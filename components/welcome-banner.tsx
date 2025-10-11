@@ -54,43 +54,45 @@ export function WelcomeBanner({
     city !== "Unknown" && country !== "Unknown" ? `${city}, ${country}` : country !== "Unknown" ? country : ""
 
   return (
-    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-full max-w-md px-4 animate-slide-down">
-      <div className="relative rounded-xl border border-border bg-card/95 backdrop-blur-lg p-4 shadow-2xl">
-        <Button variant="ghost" size="icon" className="absolute right-2 top-2 h-6 w-6" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 pointer-events-none">
+      <div className="relative w-full max-w-md animate-slide-down pointer-events-auto">
+        <div className="relative rounded-xl border border-border bg-card/95 backdrop-blur-lg p-4 shadow-2xl">
+          <Button variant="ghost" size="icon" className="absolute right-2 top-2 h-6 w-6" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
 
-        <div className="flex items-start gap-3 pr-8">
-          <div className="rounded-full bg-blue-500/10 p-2 flex-shrink-0">
-            <MapPin className="h-5 w-5 text-blue-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground mb-1">
-              {title}
-              {isTrackedVisitor && (
-                <>
-                  {" "}
-                  — user from {locationText} {country !== "Unknown" && getCountryFlag(country)}
-                </>
-              )}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">{description}</p>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={onCreateAccount} className="flex-1">
-                Create an account
-              </Button>
-              <Button size="sm" variant="outline" onClick={onClose}>
-                Dismiss
-              </Button>
+          <div className="flex items-start gap-3 pr-8">
+            <div className="rounded-full bg-blue-500/10 p-2 flex-shrink-0">
+              <MapPin className="h-5 w-5 text-blue-500" />
             </div>
-            {isTrackedVisitor && (
-              <p className="text-xs text-muted-foreground mt-2">
-                We use IP-based location for analytics only —{" "}
-                <a href="#" className="underline hover:text-foreground">
-                  Privacy
-                </a>
-              </p>
-            )}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground mb-1">
+                {title}
+                {isTrackedVisitor && (
+                  <>
+                    {" "}
+                    — user from {locationText} {country !== "Unknown" && getCountryFlag(country)}
+                  </>
+                )}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">{description}</p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={onCreateAccount} className="flex-1">
+                  Create an account
+                </Button>
+                <Button size="sm" variant="outline" onClick={onClose}>
+                  Dismiss
+                </Button>
+              </div>
+              {isTrackedVisitor && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  We use IP-based location for analytics only —{" "}
+                  <a href="#" className="underline hover:text-foreground">
+                    Privacy
+                  </a>
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

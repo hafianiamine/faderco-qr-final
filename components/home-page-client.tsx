@@ -26,7 +26,6 @@ export function HomePageClient() {
     const hasSeenWelcome = localStorage.getItem("hasSeenWelcome")
 
     if (searchParams.get("tracked") === "true") {
-      // User came from QR code scan - show location data
       const city = searchParams.get("city") || "Unknown"
       const country = searchParams.get("country") || "Unknown"
 
@@ -43,10 +42,32 @@ export function HomePageClient() {
       newUrl.searchParams.delete("ip")
       window.history.replaceState({}, "", newUrl.toString())
     } else if (!hasSeenWelcome) {
-      // First-time visitor - show welcome popup without location data
       setTimeout(() => {
         setShowWelcome(true)
       }, 1000)
+    }
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+        (e.ctrlKey && e.key === "u")
+      ) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener("contextmenu", handleContextMenu)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu)
+      document.removeEventListener("keydown", handleKeyDown)
     }
   }, [searchParams])
 
@@ -69,9 +90,7 @@ export function HomePageClient() {
         title: settingsMap.welcome_popup_title || "Welcome to Our New Brand Tool",
         description: settingsMap.welcome_popup_description || "Experience the power of FADERCO QR tracking",
       })
-    } catch (error) {
-      console.error("[v0] Failed to load welcome settings:", error)
-    }
+    } catch (error) {}
   }
 
   const handleCloseWelcome = () => {
