@@ -3,6 +3,7 @@ import { QRMockup } from "@/components/qr-mockup"
 import { SiteFooter } from "@/components/site-footer"
 import { HomePageClient } from "@/components/home-page-client"
 import { AnimatedBackground } from "@/components/animated-background"
+import { FadeWords } from "@/components/fade-words"
 
 export default function HomePage() {
   return (
@@ -29,9 +30,15 @@ export default function HomePage() {
               </div>
 
               <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl animate-fade-in-up animation-delay-200">
-                <span className="block text-foreground">With FADERCO QR you can</span>
-                <span className="block mt-2 bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-                  create, track, and analyse
+                <span className="block text-foreground">
+                  <FadeWords
+                    words={["UPDATE", "SCHEDULE", "CHANGE", "WATCH"]}
+                    className="bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent uppercase"
+                  />{" "}
+                  your QR anytime — even after printing.
+                </span>
+                <span className="block mt-2 text-muted-foreground text-lg md:text-xl lg:text-2xl font-normal">
+                  No more &quot;oops, it&apos;s already printed on 1000 packaging&quot;.
                 </span>
               </h1>
 
