@@ -54,7 +54,7 @@ export function WelcomeBanner({
     city !== "Unknown" && country !== "Unknown" ? `${city}, ${country}` : country !== "Unknown" ? country : ""
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 animate-slide-down">
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-full max-w-md px-4 animate-slide-down">
       <div className="relative rounded-xl border border-border bg-card/95 backdrop-blur-lg p-4 shadow-2xl">
         <Button variant="ghost" size="icon" className="absolute right-2 top-2 h-6 w-6" onClick={onClose}>
           <X className="h-4 w-4" />
