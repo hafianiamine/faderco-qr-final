@@ -10,10 +10,12 @@ import { UserAnalyticsSection } from "@/components/user/user-analytics-section"
 import { UserProfileSection } from "@/components/user/user-profile-section"
 import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
+import { FeatureTourModal } from "@/components/feature-tour-modal"
 
 export default function UserDashboardPage() {
   const [currentSection, setCurrentSection] = useState("dashboard")
   const [userEmail, setUserEmail] = useState<string>()
+  const [showFeatureTour, setShowFeatureTour] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -23,16 +25,41 @@ export default function UserDashboardPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email)
+        const hasSeenTour = localStorage.getItem(`feature-tour-seen-${user.id}`)
+        if (!hasSeenTour) {
+          setShowFeatureTour(true)
+        }
       }
     }
     loadUser()
   }, [])
 
+  const handleCloseTour = () => {
+    setShowFeatureTour(false)
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        localStorage.setItem(`feature-tour-seen-${user.id}`, "true")
+      }
+    })
+  }
+
+  const handleShowTour = () => {
+    setShowFeatureTour(true)
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <AnimatedBackground />
 
-      <UserGlassMenu userEmail={userEmail} onSectionChange={setCurrentSection} currentSection={currentSection} />
+      <UserGlassMenu
+        userEmail={userEmail}
+        onSectionChange={setCurrentSection}
+        currentSection={currentSection}
+        onShowFeatureTour={handleShowTour}
+      />
+
+      <FeatureTourModal isOpen={showFeatureTour} onClose={handleCloseTour} userName={userEmail} />
 
       <div className="relative z-10 ml-24 min-h-screen p-8">
         <div className="mx-auto max-w-7xl">

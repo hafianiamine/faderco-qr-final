@@ -14,6 +14,10 @@ export interface QRCustomization {
   scanLimit?: number
   scheduledStart?: string
   scheduledEnd?: string
+  geofenceEnabled?: boolean
+  geofenceLatitude?: number
+  geofenceLongitude?: number
+  geofenceRadius?: number
 }
 
 export async function createQRCode(title: string, destinationUrl: string, customization?: QRCustomization) {
@@ -72,6 +76,10 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       scans_used: 0,
       scheduled_start: customization?.scheduledStart || null,
       scheduled_end: customization?.scheduledEnd || null,
+      geofence_enabled: customization?.geofenceEnabled || false,
+      geofence_latitude: customization?.geofenceLatitude || null,
+      geofence_longitude: customization?.geofenceLongitude || null,
+      geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
     }
@@ -286,6 +294,10 @@ export async function updateQRCodeSettings(
     scanLimit?: number | null
     scheduledStart?: string | null
     scheduledEnd?: string | null
+    geofenceEnabled?: boolean
+    geofenceLatitude?: number
+    geofenceLongitude?: number
+    geofenceRadius?: number
   },
 ) {
   try {
@@ -313,6 +325,22 @@ export async function updateQRCodeSettings(
 
     if (settings.scheduledEnd !== undefined) {
       updateData.scheduled_end = settings.scheduledEnd
+    }
+
+    if (settings.geofenceEnabled !== undefined) {
+      updateData.geofence_enabled = settings.geofenceEnabled
+    }
+
+    if (settings.geofenceLatitude !== undefined) {
+      updateData.geofence_latitude = settings.geofenceLatitude
+    }
+
+    if (settings.geofenceLongitude !== undefined) {
+      updateData.geofence_longitude = settings.geofenceLongitude
+    }
+
+    if (settings.geofenceRadius !== undefined) {
+      updateData.geofence_radius = settings.geofenceRadius
     }
 
     const { error: updateError } = await supabase

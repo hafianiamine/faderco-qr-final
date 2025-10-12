@@ -1,5 +1,5 @@
 "use client"
-import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus } from "lucide-react"
+import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus, Sparkles } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -10,9 +10,10 @@ interface UserGlassMenuProps {
   userEmail?: string
   onSectionChange: (section: string) => void
   currentSection: string
+  onShowFeatureTour?: () => void
 }
 
-export function UserGlassMenu({ userEmail, onSectionChange, currentSection }: UserGlassMenuProps) {
+export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onShowFeatureTour }: UserGlassMenuProps) {
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState<string>("")
 
@@ -112,6 +113,19 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection }: Us
               Settings
             </span>
           </button>
+
+          {onShowFeatureTour && (
+            <button
+              onClick={onShowFeatureTour}
+              className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50"
+              title="Feature Tour"
+            >
+              <Sparkles className="h-5 w-5" />
+              <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
+                Feature Tour
+              </span>
+            </button>
+          )}
 
           <button
             onClick={handleLogout}

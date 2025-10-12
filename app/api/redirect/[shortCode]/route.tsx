@@ -70,6 +70,161 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
       )
     }
 
+    // Geofencing validation before other checks
+    if (qrCode.geofence_enabled && qrCode.geofence_latitude && qrCode.geofence_longitude && qrCode.geofence_radius) {
+      return new NextResponse(
+        `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Location Verification</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+                padding: 20px;
+              }
+              .container {
+                max-width: 500px;
+              }
+              .emoji {
+                font-size: 4rem;
+                margin: 0 0 1rem 0;
+              }
+              h1 {
+                font-size: 2rem;
+                margin: 0 0 1rem 0;
+              }
+              p {
+                font-size: 1.1rem;
+                opacity: 0.9;
+                line-height: 1.6;
+                margin-bottom: 1.5rem;
+              }
+              .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top: 4px solid white;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+              .error {
+                background: rgba(255, 0, 0, 0.2);
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="emoji">📍</div>
+              <h1>Verifying Your Location</h1>
+              <p>This QR code requires location verification to ensure you're in the allowed area.</p>
+              <div class="spinner"></div>
+              <p id="status">Requesting location access...</p>
+            </div>
+            <script>
+              const targetLat = ${qrCode.geofence_latitude};
+              const targetLng = ${qrCode.geofence_longitude};
+              const allowedRadius = ${qrCode.geofence_radius};
+              const destinationUrl = "${qrCode.destination_url}";
+
+              function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // Earth's radius in meters
+                const φ1 = lat1 * Math.PI / 180;
+                const φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+                return R * c; // Distance in meters
+              }
+
+              if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+
+                    if (distance <= allowedRadius) {
+                      document.getElementById("status").textContent = "✓ Location verified! Redirecting...";
+                      setTimeout(() => {
+                        window.location.href = destinationUrl;
+                      }, 1000);
+                    } else {
+                      const distanceKm = (distance / 1000).toFixed(1);
+                      const allowedKm = (allowedRadius / 1000).toFixed(1);
+                      document.querySelector(".container").innerHTML = \`
+                        <div class="emoji">🚫</div>
+                        <h1>Location Not Allowed</h1>
+                        <p>This QR code can only be accessed within \${allowedKm} km of the designated location.</p>
+                        <p>You are currently \${distanceKm} km away.</p>
+                        <div class="error">
+                          <p style="margin: 0; font-size: 0.9rem;">Please move closer to the allowed area to access this content.</p>
+                        </div>
+                      \`;
+                    }
+                  },
+                  (error) => {
+                    document.querySelector(".container").innerHTML = \`
+                      <div class="emoji">⚠️</div>
+                      <h1>Location Access Required</h1>
+                      <p>This QR code requires location access to verify you're in the allowed area.</p>
+                      <div class="error">
+                        <p style="margin: 0; font-size: 0.9rem;">Please enable location services and refresh the page.</p>
+                      </div>
+                    \`;
+                  },
+                  {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                  }
+                );
+              } else {
+                document.querySelector(".container").innerHTML = \`
+                  <div class="emoji">⚠️</div>
+                  <h1>Location Not Supported</h1>
+                  <p>Your browser doesn't support location services.</p>
+                  <div class="error">
+                    <p style="margin: 0; font-size: 0.9rem;">Please use a modern browser with location support.</p>
+                  </div>
+                \`;
+              }
+            </script>
+          </body>
+        </html>
+        `,
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+          },
+        },
+      )
+    }
+
     if (qrCode.status === "deleted") {
       return new NextResponse(
         `

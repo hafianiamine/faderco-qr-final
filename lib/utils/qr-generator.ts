@@ -61,7 +61,7 @@ export function addLogoToQRClient(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })
     if (!ctx) {
       reject(new Error("Failed to get canvas context"))
       return
@@ -78,17 +78,44 @@ export function addLogoToQRClient(
       const logoImage = new Image()
       logoImage.crossOrigin = "anonymous"
       logoImage.onload = () => {
-        const logoSizePixels = size * (logoSize / 100)
-        const logoX = (size - logoSizePixels) / 2
-        const logoY = (size - logoSizePixels) / 2
+        const maxLogoSize = size * (logoSize / 100)
+        const logoAspectRatio = logoImage.width / logoImage.height
 
-        const padding = logoSizePixels * 0.15
-        ctx.fillStyle = outlineColor
-        ctx.fillRect(logoX - padding, logoY - padding, logoSizePixels + padding * 2, logoSizePixels + padding * 2)
+        let logoWidth = maxLogoSize
+        let logoHeight = maxLogoSize
 
-        ctx.drawImage(logoImage, logoX, logoY, logoSizePixels, logoSizePixels)
+        if (logoAspectRatio > 1) {
+          // Wider than tall
+          logoHeight = maxLogoSize / logoAspectRatio
+        } else {
+          // Taller than wide
+          logoWidth = maxLogoSize * logoAspectRatio
+        }
 
-        resolve(canvas.toDataURL("image/png"))
+        const logoX = (size - logoWidth) / 2
+        const logoY = (size - logoHeight) / 2
+
+        const outlineWidth = Math.max(3, logoWidth * 0.08) // 8% of logo width, minimum 3px
+
+        // Draw white background for better QR code readability
+        ctx.fillStyle = "#FFFFFF"
+        ctx.fillRect(
+          logoX - outlineWidth * 1.5,
+          logoY - outlineWidth * 1.5,
+          logoWidth + outlineWidth * 3,
+          logoHeight + outlineWidth * 3,
+        )
+
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = "high"
+        ctx.drawImage(logoImage, logoX, logoY, logoWidth, logoHeight)
+
+        ctx.strokeStyle = outlineColor
+        ctx.lineWidth = outlineWidth
+        ctx.lineJoin = "round"
+        ctx.strokeRect(logoX, logoY, logoWidth, logoHeight)
+
+        resolve(canvas.toDataURL("image/png", 1.0))
       }
       logoImage.onerror = () => {
         resolve(qrDataUrl)
