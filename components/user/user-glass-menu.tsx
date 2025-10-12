@@ -1,5 +1,5 @@
 "use client"
-import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus, Sparkles } from "lucide-react"
+import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus, Lightbulb } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -114,19 +114,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
             </span>
           </button>
 
-          {onShowFeatureTour && (
-            <button
-              onClick={onShowFeatureTour}
-              className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50"
-              title="Feature Tour"
-            >
-              <Sparkles className="h-5 w-5" />
-              <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
-                Feature Tour
-              </span>
-            </button>
-          )}
-
           <button
             onClick={handleLogout}
             className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-red-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700"
@@ -138,6 +125,21 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
             </span>
           </button>
         </div>
+
+        {onShowFeatureTour && (
+          <div className="flex flex-col gap-3 rounded-full border border-gray-200 bg-white/80 p-3 backdrop-blur-xl shadow-lg">
+            <button
+              onClick={onShowFeatureTour}
+              className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/50"
+              title="Feature Tour"
+            >
+              <Lightbulb className="h-5 w-5" />
+              <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
+                Feature Tour
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </>
   )
