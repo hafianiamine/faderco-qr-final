@@ -96,7 +96,7 @@ export function AllQRCodesSection() {
         <div className="flex items-center gap-3">
           <QrCode className="h-8 w-8 text-blue-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">All QR Codes</h1>
+            <h1 className="text-3xl font-bold text-gray-900 uppercase font-display">All QR Codes</h1>
             <p className="text-sm text-gray-600">View and manage QR codes from all users</p>
           </div>
         </div>
@@ -115,78 +115,95 @@ export function AllQRCodesSection() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">QR Code</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Owner</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Destination</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Scans</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredQRCodes.map((qr) => (
-                <tr key={qr.id} className="transition-colors hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="h-12 w-12 rounded" />
-                      <div>
-                        <div className="font-medium text-gray-900">{qr.title}</div>
-                        <div className="text-xs text-gray-500 font-mono">{qr.short_code}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium text-gray-900">{qr.profiles?.full_name || "Unknown"}</div>
-                      <div className="text-sm text-gray-500">{qr.profiles?.email}</div>
-                      {qr.profiles?.company && <div className="text-xs text-gray-400">{qr.profiles.company}</div>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="max-w-xs truncate text-sm text-gray-700" title={qr.destination_url}>
-                      {qr.destination_url}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="font-semibold text-gray-900">{qr.scans_used || 0}</span>
-                    {qr.scan_limit && <span className="text-gray-500">/{qr.scan_limit}</span>}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        qr.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {qr.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(qr)}
-                        className="border-gray-200"
-                        title={qr.status === "active" ? "Pause QR Code" : "Activate QR Code"}
-                      >
-                        {qr.status === "active" ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => setDeletingQR(qr)} title="Delete QR Code">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {filteredQRCodes.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white/80 p-12 text-center shadow-lg backdrop-blur-xl">
+          <QrCode className="mx-auto h-16 w-16 text-gray-400" />
+          <h3 className="mt-4 text-lg font-semibold text-gray-900">
+            {qrCodes.length === 0 ? "No QR codes found" : "No matching QR codes"}
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            {qrCodes.length === 0 ? "Users haven't created any QR codes yet" : "Try adjusting your search query"}
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-xl overflow-hidden shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-gray-200 bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">QR Code</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Owner</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Destination</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Scans</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Status</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredQRCodes.map((qr) => (
+                  <tr key={qr.id} className="transition-colors hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="h-12 w-12 rounded" />
+                        <div>
+                          <div className="font-medium text-gray-900">{qr.title}</div>
+                          <div className="text-xs text-gray-500 font-mono">{qr.short_code}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="font-medium text-gray-900">{qr.profiles?.full_name || "Unknown"}</div>
+                        <div className="text-sm text-gray-500">{qr.profiles?.email}</div>
+                        {qr.profiles?.company && <div className="text-xs text-gray-400">{qr.profiles.company}</div>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="max-w-xs truncate text-sm text-gray-700" title={qr.destination_url}>
+                        {qr.destination_url}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="font-semibold text-gray-900">{qr.scans_used || 0}</span>
+                      {qr.scan_limit && <span className="text-gray-500">/{qr.scan_limit}</span>}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          qr.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {qr.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleToggleStatus(qr)}
+                          className="border-gray-200"
+                          title={qr.status === "active" ? "Pause QR Code" : "Activate QR Code"}
+                        >
+                          {qr.status === "active" ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeletingQR(qr)}
+                          title="Delete QR Code"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={!!deletingQR} onOpenChange={(open) => !open && setDeletingQR(null)}>
         <AlertDialogContent>

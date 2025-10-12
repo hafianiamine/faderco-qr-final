@@ -26,11 +26,11 @@ export default function HomePage() {
             <div className="space-y-6 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs md:text-sm animate-fade-in-up backdrop-blur-sm">
                 <Zap className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />
-                <span className="text-blue-500 font-medium">Next-Gen QR Platform</span>
+                <span className="text-blue-500 font-medium uppercase">Next-Gen QR Platform</span>
               </div>
 
-              <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl animate-fade-in-up animation-delay-200">
-                <span className="block text-foreground">
+              <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-5xl animate-fade-in-up animation-delay-200 font-display">
+                <span className="block text-foreground uppercase">
                   <FadeWords
                     words={["UPDATE", "SCHEDULE", "CHANGE", "WATCH"]}
                     className="bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent uppercase"
@@ -42,16 +42,11 @@ export default function HomePage() {
                 </span>
               </h1>
 
-              <p className="mx-auto max-w-2xl text-pretty text-base text-muted-foreground md:text-lg lg:text-xl animate-fade-in-up animation-delay-400 lg:mx-0">
-                Your complete toolkit for QR code management with built-in analytics, URL shortening, and real-time
-                tracking.
-              </p>
-
               <div className="grid grid-cols-2 gap-3 animate-fade-in-up animation-delay-600">
                 <div className="flex items-start gap-2 rounded-lg bg-muted/50 backdrop-blur-sm p-3 text-left border border-border/50 hover:border-blue-500/30 transition-all">
                   <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs md:text-sm font-semibold">Real-time Analytics</div>
+                    <div className="text-xs md:text-sm font-semibold uppercase">Real-time Analytics</div>
                     <div className="text-[10px] md:text-xs text-muted-foreground">Track every scan instantly</div>
                   </div>
                 </div>
@@ -59,7 +54,7 @@ export default function HomePage() {
                 <div className="flex items-start gap-2 rounded-lg bg-muted/50 backdrop-blur-sm p-3 text-left border border-border/50 hover:border-blue-500/30 transition-all">
                   <MapPin className="h-4 w-4 md:h-5 md:w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs md:text-sm font-semibold">Live Map View</div>
+                    <div className="text-xs md:text-sm font-semibold uppercase">Live Map View</div>
                     <div className="text-[10px] md:text-xs text-muted-foreground">See where scans happen</div>
                   </div>
                 </div>
@@ -67,7 +62,7 @@ export default function HomePage() {
                 <div className="flex items-start gap-2 rounded-lg bg-muted/50 backdrop-blur-sm p-3 text-left border border-border/50 hover:border-blue-500/30 transition-all">
                   <Link2 className="h-4 w-4 md:h-5 md:w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs md:text-sm font-semibold">URL Shortener</div>
+                    <div className="text-xs md:text-sm font-semibold uppercase">URL Shortener</div>
                     <div className="text-[10px] md:text-xs text-muted-foreground">Built-in short links</div>
                   </div>
                 </div>
@@ -75,7 +70,7 @@ export default function HomePage() {
                 <div className="flex items-start gap-2 rounded-lg bg-muted/50 backdrop-blur-sm p-3 text-left border border-border/50 hover:border-blue-500/30 transition-all">
                   <Clock className="h-4 w-4 md:h-5 md:w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs md:text-sm font-semibold">Who, When, Where</div>
+                    <div className="text-xs md:text-sm font-semibold uppercase">Who, When, Where</div>
                     <div className="text-[10px] md:text-xs text-muted-foreground">Complete scan details</div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, JetBrains_Mono } from "next/font/google"
+import { Inter, JetBrains_Mono, Poppins } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -16,6 +16,13 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 })
 
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+})
+
 export const metadata: Metadata = {
   title: "FADERCO QR Platform",
   description: "Professional QR code generation and management platform with advanced analytics",
@@ -28,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable}`}>
       <body className="font-sans antialiased">
         <Suspense fallback={null}>{children}</Suspense>
       </body>

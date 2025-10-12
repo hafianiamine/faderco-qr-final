@@ -258,9 +258,9 @@ export function UserQRCodesSection() {
                         </Badge>
                       )}
                       {pendingDeletion && (
-                        <Badge variant="destructive" className="flex-shrink-0">
+                        <Badge variant="destructive" className="flex-shrink-0 uppercase">
                           <Clock className="mr-1 h-3 w-3" />
-                          Pending Deletion
+                          Scheduled for Deletion
                         </Badge>
                       )}
                     </div>
@@ -352,6 +352,83 @@ export function UserQRCodesSection() {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{viewingQR?.title}</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div className="rounded-lg bg-white p-4">
+                {viewingQR?.qr_logo_url ? (
+                  <QRWithLogo qr={viewingQR} />
+                ) : (
+                  <img
+                    src={viewingQR?.qr_image_url || "/placeholder.svg"}
+                    alt={viewingQR?.title}
+                    className="mx-auto h-64 w-64"
+                  />
+                )}
+              </div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-semibold">Destination URL:</span>
+                  <p className="text-muted-foreground break-all">{viewingQR?.destination_url}</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Short Code:</span>
+                  <p className="text-muted-foreground font-mono">{viewingQR?.short_code}</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Total Scans:</span>
+                  <p className="text-muted-foreground">{viewingQR?.scans_used || 0}</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Status:</span>
+                  <p className="text-muted-foreground capitalize">{viewingQR?.status}</p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <a href={viewingQR?.qr_image_url} download={`${viewingQR?.title}.png`}>
+                Download
+              </a>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!editingQR} onOpenChange={(open) => !open && setEditingQR(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Destination URL</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>Update the destination URL for "{editingQR?.title}". The QR code image will remain the same.</p>
+              <Input
+                placeholder="https://example.com"
+                value={newDestinationUrl}
+                onChange={(e) => setNewDestinationUrl(e.target.value)}
+                className="font-mono"
+              />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setEditingQR(null)
+                setNewDestinationUrl("")
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateDestination} disabled={isUpdating || !newDestinationUrl}>
+              {isUpdating ? "Updating..." : "Update URL"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deletingQR} onOpenChange={(open) => !open && setDeletingQR(null)}>
         <AlertDialogContent className="max-w-md">
