@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono, Poppins } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
+import { SecurityProvider } from "@/components/security-provider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,7 +38,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable}`}>
       <body className="font-sans antialiased">
-        <Suspense fallback={null}>{children}</Suspense>
+        <SecurityProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </SecurityProvider>
       </body>
     </html>
   )

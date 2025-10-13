@@ -299,7 +299,6 @@ export async function deleteUser(userId: string) {
 
 export async function getAllQRCodes() {
   try {
-    console.log("[v0] getAllQRCodes: Starting...")
     const supabase = await createClient()
 
     const {
@@ -307,18 +306,14 @@ export async function getAllQRCodes() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      console.log("[v0] getAllQRCodes: No user found")
       return { error: "Unauthorized" }
     }
 
     const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
     if (adminProfile?.role !== "admin") {
-      console.log("[v0] getAllQRCodes: User is not admin")
       return { error: "Unauthorized" }
     }
-
-    console.log("[v0] getAllQRCodes: Admin verified, creating service client...")
 
     const supabaseAdmin = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -330,8 +325,6 @@ export async function getAllQRCodes() {
         },
       },
     )
-
-    console.log("[v0] getAllQRCodes: Fetching QR codes...")
 
     const { data: qrCodes, error } = await supabaseAdmin
       .from("qr_codes")
@@ -349,15 +342,12 @@ export async function getAllQRCodes() {
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("[v0] getAllQRCodes: Database error:", error)
-      return { error: "Failed to fetch QR codes", details: error.message }
+      return { error: "Failed to fetch QR codes" }
     }
 
-    console.log("[v0] getAllQRCodes: Successfully fetched", qrCodes?.length || 0, "QR codes")
     return { qrCodes: qrCodes || [] }
   } catch (error) {
-    console.error("[v0] getAllQRCodes: Exception:", error)
-    return { error: "An unexpected error occurred", details: error instanceof Error ? error.message : String(error) }
+    return { error: "An unexpected error occurred" }
   }
 }
 

@@ -25,10 +25,7 @@ export default function UserDashboardPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email)
-        const hasSeenTour = localStorage.getItem(`feature-tour-seen-${user.id}`)
-        if (!hasSeenTour) {
-          setShowFeatureTour(true)
-        }
+        setShowFeatureTour(true)
       }
     }
     loadUser()
@@ -36,12 +33,6 @@ export default function UserDashboardPage() {
 
   const handleCloseTour = () => {
     setShowFeatureTour(false)
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        localStorage.setItem(`feature-tour-seen-${user.id}`, "true")
-      }
-    })
   }
 
   const handleShowTour = () => {

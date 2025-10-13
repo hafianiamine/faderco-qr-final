@@ -49,7 +49,6 @@ export function AllQRCodesSection() {
     try {
       const result = await getAllQRCodes()
       if (result.error) {
-        console.error("Error loading QR codes:", result.error)
         toast.error(result.error)
         setQrCodes([])
         setFilteredQRCodes([])
@@ -58,7 +57,6 @@ export function AllQRCodesSection() {
         setFilteredQRCodes(result.qrCodes || [])
       }
     } catch (error) {
-      console.error("Exception loading QR codes:", error)
       toast.error("Failed to load QR codes")
       setQrCodes([])
       setFilteredQRCodes([])
