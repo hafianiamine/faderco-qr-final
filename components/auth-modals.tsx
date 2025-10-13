@@ -53,7 +53,29 @@ function LoginModal({
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
   const router = useRouter()
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const supabase = createClient()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+
+      if (error) throw error
+      setResetSuccess(true)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,14 +121,45 @@ function LoginModal({
     }
   }
 
+  if (resetSuccess) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Check your email</DialogTitle>
+            <DialogDescription>
+              We&apos;ve sent you a password reset link. Please check your email and follow the instructions.
+            </DialogDescription>
+          </DialogHeader>
+          <Button
+            onClick={() => {
+              setResetSuccess(false)
+              setShowForgotPassword(false)
+              onOpenChange(false)
+            }}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Login to FADERCO QR</DialogTitle>
-          <DialogDescription>Enter your credentials to access your account</DialogDescription>
+          <DialogTitle className="text-2xl">
+            {showForgotPassword ? "Reset Password" : "Login to FADERCO QR"}
+          </DialogTitle>
+          <DialogDescription>
+            {showForgotPassword
+              ? "Enter your email address and we'll send you a reset link"
+              : "Enter your credentials to access your account"}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={showForgotPassword ? handleForgotPassword : handleLogin}>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
               <Label htmlFor="login-email">Email</Label>
@@ -119,30 +172,59 @@ function LoginModal({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="login-password">Password</Label>
-              <Input
-                id="login-password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {!showForgotPassword && (
+              <div className="grid gap-2">
+                <Label htmlFor="login-password">Password</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            )}
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading
+                ? showForgotPassword
+                  ? "Sending reset link..."
+                  : "Logging in..."
+                : showForgotPassword
+                  ? "Send Reset Link"
+                  : "Login"}
             </Button>
           </div>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              onClick={onSwitchToRegister}
-              className="underline underline-offset-4 hover:text-primary"
-            >
-              Register
-            </button>
+          <div className="mt-4 flex flex-col gap-2 text-center text-sm">
+            {!showForgotPassword && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </button>
+            )}
+            {showForgotPassword ? (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Back to login
+              </button>
+            ) : (
+              <div>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchToRegister}
+                  className="underline underline-offset-4 hover:text-primary"
+                >
+                  Register
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </DialogContent>

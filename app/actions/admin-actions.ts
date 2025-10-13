@@ -315,7 +315,18 @@ export async function getAllQRCodes() {
       return { error: "Unauthorized" }
     }
 
-    const { data: qrCodes, error } = await supabase
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
+    )
+
+    const { data: qrCodes, error } = await supabaseAdmin
       .from("qr_codes")
       .select(
         `
@@ -328,15 +339,18 @@ export async function getAllQRCodes() {
         )
       `,
       )
-      .neq("status", "deleted")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     if (error) {
+      console.error("[v0] Error fetching QR codes:", error)
       return { error: "Failed to fetch QR codes" }
     }
 
+    console.log("[v0] Fetched QR codes count:", qrCodes?.length || 0)
     return { qrCodes }
   } catch (error) {
+    console.error("[v0] Exception in getAllQRCodes:", error)
     return { error: "An unexpected error occurred" }
   }
 }

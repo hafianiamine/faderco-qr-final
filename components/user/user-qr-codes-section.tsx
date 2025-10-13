@@ -58,6 +58,7 @@ export function UserQRCodesSection() {
       .from("qr_codes")
       .select("*")
       .eq("user_id", user.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     setQrCodes(data || [])
@@ -158,14 +159,23 @@ export function UserQRCodesSection() {
     setViewingQR(qr)
   }
 
-  function isPendingDeletion(qrId: string) {
-    return pendingDeletions.find((pd) => pd.qr_code_id === qrId)
+  function isPendingDeletion(qr: any) {
+    if (qr.scheduled_deletion_at) {
+      const scheduledTime = new Date(qr.scheduled_deletion_at).getTime()
+      const now = new Date().getTime()
+      // Only show as pending if scheduled time is in the future
+      if (scheduledTime > now) {
+        return { scheduled_deletion_at: qr.scheduled_deletion_at, qr_code_id: qr.id }
+      }
+    }
+    return pendingDeletions.find((pd) => pd.qr_code_id === qr.id)
   }
 
   function getTimeRemaining(scheduledAt: string) {
     const now = new Date()
     const scheduled = new Date(scheduledAt)
-    const diff = scheduled.getTime() - now.getTime()
+    const deletionTime = new Date(scheduled.getTime() + 12 * 60 * 60 * 1000)
+    const diff = deletionTime.getTime() - now.getTime()
 
     if (diff <= 0) return "Deleting soon..."
 
@@ -233,7 +243,7 @@ export function UserQRCodesSection() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {qrCodes.map((qr) => {
-            const pendingDeletion = isPendingDeletion(qr.id)
+            const pendingDeletion = isPendingDeletion(qr)
             return (
               <div
                 key={qr.id}
