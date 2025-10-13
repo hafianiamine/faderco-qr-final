@@ -15,6 +15,7 @@ import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-ac
 import { updateWelcomePopupSettings } from "@/app/actions/admin-actions"
 import { put } from "@vercel/blob"
 import { Switch } from "@/components/ui/switch"
+import { LandingPageEditor } from "@/components/admin/landing-page-editor"
 
 export function SettingsSection() {
   const [loading, setLoading] = useState(false)
@@ -287,6 +288,8 @@ export function SettingsSection() {
         <h2 className="text-3xl font-bold text-gray-900">Platform Settings</h2>
         <p className="text-gray-600 mt-2">Configure your QR platform</p>
       </div>
+
+      <LandingPageEditor />
 
       <Card className="p-6">
         <form onSubmit={handleWelcomePopupSubmit} className="space-y-6">
