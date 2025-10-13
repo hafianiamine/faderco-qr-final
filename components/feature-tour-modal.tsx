@@ -124,9 +124,9 @@ export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-xl font-bold">
             {currentStep === 0 ? (
               <span>Hello {userName ? userName.split("@")[0] : "there"}! 👋</span>
             ) : (
@@ -137,24 +137,24 @@ export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModal
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-2">
           {currentStep === 0 && (
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-600 text-base">
               Welcome to your QR code management platform! Let's show you what you can do with our system.
             </p>
           )}
 
-          <div className={`rounded-2xl ${currentFeature.bgColor} p-8 transition-all duration-300`}>
-            <div className="flex items-start gap-6">
-              <div className={`rounded-full bg-white p-4 shadow-lg`}>
-                <Icon className={`h-8 w-8 ${currentFeature.color}`} />
+          <div className={`rounded-xl ${currentFeature.bgColor} p-6 transition-all duration-300`}>
+            <div className="flex items-start gap-4">
+              <div className={`rounded-full bg-white p-3 shadow-lg flex-shrink-0`}>
+                <Icon className={`h-6 w-6 ${currentFeature.color}`} />
               </div>
-              <div className="flex-1 space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">{currentFeature.title}</h3>
-                <p className="text-gray-700 text-lg leading-relaxed">{currentFeature.description}</p>
+              <div className="flex-1 space-y-2 min-w-0">
+                <h3 className="text-lg font-bold text-gray-900">{currentFeature.title}</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">{currentFeature.description}</p>
                 {currentFeature.benefit && (
-                  <div className="mt-4 rounded-lg bg-white/60 p-4 border-l-4 border-current">
-                    <p className="text-sm font-semibold text-gray-900">
+                  <div className="mt-3 rounded-lg bg-white/60 p-3 border-l-4 border-current">
+                    <p className="text-xs font-semibold text-gray-900">
                       💡 <span className={currentFeature.color}>Why it matters:</span> {currentFeature.benefit}
                     </p>
                   </div>
