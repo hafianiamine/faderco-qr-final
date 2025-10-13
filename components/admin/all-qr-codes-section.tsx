@@ -46,14 +46,25 @@ export function AllQRCodesSection() {
   }, [searchQuery, qrCodes])
 
   async function loadQRCodes() {
-    const result = await getAllQRCodes()
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      setQrCodes(result.qrCodes || [])
-      setFilteredQRCodes(result.qrCodes || [])
+    try {
+      const result = await getAllQRCodes()
+      if (result.error) {
+        console.error("Error loading QR codes:", result.error)
+        toast.error(result.error)
+        setQrCodes([])
+        setFilteredQRCodes([])
+      } else {
+        setQrCodes(result.qrCodes || [])
+        setFilteredQRCodes(result.qrCodes || [])
+      }
+    } catch (error) {
+      console.error("Exception loading QR codes:", error)
+      toast.error("Failed to load QR codes")
+      setQrCodes([])
+      setFilteredQRCodes([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleToggleStatus(qr: any) {

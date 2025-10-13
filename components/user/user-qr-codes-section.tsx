@@ -47,22 +47,37 @@ export function UserQRCodesSection() {
   }, [])
 
   async function loadQRCodes() {
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-    if (!user) return
+      if (!user) {
+        setLoading(false)
+        return
+      }
 
-    const { data } = await supabase
-      .from("qr_codes")
-      .select("*")
-      .eq("user_id", user.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
+      const { data, error } = await supabase
+        .from("qr_codes")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
 
-    setQrCodes(data || [])
-    setLoading(false)
+      if (error) {
+        console.error("Error loading QR codes:", error)
+        toast.error("Failed to load QR codes")
+        setQrCodes([])
+      } else {
+        setQrCodes(data || [])
+      }
+
+      setLoading(false)
+    } catch (error) {
+      console.error("Exception loading QR codes:", error)
+      setQrCodes([])
+      setLoading(false)
+    }
   }
 
   async function loadPendingDeletions() {

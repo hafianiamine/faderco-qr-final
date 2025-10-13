@@ -339,18 +339,16 @@ export async function getAllQRCodes() {
         )
       `,
       )
-      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("[v0] Error fetching QR codes:", error)
-      return { error: "Failed to fetch QR codes" }
+      console.error("Error fetching QR codes:", error)
+      return { error: "Failed to fetch QR codes", details: error.message }
     }
 
-    console.log("[v0] Fetched QR codes count:", qrCodes?.length || 0)
-    return { qrCodes }
+    return { qrCodes: qrCodes || [] }
   } catch (error) {
-    console.error("[v0] Exception in getAllQRCodes:", error)
+    console.error("Exception in getAllQRCodes:", error)
     return { error: "An unexpected error occurred" }
   }
 }
