@@ -1,28 +1,46 @@
 import type React from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { LanguageProvider } from "@/lib/translation-context"
-import { AuthProvider } from "@/components/auth-provider"
+import type { Metadata } from "next"
+import { Inter, JetBrains_Mono, Poppins } from "next/font/google"
+import { Suspense } from "react"
+import "./globals.css"
+import { SecurityProvider } from "@/components/security-provider"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
 
-export const metadata = {
-  title: "Faderco Track - TV Ad Analytics Platform",
-  description: "Track brand activity, detect patterns, and compare performance across TV channels",
-    generator: 'v0.app'
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+})
+
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+})
+
+export const metadata: Metadata = {
+  title: "FADERCO QR Platform",
+  description: "Professional QR code generation and management platform with advanced analytics",
+  generator: "fadercoqr.com",
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <LanguageProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable}`}>
+      <body className="font-sans antialiased">
+        <SecurityProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </SecurityProvider>
       </body>
     </html>
   )
