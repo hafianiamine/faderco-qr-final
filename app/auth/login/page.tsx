@@ -10,15 +10,14 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { BarChart3, Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [resetEmail, setResetEmail] = useState("")
-  const [resetSent, setResetSent] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,83 +27,16 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error: signInError, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+        },
       })
-
-      if (signInError) throw signInError
-
-      const user = data.user
-
-      if (!user?.email_confirmed_at) {
-        await supabase.auth.signOut()
-        setError("Email not confirmed. Please check your email or contact an administrator to confirm your account.")
-        setIsLoading(false)
-        return
-      }
-
-      const { data: profile } = await supabase.from("profiles").select("status, role").eq("id", user?.id).single()
-
-      // Allow admin email to bypass approval check
-      if (user?.email !== "admin@fadercoqr.com") {
-        if (profile?.status === "pending") {
-          await supabase.auth.signOut()
-          setError("Your account is pending approval. Please wait for an administrator to approve your registration.")
-          setIsLoading(false)
-          return
-        }
-
-        if (profile?.status === "rejected") {
-          await supabase.auth.signOut()
-          setError("Your account registration was rejected. Please contact an administrator.")
-          setIsLoading(false)
-          return
-        }
-
-        if (profile?.status === "blocked") {
-          await supabase.auth.signOut()
-          setError("Your account has been blocked. Please contact an administrator.")
-          setIsLoading(false)
-          return
-        }
-      }
-
-      if (profile?.role === "admin") {
-        router.replace("/admin")
-      } else {
-        router.replace("/dashboard")
-      }
-      router.refresh()
-    } catch (error: unknown) {
-      console.error("Login error:", error)
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      })
-
       if (error) throw error
-
-      setResetSent(true)
-      setTimeout(() => {
-        setShowForgotPassword(false)
-        setResetSent(false)
-        setResetEmail("")
-      }, 3000)
+      router.push("/dashboard")
     } catch (error: unknown) {
-      console.error("Password reset error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
@@ -112,107 +44,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                {showForgotPassword ? "Reset Password" : "Login to FADERCO QR"}
-              </CardTitle>
-              <CardDescription>
-                {showForgotPassword
-                  ? "Enter your email to receive a password reset link"
-                  : "Enter your credentials to access your account"}
-              </CardDescription>
+          {/* Logo and branding */}
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold">DataBoard</span>
+            </div>
+            <p className="text-muted-foreground">Sign in to your analytics dashboard</p>
+          </div>
+
+          <Card className="border-border/50">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-semibold tracking-tight">Sign in</CardTitle>
+              <CardDescription>Enter your credentials to access your dashboard</CardDescription>
             </CardHeader>
             <CardContent>
-              {showForgotPassword ? (
-                <form onSubmit={handleForgotPassword}>
-                  <div className="flex flex-col gap-6">
-                    {resetSent ? (
-                      <div className="rounded-lg bg-green-50 p-4 text-sm text-green-800">
-                        Password reset link sent! Check your email.
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid gap-2">
-                          <Label htmlFor="reset-email">Email</Label>
-                          <Input
-                            id="reset-email"
-                            type="email"
-                            placeholder="you@faderco.dz"
-                            required
-                            value={resetEmail}
-                            onChange={(e) => setResetEmail(e.target.value)}
-                          />
-                        </div>
-                        {error && <p className="text-sm text-destructive">{error}</p>}
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                          {isLoading ? "Sending..." : "Send Reset Link"}
-                        </Button>
-                      </>
-                    )}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-10 pr-10"
+                    />
                     <Button
                       type="button"
                       variant="ghost"
-                      className="w-full"
-                      onClick={() => {
-                        setShowForgotPassword(false)
-                        setError(null)
-                        setResetEmail("")
-                      }}
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
                     >
-                      Back to Login
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                </form>
-              ) : (
-                <form onSubmit={handleLogin}>
-                  <div className="flex flex-col gap-6">
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@faderco.dz"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Password</Label>
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(true)}
-                          className="text-sm text-blue-600 hover:underline"
-                        >
-                          Forgot Password?
-                        </button>
-                      </div>
-                      <Input
-                        id="password"
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
-                    {error && <p className="text-sm text-destructive">{error}</p>}
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Logging in..." : "Login"}
-                    </Button>
+                </div>
+                {error && (
+                  <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                    {error}
                   </div>
-                  <div className="mt-4 text-center text-sm">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/auth/register" className="underline underline-offset-4">
-                      Register
-                    </Link>
-                  </div>
-                </form>
-              )}
+                )}
+                <Button type="submit" className="w-full h-10" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </Button>
+              </form>
+              <div className="mt-6 text-center text-sm">
+                Don't have an account?{" "}
+                <Link href="/auth/register" className="text-primary hover:underline font-medium">
+                  Create account
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -2,19 +2,6 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.next()
-  }
-
-  if (request.nextUrl.pathname.startsWith("/_vercel/")) {
-    return NextResponse.next()
-  }
-
-  const publicRoutes = ["/", "/auth/login", "/auth/register", "/auth/registration-success", "/auth/pending-approval"]
-  if (publicRoutes.includes(request.nextUrl.pathname)) {
-    return NextResponse.next()
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -32,14 +19,7 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
-              ...options,
-              maxAge: 30 * 24 * 60 * 60,
-              sameSite: "lax",
-              secure: true,
-            }),
-          )
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
     },
@@ -49,23 +29,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (profile?.role === "admin" && request.nextUrl.pathname.startsWith("/dashboard")) {
-      const url = request.nextUrl.clone()
-      url.pathname = "/admin"
-      return NextResponse.redirect(url)
-    }
-
-    if (profile?.role !== "admin" && request.nextUrl.pathname.startsWith("/admin")) {
-      const url = request.nextUrl.clone()
-      url.pathname = "/dashboard"
-      return NextResponse.redirect(url)
-    }
-  }
-
-  if (!user) {
+  if (request.nextUrl.pathname.startsWith("/dashboard") && !user && !request.nextUrl.pathname.startsWith("/auth")) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)

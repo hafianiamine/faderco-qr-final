@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb', // Increase the body size limit for server actions
+    },
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,7 +14,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  transpilePackages: ['leaflet', 'react-leaflet'],
-}
+};
 
-export default nextConfig
+export default nextConfig;
