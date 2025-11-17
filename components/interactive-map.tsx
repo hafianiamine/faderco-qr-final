@@ -3,7 +3,6 @@
 import { useEffect } from "react"
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
 import L from "leaflet"
-import "leaflet/dist/leaflet.css"
 
 interface Scan {
   id: string
@@ -48,38 +47,47 @@ function MapBounds({ scans }: { scans: Scan[] }) {
 }
 
 export default function InteractiveMap({ scans }: InteractiveMapProps) {
-  // Calculate center point (average of all coordinates)
-  const center: [number, number] =
-    scans.length > 0
-      ? [
-          scans.reduce((sum, scan) => sum + (scan.latitude || 0), 0) / scans.length,
-          scans.reduce((sum, scan) => sum + (scan.longitude || 0), 0) / scans.length,
-        ]
-      : [20, 0] // Default center if no scans
+  useEffect(() => {
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    document.head.appendChild(link)
+
+    return () => {
+      document.head.removeChild(link)
+    }
+  }, [])
+
+  if (scans.length === 0) {
+    return (
+      <div className="flex h-96 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+        <p className="text-gray-600">No scans to display on map</p>
+      </div>
+    )
+  }
 
   return (
-    <MapContainer center={center} zoom={2} style={{ height: "100%", width: "100%" }} className="z-0">
+    <MapContainer center={[20, 0]} zoom={2} className="h-96 rounded-lg border border-gray-200">
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
+      {scans.map((scan) =>
+        scan.latitude && scan.longitude ? (
+          <Marker key={scan.id} position={[scan.latitude, scan.longitude]} icon={customIcon}>
+            <Popup>
+              <div className="space-y-2">
+                <p className="font-semibold">{scan.qr_code?.title || "QR Code"}</p>
+                <p className="text-sm text-gray-600">
+                  {scan.city}, {scan.country}
+                </p>
+                <p className="text-xs text-gray-500">{new Date(scan.scanned_at).toLocaleDateString()}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ) : null
+      )}
       <MapBounds scans={scans} />
-      {scans.map((scan) => (
-        <Marker key={scan.id} position={[scan.latitude as number, scan.longitude as number]} icon={customIcon}>
-          <Popup>
-            <div className="p-2 min-w-[200px]">
-              <h3 className="font-bold text-gray-900 mb-1">{scan.qr_code?.title || "Unknown QR"}</h3>
-              <p className="text-sm text-gray-600 mb-1">
-                {scan.city && scan.country ? `${scan.city}, ${scan.country}` : scan.country || "Unknown Location"}
-              </p>
-              <p className="text-xs text-gray-500 mb-1">{new Date(scan.scanned_at).toLocaleString()}</p>
-              <p className="text-xs text-gray-400">
-                {scan.latitude?.toFixed(4)}, {scan.longitude?.toFixed(4)}
-              </p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
     </MapContainer>
   )
 }

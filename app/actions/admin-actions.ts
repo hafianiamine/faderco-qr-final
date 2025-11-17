@@ -326,26 +326,35 @@ export async function getAllQRCodes() {
       },
     )
 
-    const { data: qrCodes, error } = await supabaseAdmin
+    // Fetch QR codes
+    const { data: qrCodes, error: qrError } = await supabaseAdmin
       .from("qr_codes")
-      .select(
-        `
-        *,
-        profiles:user_id (
-          id,
-          email,
-          full_name,
-          company
-        )
-      `,
-      )
+      .select("*")
       .order("created_at", { ascending: false })
 
-    if (error) {
+    if (qrError) {
       return { error: "Failed to fetch QR codes" }
     }
 
-    return { qrCodes: qrCodes || [] }
+    // Fetch user profiles and create a map
+    const { data: profiles, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name, company")
+
+    if (profileError) {
+      return { error: "Failed to fetch user profiles" }
+    }
+
+    // Create a profile map for quick lookup
+    const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || [])
+
+    // Combine QR codes with their profile data
+    const enrichedQRCodes = (qrCodes || []).map((qr: any) => ({
+      ...qr,
+      profiles: profileMap.get(qr.user_id) || null,
+    }))
+
+    return { qrCodes: enrichedQRCodes }
   } catch (error) {
     return { error: "An unexpected error occurred" }
   }
