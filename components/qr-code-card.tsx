@@ -2,11 +2,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Download, Eye } from "lucide-react"
+import { ExternalLink, Download, Eye, FileType } from "lucide-react" // Added FileType icon for SVG download
 import Image from "next/image"
 import { toast } from "sonner"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { generateQRCodeSVG } from "@/lib/utils/qr-generator" // Added SVG generator import
 
 interface QRCodeCardProps {
   qrCode: {
@@ -22,6 +23,7 @@ interface QRCodeCardProps {
 
 export function QRCodeCard({ qrCode }: QRCodeCardProps) {
   const [showPreview, setShowPreview] = useState(false)
+  const [downloadingSVG, setDownloadingSVG] = useState(false) // Added SVG download state
 
   const handleDownload = () => {
     if (!qrCode.qr_image_url) {
@@ -34,6 +36,31 @@ export function QRCodeCard({ qrCode }: QRCodeCardProps) {
     link.href = qrCode.qr_image_url
     link.click()
     toast.success("QR code downloaded!")
+  }
+
+  const handleDownloadSVG = async () => {
+    setDownloadingSVG(true)
+    try {
+      const svgString = await generateQRCodeSVG(qrCode.short_url, {
+        width: 1000,
+        height: 1000,
+        margin: 2,
+      })
+
+      const blob = new Blob([svgString], { type: "image/svg+xml" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.download = `${qrCode.title.replace(/\s+/g, "-").toLowerCase()}.svg`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+
+      toast.success("SVG QR code downloaded!")
+    } catch (error) {
+      toast.error("Failed to download SVG")
+    } finally {
+      setDownloadingSVG(false)
+    }
   }
 
   return (
@@ -67,7 +94,15 @@ export function QRCodeCard({ qrCode }: QRCodeCardProps) {
             </Button>
             <Button variant="outline" size="sm" className="bg-white/30 border-gray-200" onClick={handleDownload}>
               <Download className="h-4 w-4" />
-              Download QR Code
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/30 border-gray-200"
+              onClick={handleDownloadSVG}
+              disabled={downloadingSVG}
+            >
+              <FileType className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>
@@ -102,12 +137,21 @@ export function QRCodeCard({ qrCode }: QRCodeCardProps) {
             <div className="flex gap-2">
               <Button className="flex-1" onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
-                Download QR Code
+                PNG
+              </Button>
+              <Button
+                className="flex-1 bg-transparent"
+                variant="outline"
+                onClick={handleDownloadSVG}
+                disabled={downloadingSVG}
+              >
+                <FileType className="mr-2 h-4 w-4" />
+                SVG
               </Button>
               <Button variant="outline" asChild>
                 <a href={qrCode.short_url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  Test Scan
+                  Test
                 </a>
               </Button>
             </div>

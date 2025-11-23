@@ -18,6 +18,7 @@ import {
   UserPlus,
   Filter,
   Eye,
+  LogIn,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +31,7 @@ import {
   deleteUser,
   updateUserStatus,
   adminGetUserQRCodes,
+  loginAsUser, // Added loginAsUser import
 } from "@/app/actions/admin-actions"
 import { useToast } from "@/hooks/use-toast"
 
@@ -251,6 +253,26 @@ export function UsersSection() {
       setShowCreateModal(false)
       setCreateFormData({ email: "", password: "", fullName: "", company: "" })
       loadUsers()
+    }
+  }
+
+  async function handleLoginAsUser(user: User) {
+    if (!confirm(`Login as ${user.email}? You will be redirected to their dashboard.`)) return
+
+    const result = await loginAsUser(user.id)
+    if (result.error) {
+      toast({
+        title: "Error",
+        description: result.error,
+        variant: "destructive",
+      })
+    } else if (result.success) {
+      // Store impersonation data in sessionStorage
+      sessionStorage.setItem("impersonating_user_id", result.targetUserId!)
+      sessionStorage.setItem("original_admin_id", result.originalAdminId!)
+
+      // Redirect to user dashboard
+      window.location.href = "/dashboard"
     }
   }
 
@@ -480,6 +502,14 @@ export function UsersSection() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        onClick={() => handleLoginAsUser(user)}
+                        className="bg-indigo-500 hover:bg-indigo-600 text-white"
+                        title="Login as this user"
+                      >
+                        <LogIn className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => handleViewUserQRs(user)}

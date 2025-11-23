@@ -542,3 +542,70 @@ export async function updateWelcomePopupSettings(enabled: boolean, title: string
     return { error: "An unexpected error occurred" }
   }
 }
+
+export async function updateLandingPopupSettings(
+  enabled: boolean,
+  title: string,
+  description: string,
+  imageUrl?: string,
+) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (adminProfile?.role !== "admin") {
+      return { error: "Unauthorized" }
+    }
+
+    const settings = [
+      { key: "landing_popup_enabled", value: enabled.toString() },
+      { key: "landing_popup_title", value: title },
+      { key: "landing_popup_description", value: description },
+    ]
+
+    if (imageUrl !== undefined) {
+      settings.push({ key: "landing_popup_image", value: imageUrl })
+    }
+
+    await supabase.from("settings").upsert(settings, { onConflict: "key" })
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}
+
+export async function loginAsUser(targetUserId: string) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (adminProfile?.role !== "admin") {
+      return { error: "Unauthorized" }
+    }
+
+    // Store original admin ID in session storage (client will handle this)
+    return { success: true, targetUserId, originalAdminId: user.id }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { SiteFooter } from "@/components/site-footer"
+import { ImpersonationBanner } from "@/components/impersonation-banner" // Added impersonation banner import
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -35,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen flex-col">
+      <ImpersonationBanner />
       <DashboardNav />
       <main className="flex-1">{children}</main>
       <SiteFooter />

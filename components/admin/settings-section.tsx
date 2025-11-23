@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, Palette, MessageSquare } from "lucide-react"
+import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, Palette, MessageSquare, ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-actions"
-import { updateWelcomePopupSettings } from "@/app/actions/admin-actions"
+import { updateWelcomePopupSettings, updateLandingPopupSettings } from "@/app/actions/admin-actions"
 import { put } from "@vercel/blob"
 import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
@@ -41,6 +41,17 @@ export function SettingsSection() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [landingPopup, setLandingPopup] = useState({
+    enabled: false,
+    title: "",
+    description: "",
+    imageUrl: "",
+  })
+  const [landingPopupLoading, setLandingPopupLoading] = useState(false)
+  const [popupImageFile, setPopupImageFile] = useState<File | null>(null)
+  const [popupImagePreview, setPopupImagePreview] = useState<string | null>(null)
+  const [popupImageUploading, setPopupImageUploading] = useState(false)
+  const popupImageInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const supabase = createClient()
 
@@ -48,6 +59,7 @@ export function SettingsSection() {
     loadSettings()
     loadAllowedDomains()
     loadWelcomePopupSettings()
+    loadLandingPopupSettings()
   }, [])
 
   async function loadSettings() {
@@ -117,6 +129,35 @@ export function SettingsSection() {
     }
   }
 
+  async function loadLandingPopupSettings() {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("key, value")
+        .in("key", ["landing_popup_enabled", "landing_popup_title", "landing_popup_description", "landing_popup_image"])
+
+      if (error) throw error
+
+      const settingsMap: Record<string, string> = {}
+      data?.forEach((setting) => {
+        settingsMap[setting.key] = setting.value
+      })
+
+      setLandingPopup({
+        enabled: settingsMap.landing_popup_enabled === "true",
+        title: settingsMap.landing_popup_title || "",
+        description: settingsMap.landing_popup_description || "",
+        imageUrl: settingsMap.landing_popup_image || "",
+      })
+
+      if (settingsMap.landing_popup_image) {
+        setPopupImagePreview(settingsMap.landing_popup_image)
+      }
+    } catch (error) {
+      console.error("Error loading landing popup settings:", error)
+    }
+  }
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -137,12 +178,41 @@ export function SettingsSection() {
     }
   }
 
+  const handlePopupImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image file size must be less than 5MB",
+          variant: "destructive",
+        })
+        return
+      }
+      setPopupImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPopupImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const removeLogo = () => {
     setLogoFile(null)
     setLogoPreview(null)
     setSettings({ ...settings, platform_logo_url: "" })
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
+    }
+  }
+
+  const removePopupImage = () => {
+    setPopupImageFile(null)
+    setPopupImagePreview(null)
+    setLandingPopup({ ...landingPopup, imageUrl: "" })
+    if (popupImageInputRef.current) {
+      popupImageInputRef.current.value = ""
     }
   }
 
@@ -282,6 +352,47 @@ export function SettingsSection() {
     }
   }
 
+  async function handleLandingPopupSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLandingPopupLoading(true)
+    setPopupImageUploading(!!popupImageFile)
+
+    try {
+      let imageUrl = landingPopup.imageUrl
+      if (popupImageFile) {
+        const blob = await put(`landing-popup-images/${Date.now()}-${popupImageFile.name}`, popupImageFile, {
+          access: "public",
+        })
+        imageUrl = blob.url
+      }
+
+      const result = await updateLandingPopupSettings(
+        landingPopup.enabled,
+        landingPopup.title,
+        landingPopup.description,
+        imageUrl,
+      )
+
+      if (result.error) throw new Error(result.error)
+
+      toast({
+        title: "Success",
+        description: "Landing page popup settings updated successfully.",
+      })
+
+      await loadLandingPopupSettings()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update landing page popup settings",
+        variant: "destructive",
+      })
+    } finally {
+      setLandingPopupLoading(false)
+      setPopupImageUploading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -350,6 +461,119 @@ export function SettingsSection() {
               </>
             ) : (
               "Save Welcome Popup Settings"
+            )}
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-6">
+        <form onSubmit={handleLandingPopupSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <ImageIcon className="h-5 w-5 text-gray-700" />
+              <h3 className="text-lg font-semibold">Landing Page Popup</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure a promotional popup that appears on your landing page with an optional image.
+            </p>
+
+            <div className="flex items-center justify-between rounded-lg border p-4 bg-gray-50">
+              <div className="space-y-0.5">
+                <Label htmlFor="landing-popup-enabled" className="text-base font-medium">
+                  Enable Landing Page Popup
+                </Label>
+                <p className="text-sm text-muted-foreground">Show popup to landing page visitors</p>
+              </div>
+              <Switch
+                id="landing-popup-enabled"
+                checked={landingPopup.enabled}
+                onCheckedChange={(checked) => setLandingPopup({ ...landingPopup, enabled: checked })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="landing_popup_title">Popup Title</Label>
+              <Input
+                id="landing_popup_title"
+                value={landingPopup.title}
+                onChange={(e) => setLandingPopup({ ...landingPopup, title: e.target.value })}
+                placeholder="Special Offer!"
+                disabled={!landingPopup.enabled}
+              />
+              <p className="text-xs text-gray-500 mt-1">The main heading shown in the popup</p>
+            </div>
+
+            <div>
+              <Label htmlFor="landing_popup_description">Popup Description</Label>
+              <Textarea
+                id="landing_popup_description"
+                value={landingPopup.description}
+                onChange={(e) => setLandingPopup({ ...landingPopup, description: e.target.value })}
+                placeholder="Get 20% off your first QR code campaign..."
+                rows={3}
+                disabled={!landingPopup.enabled}
+              />
+              <p className="text-xs text-gray-500 mt-1">The description text shown in the popup</p>
+            </div>
+
+            <div>
+              <Label>Popup Image (Optional)</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={popupImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePopupImageUpload}
+                    className="hidden"
+                    id="popup-image-upload"
+                    disabled={!landingPopup.enabled}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => popupImageInputRef.current?.click()}
+                    className="flex-1"
+                    disabled={!landingPopup.enabled}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {popupImagePreview ? "Change Image" : "Upload Image"}
+                  </Button>
+                  {popupImagePreview && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={removePopupImage}
+                      disabled={!landingPopup.enabled}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {popupImagePreview && (
+                  <div className="flex items-center gap-2 rounded border border-border p-2 bg-gray-50">
+                    <img
+                      src={popupImagePreview || "/placeholder.svg"}
+                      alt="Popup image preview"
+                      className="h-24 w-24 rounded object-cover"
+                    />
+                    <span className="text-xs text-muted-foreground">{popupImageFile?.name || "Current image"}</span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">Upload an image for the popup (max 5MB)</p>
+              </div>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={landingPopupLoading || popupImageUploading} className="w-full">
+            {landingPopupLoading || popupImageUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {popupImageUploading ? "Uploading image..." : "Saving..."}
+              </>
+            ) : (
+              "Save Landing Page Popup Settings"
             )}
           </Button>
         </form>
