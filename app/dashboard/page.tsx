@@ -11,11 +11,14 @@ import { UserProfileSection } from "@/components/user/user-profile-section"
 import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
+import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
+import { checkPasswordResetRequired } from "@/app/actions/security-actions"
 
 export default function UserDashboardPage() {
   const [currentSection, setCurrentSection] = useState("dashboard")
   const [userEmail, setUserEmail] = useState<string>()
   const [showFeatureTour, setShowFeatureTour] = useState(false)
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -26,10 +29,23 @@ export default function UserDashboardPage() {
       if (user) {
         setUserEmail(user.email)
         setShowFeatureTour(true)
+
+        const { required } = await checkPasswordResetRequired()
+        setShowPasswordReset(required)
       }
     }
     loadUser()
   }, [])
+
+  useEffect(() => {
+    async function checkReset() {
+      const { required } = await checkPasswordResetRequired()
+      if (required) {
+        setShowPasswordReset(true)
+      }
+    }
+    checkReset()
+  }, [currentSection])
 
   const handleCloseTour = () => {
     setShowFeatureTour(false)
@@ -50,7 +66,9 @@ export default function UserDashboardPage() {
         onShowFeatureTour={handleShowTour}
       />
 
-      <FeatureTourModal isOpen={showFeatureTour} onClose={handleCloseTour} userName={userEmail} />
+      <FeatureTourModal isOpen={showFeatureTour && !showPasswordReset} onClose={handleCloseTour} userName={userEmail} />
+
+      <ForcePasswordResetModal isOpen={showPasswordReset} />
 
       <div className="relative z-10 ml-24 min-h-screen p-8">
         <div className="mx-auto max-w-7xl">

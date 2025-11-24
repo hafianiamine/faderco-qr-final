@@ -12,6 +12,7 @@ import { ProfileSection } from "@/components/admin/profile-section"
 import { SettingsSection } from "@/components/admin/settings-section"
 import { PendingAccountsSection } from "@/components/admin/pending-accounts-section"
 import { AllQRCodesSection } from "@/components/admin/all-qr-codes-section"
+import { SecurityDashboard } from "@/components/admin/security-dashboard"
 
 export default function AdminPage() {
   const [currentSection, setCurrentSection] = useState("dashboard")
@@ -54,6 +55,7 @@ export default function AdminPage() {
           {currentSection === "companies" && <CompaniesSection />}
           {currentSection === "profile" && <ProfileSection />}
           {currentSection === "settings" && <SettingsSection />}
+          {currentSection === "security" && <SecurityDashboard />}
         </div>
       </div>
     </div>

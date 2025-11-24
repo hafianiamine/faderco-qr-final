@@ -20,6 +20,8 @@ import {
 } from "@/app/actions/admin-actions"
 import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
+import { forceAllPasswordResets } from "@/app/actions/security-actions"
+import { AlertTriangle } from "lucide-react"
 
 export function SettingsSection() {
   const [loading, setLoading] = useState(false)
@@ -62,6 +64,7 @@ export function SettingsSection() {
   const [popupImagePreview, setPopupImagePreview] = useState<string | null>(null)
   const [footerLoading, setFooterLoading] = useState(false)
   const supabase = createClient()
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false)
 
   useEffect(() => {
     loadSettings()
@@ -531,6 +534,33 @@ export function SettingsSection() {
     }
   }
 
+  async function handleForcePasswordReset() {
+    if (!confirm("Are you sure you want to force all users to reset their passwords? This action cannot be undone.")) {
+      return
+    }
+
+    setPasswordResetLoading(true)
+
+    try {
+      const result = await forceAllPasswordResets()
+
+      if (result.error) throw new Error(result.error)
+
+      toast({
+        title: "Success",
+        description: "All users will be required to reset their passwords on next login",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to force password resets",
+        variant: "destructive",
+      })
+    } finally {
+      setPasswordResetLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -838,71 +868,108 @@ export function SettingsSection() {
       </Card>
 
       <Card className="p-6">
-        <div className="space-y-4">
-          <div>
+        <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold">Whitelist Email Domains</h3>
+              <h3 className="text-lg font-semibold">Security Settings</h3>
             </div>
-            <p className="text-sm text-gray-600">
-              Control which email domains can register accounts. Only users with emails from these domains will be
-              allowed to sign up.
-            </p>
-          </div>
 
-          <form onSubmit={handleAddDomain} className="flex gap-2">
-            <Input
-              value={newDomain}
-              onChange={(e) => setNewDomain(e.target.value)}
-              placeholder="example.com or @example.com"
-              className="flex-1"
-              disabled={domainLoading}
-            />
-            <Button type="submit" disabled={domainLoading}>
-              {domainLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-              Add Domain
-            </Button>
-          </form>
-
-          <div className="space-y-2">
-            {allowedDomains.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Globe className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No domains added yet</p>
-                <p className="text-xs">Add domains to restrict registration to specific email addresses</p>
-              </div>
-            ) : (
-              allowedDomains.map((domain) => (
-                <div
-                  key={domain.id}
-                  className="flex items-center justify-between rounded-lg border p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-gray-600" />
-                    <span className="font-mono text-sm">@{domain.domain}</span>
-                  </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-amber-900 mb-1">Force Password Reset</h4>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Force all users (excluding admins) to reset their passwords on their next login. Use this if you
+                    suspect a security breach or want to enforce new password policies.
+                  </p>
                   <Button
-                    variant="ghost"
+                    onClick={handleForcePasswordReset}
+                    disabled={passwordResetLoading}
+                    variant="destructive"
                     size="sm"
-                    onClick={() => handleRemoveDomain(domain.id)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {passwordResetLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Force All Users to Reset Password"
+                    )}
                   </Button>
                 </div>
-              ))
-            )}
-          </div>
-
-          {allowedDomains.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-800">
-                <strong>Note:</strong> Only emails ending with {allowedDomains.map((d) => `@${d.domain}`).join(", ")}{" "}
-                will be allowed to register. All other domains will be blocked.
-              </p>
+              </div>
             </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-5 w-5 text-gray-700" />
+            <h3 className="text-lg font-semibold">Whitelist Email Domains</h3>
+          </div>
+          <p className="text-sm text-gray-600">
+            Control which email domains can register accounts. Only users with emails from these domains will be allowed
+            to sign up.
+          </p>
+        </div>
+
+        <form onSubmit={handleAddDomain} className="flex gap-2">
+          <Input
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+            placeholder="example.com or @example.com"
+            className="flex-1"
+            disabled={domainLoading}
+          />
+          <Button type="submit" disabled={domainLoading}>
+            {domainLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            Add Domain
+          </Button>
+        </form>
+
+        <div className="space-y-2">
+          {allowedDomains.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Globe className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No domains added yet</p>
+              <p className="text-xs">Add domains to restrict registration to specific email addresses</p>
+            </div>
+          ) : (
+            allowedDomains.map((domain) => (
+              <div
+                key={domain.id}
+                className="flex items-center justify-between rounded-lg border p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-gray-600" />
+                  <span className="font-mono text-sm">@{domain.domain}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveDomain(domain.id)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
           )}
         </div>
+
+        {allowedDomains.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-800">
+              <strong>Note:</strong> Only emails ending with {allowedDomains.map((d) => `@${d.domain}`).join(", ")} will
+              be allowed to register. All other domains will be blocked.
+            </p>
+          </div>
+        )}
       </Card>
     </div>
   )

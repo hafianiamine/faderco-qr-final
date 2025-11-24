@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { generateShortCode, createShortUrl } from "@/lib/utils/url-shortener"
 import { revalidatePath } from "next/cache"
+import { logActivity, getRealIP, parseUserAgent } from "@/lib/activity-logger"
+import { headers } from "next/headers"
 
 export interface QRCustomization {
   colorDark?: string
@@ -23,6 +25,7 @@ export interface QRCustomization {
 export async function createQRCode(title: string, destinationUrl: string, customization?: QRCustomization) {
   try {
     const supabase = await createClient()
+    const headersList = await headers()
 
     const {
       data: { user },
@@ -90,6 +93,17 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       return { error: `Failed to create QR code: ${insertError.message}` }
     }
 
+    await logActivity({
+      userId: user.id,
+      action: "qr_created",
+      entityType: "qr_code",
+      entityId: qrCode.id,
+      newValue: JSON.stringify({ title, destinationUrl, shortCode: qrCode.short_code }),
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
+
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/qr-codes")
 
@@ -102,6 +116,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
 export async function deleteQRCode(qrCodeId: string) {
   try {
     const supabase = await createClient()
+    const headersList = await headers()
 
     const {
       data: { user },
@@ -111,11 +126,29 @@ export async function deleteQRCode(qrCodeId: string) {
       return { error: "Unauthorized" }
     }
 
+    const { data: qrCode } = await supabase
+      .from("qr_codes")
+      .select("title, destination_url")
+      .eq("id", qrCodeId)
+      .eq("user_id", user.id)
+      .single()
+
     const { error: deleteError } = await supabase.from("qr_codes").delete().eq("id", qrCodeId).eq("user_id", user.id)
 
     if (deleteError) {
       return { error: "Failed to delete QR code" }
     }
+
+    await logActivity({
+      userId: user.id,
+      action: "qr_deleted",
+      entityType: "qr_code",
+      entityId: qrCodeId,
+      oldValue: JSON.stringify(qrCode),
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/qr-codes")
@@ -216,6 +249,7 @@ export async function cancelQRCodeDeletion(qrCodeId: string) {
 export async function updateQRCodeDestination(qrCodeId: string, newDestinationUrl: string) {
   try {
     const supabase = await createClient()
+    const headersList = await headers()
 
     const {
       data: { user },
@@ -231,6 +265,13 @@ export async function updateQRCodeDestination(qrCodeId: string, newDestinationUr
       return { error: "Invalid URL format" }
     }
 
+    const { data: oldQrCode } = await supabase
+      .from("qr_codes")
+      .select("destination_url")
+      .eq("id", qrCodeId)
+      .eq("user_id", user.id)
+      .single()
+
     const { error: updateError } = await supabase
       .from("qr_codes")
       .update({
@@ -244,6 +285,18 @@ export async function updateQRCodeDestination(qrCodeId: string, newDestinationUr
       return { error: `Failed to update destination: ${updateError.message}` }
     }
 
+    await logActivity({
+      userId: user.id,
+      action: "qr_edited",
+      entityType: "qr_code",
+      entityId: qrCodeId,
+      oldValue: oldQrCode?.destination_url || "",
+      newValue: newDestinationUrl,
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
+
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/qr-codes")
 
@@ -256,6 +309,7 @@ export async function updateQRCodeDestination(qrCodeId: string, newDestinationUr
 export async function toggleQRCodeStatus(qrCodeId: string, newStatus: "active" | "inactive") {
   try {
     const supabase = await createClient()
+    const headersList = await headers()
 
     const {
       data: { user },
@@ -278,6 +332,17 @@ export async function toggleQRCodeStatus(qrCodeId: string, newStatus: "active" |
     if (updateError) {
       return { error: `Failed to update status: ${updateError.message}` }
     }
+
+    await logActivity({
+      userId: user.id,
+      action: newStatus === "active" ? "qr_enabled" : "qr_disabled",
+      entityType: "qr_code",
+      entityId: qrCodeId,
+      newValue: newStatus,
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/qr-codes")
@@ -302,6 +367,7 @@ export async function updateQRCodeSettings(
 ) {
   try {
     const supabase = await createClient()
+    const headersList = await headers()
 
     const {
       data: { user },

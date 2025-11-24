@@ -1,5 +1,5 @@
 "use client"
-import { Users, BarChart3, Building2, LogOut, LayoutDashboard, Settings, Clock, QrCode } from "lucide-react"
+import { Users, BarChart3, Building2, LogOut, LayoutDashboard, Settings, Clock, QrCode, Shield } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -42,6 +42,7 @@ export function CircularGlassMenu({ userEmail, userRole, onSectionChange, curren
     { id: "all-qr-codes", label: "All QR Codes", icon: QrCode },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "companies", label: "Companies", icon: Building2 },
+    { id: "security", label: "Security & Logs", icon: Shield },
   ]
 
   const handleLogout = async () => {
