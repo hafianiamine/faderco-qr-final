@@ -17,7 +17,7 @@ interface UserGlassMenuProps {
 export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onShowFeatureTour }: UserGlassMenuProps) {
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState<string>("")
-  const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("https://www.youtube.com/embed/dQw4w9WgXcQ")
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("")
   const [showVideoModal, setShowVideoModal] = useState(false)
 
   useEffect(() => {
@@ -27,8 +27,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
         data: { user },
       } = await supabase.auth.getUser()
 
-      console.log("[v0] UserGlassMenu: Loading user data")
-
       if (user) {
         const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle()
 
@@ -36,10 +34,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
           setAvatarUrl(data.avatar_url)
         }
 
-        console.log("[v0] UserGlassMenu: Fetching tutorial video URL using server action")
         const { videoUrl } = await getTutorialVideoUrl()
-        console.log("[v0] UserGlassMenu: Tutorial video URL from server:", videoUrl)
-
         if (videoUrl) {
           setTutorialVideoUrl(videoUrl)
         }

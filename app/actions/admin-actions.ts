@@ -691,13 +691,13 @@ export async function getTutorialVideoUrl() {
 
     if (error) {
       console.error("Error fetching tutorial video URL:", error)
-      return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+      return { videoUrl: null }
     }
 
-    return { videoUrl: data?.value || "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+    return { videoUrl: data?.value || null }
   } catch (error) {
     console.error("Error in getTutorialVideoUrl:", error)
-    return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+    return { videoUrl: null }
   }
 }
 
