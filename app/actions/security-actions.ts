@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { logActivity, getRealIP, parseUserAgent } from "@/lib/activity-logger"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { createHash } from "crypto"
 
 // Force all users to reset password
 export async function forceAllPasswordResets() {
@@ -53,6 +54,50 @@ export async function checkPasswordResetRequired() {
   return { required: profile?.force_password_reset || false }
 }
 
+// Hash password for comparison (without storing)
+function hashPassword(password: string): string {
+  return createHash("sha256").update(password).digest("hex")
+}
+
+async function isPasswordReused(userId: string, newPassword: string): Promise<boolean> {
+  const supabase = await createClient()
+  const passwordHash = hashPassword(newPassword)
+
+  // Check last 5 passwords
+  const { data } = await supabase
+    .from("password_history")
+    .select("password_hash")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(5)
+
+  if (!data) return false
+
+  return data.some((record) => record.password_hash === passwordHash)
+}
+
+async function savePasswordHistory(userId: string, password: string) {
+  const supabase = await createClient()
+  const passwordHash = hashPassword(password)
+
+  await supabase.from("password_history").insert({
+    user_id: userId,
+    password_hash: passwordHash,
+  })
+
+  // Keep only last 5 passwords
+  const { data: history } = await supabase
+    .from("password_history")
+    .select("id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (history && history.length > 5) {
+    const idsToDelete = history.slice(5).map((h) => h.id)
+    await supabase.from("password_history").delete().in("id", idsToDelete)
+  }
+}
+
 // Reset user password and clear the flag
 export async function resetUserPassword(newPassword: string) {
   const supabase = await createClient()
@@ -61,14 +106,21 @@ export async function resetUserPassword(newPassword: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { error: "Unauthorized" }
+
+  const isReused = await isPasswordReused(user.id, newPassword)
+  if (isReused) {
+    return { error: "You cannot reuse your last 5 passwords. Please choose a different password." }
+  }
 
   // Update password
   const { error: authError } = await supabase.auth.updateUser({
     password: newPassword,
   })
 
-  if (authError) throw authError
+  if (authError) return { error: authError.message }
+
+  await savePasswordHistory(user.id, newPassword)
 
   // Clear the force reset flag and update last password change
   const { error: profileError } = await supabase
@@ -79,7 +131,7 @@ export async function resetUserPassword(newPassword: string) {
     })
     .eq("id", user.id)
 
-  if (profileError) throw profileError
+  if (profileError) return { error: profileError.message }
 
   // Log the action
   await logActivity({
@@ -98,6 +150,7 @@ export async function resetUserPassword(newPassword: string) {
 // Get all activity logs (admin only)
 export async function getActivityLogs(filters?: {
   userId?: string
+  qrCodeId?: string
   actionType?: string
   startDate?: string
   endDate?: string
@@ -123,6 +176,10 @@ export async function getActivityLogs(filters?: {
 
   if (filters?.userId) {
     query = query.eq("user_id", filters.userId)
+  }
+
+  if (filters?.qrCodeId) {
+    query = query.eq("entity_type", "qr_code").eq("entity_id", filters.qrCodeId)
   }
 
   if (filters?.actionType && filters.actionType !== "all_actions") {
@@ -197,9 +254,56 @@ export async function terminateSession(sessionId: string) {
   return { success: true }
 }
 
+export async function getAllUsersForFilter() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Unauthorized")
+
+  // Check if admin
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  if (profile?.role !== "admin") throw new Error("Unauthorized")
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .order("full_name", { ascending: true })
+
+  if (error) throw error
+
+  return data
+}
+
+export async function getAllQRCodesForFilter() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Unauthorized")
+
+  // Check if admin
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  if (profile?.role !== "admin") throw new Error("Unauthorized")
+
+  const { data, error } = await supabase
+    .from("qr_codes")
+    .select("id, title, destination_url")
+    .order("title", { ascending: true })
+
+  if (error) throw error
+
+  return data
+}
+
 // Export activity logs to CSV (admin only)
 export async function exportActivityLogs(filters?: {
   userId?: string
+  qrCodeId?: string
   actionType?: string
   startDate?: string
   endDate?: string
@@ -235,4 +339,114 @@ export async function exportActivityLogs(filters?: {
   const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n")
 
   return csv
+}
+
+export async function getAutoPasswordResetSettings() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Unauthorized")
+
+  // Check if admin
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  if (profile?.role !== "admin") throw new Error("Unauthorized")
+
+  const { data: enabledSetting } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "auto_password_reset_enabled")
+    .single()
+
+  const { data: daysSetting } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "auto_password_reset_days")
+    .single()
+
+  return {
+    enabled: enabledSetting?.value === "true",
+    days: Number.parseInt(daysSetting?.value || "30"),
+  }
+}
+
+export async function updateAutoPasswordResetSettings(enabled: boolean, days: number) {
+  const supabase = await createClient()
+  const headersList = await headers()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Unauthorized")
+
+  // Check if admin
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  if (profile?.role !== "admin") throw new Error("Unauthorized")
+
+  await supabase.from("settings").update({ value: enabled.toString() }).eq("key", "auto_password_reset_enabled")
+
+  await supabase.from("settings").update({ value: days.toString() }).eq("key", "auto_password_reset_days")
+
+  // Log the action
+  await logActivity({
+    userId: user.id,
+    action: "settings_changed",
+    entityType: "setting",
+    ipAddress: getRealIP(headersList),
+    deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+    newValue: `Auto password reset: ${enabled ? "enabled" : "disabled"}, every ${days} days`,
+  })
+
+  revalidatePath("/admin")
+  return { success: true }
+}
+
+export async function checkAndForcePasswordResets() {
+  const supabase = await createClient()
+
+  // Get settings
+  const { data: enabledSetting } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "auto_password_reset_enabled")
+    .single()
+
+  const { data: daysSetting } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "auto_password_reset_days")
+    .single()
+
+  const enabled = enabledSetting?.value === "true"
+  const days = Number.parseInt(daysSetting?.value || "30")
+
+  if (!enabled) {
+    return { message: "Auto password reset is disabled" }
+  }
+
+  // Calculate the cutoff date
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - days)
+
+  // Find users who haven't changed password in X days
+  const { data: users, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, last_password_change")
+    .neq("role", "admin")
+    .or(`last_password_change.is.null,last_password_change.lt.${cutoffDate.toISOString()}`)
+
+  if (error) throw error
+
+  if (!users || users.length === 0) {
+    return { message: "No users need password reset", count: 0 }
+  }
+
+  // Force password reset for these users
+  const userIds = users.map((u) => u.id)
+  await supabase.from("profiles").update({ force_password_reset: true }).in("id", userIds)
+
+  return { message: `Forced password reset for ${users.length} users`, count: users.length }
 }

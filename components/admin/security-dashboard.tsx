@@ -7,15 +7,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Shield, Download, Filter, AlertTriangle, Loader2 } from "lucide-react"
-import { getActivityLogs, exportActivityLogs } from "@/app/actions/security-actions"
+import {
+  getActivityLogs,
+  exportActivityLogs,
+  getAllUsersForFilter,
+  getAllQRCodesForFilter,
+} from "@/app/actions/security-actions"
 import { useToast } from "@/hooks/use-toast"
 
 export function SecurityDashboard() {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [users, setUsers] = useState<any[]>([])
+  const [qrCodes, setQRCodes] = useState<any[]>([])
   const [filters, setFilters] = useState({
-    actionType: "all_actions", // Updated default value
+    userId: "",
+    qrCodeId: "",
+    actionType: "all_actions",
     startDate: "",
     endDate: "",
   })
@@ -23,12 +32,31 @@ export function SecurityDashboard() {
 
   useEffect(() => {
     loadLogs()
+    loadFilterOptions()
   }, [])
+
+  async function loadFilterOptions() {
+    try {
+      const [usersData, qrCodesData] = await Promise.all([getAllUsersForFilter(), getAllQRCodesForFilter()])
+      setUsers(usersData)
+      setQRCodes(qrCodesData)
+    } catch (error: any) {
+      console.error("Error loading filter options:", error)
+    }
+  }
 
   async function loadLogs() {
     setLoading(true)
     try {
-      const data = await getActivityLogs(filters)
+      const filterParams: any = { ...filters }
+      // Remove empty string filters
+      if (!filterParams.userId) delete filterParams.userId
+      if (!filterParams.qrCodeId) delete filterParams.qrCodeId
+      if (!filterParams.actionType || filterParams.actionType === "all_actions") delete filterParams.actionType
+      if (!filterParams.startDate) delete filterParams.startDate
+      if (!filterParams.endDate) delete filterParams.endDate
+
+      const data = await getActivityLogs(filterParams)
       setLogs(data)
     } catch (error: any) {
       toast({
@@ -44,7 +72,14 @@ export function SecurityDashboard() {
   async function handleExport() {
     setExporting(true)
     try {
-      const csv = await exportActivityLogs(filters)
+      const filterParams: any = { ...filters }
+      if (!filterParams.userId) delete filterParams.userId
+      if (!filterParams.qrCodeId) delete filterParams.qrCodeId
+      if (!filterParams.actionType || filterParams.actionType === "all_actions") delete filterParams.actionType
+      if (!filterParams.startDate) delete filterParams.startDate
+      if (!filterParams.endDate) delete filterParams.endDate
+
+      const csv = await exportActivityLogs(filterParams)
 
       const blob = new Blob([csv], { type: "text/csv" })
       const url = window.URL.createObjectURL(blob)
@@ -100,7 +135,7 @@ export function SecurityDashboard() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-4 md:grid-cols-5 mb-6">
           <div>
             <Label>Action Type</Label>
             <Select value={filters.actionType} onValueChange={(value) => setFilters({ ...filters, actionType: value })}>
@@ -108,13 +143,47 @@ export function SecurityDashboard() {
                 <SelectValue placeholder="All actions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all_actions">All actions</SelectItem> {/* Updated value */}
+                <SelectItem value="all_actions">All actions</SelectItem>
                 <SelectItem value="login_success">Login Success</SelectItem>
                 <SelectItem value="login_failed">Login Failed</SelectItem>
                 <SelectItem value="qr_created">QR Created</SelectItem>
                 <SelectItem value="qr_edited">QR Edited</SelectItem>
                 <SelectItem value="qr_deleted">QR Deleted</SelectItem>
                 <SelectItem value="password_changed">Password Changed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>User</Label>
+            <Select value={filters.userId} onValueChange={(value) => setFilters({ ...filters, userId: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="All users" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_users">All users</SelectItem>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>QR Code</Label>
+            <Select value={filters.qrCodeId} onValueChange={(value) => setFilters({ ...filters, qrCodeId: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="All QR codes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_qr_codes">All QR codes</SelectItem>
+                {qrCodes.map((qr) => (
+                  <SelectItem key={qr.id} value={qr.id}>
+                    {qr.title}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -138,7 +207,7 @@ export function SecurityDashboard() {
           </div>
         </div>
 
-        <Button onClick={loadLogs} disabled={loading} className="mb-6">
+        <Button onClick={loadLogs} disabled={loading} className="mb-6 w-full">
           <Filter className="mr-2 h-4 w-4" />
           Apply Filters
         </Button>

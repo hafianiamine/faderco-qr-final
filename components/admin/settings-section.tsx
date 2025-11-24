@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, MessageSquare, ImageIcon, Video } from "lucide-react"
+import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, MessageSquare, ImageIcon, Video, Clock } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-actions"
 import {
@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
 import { forceAllPasswordResets } from "@/app/actions/security-actions"
 import { AlertTriangle } from "lucide-react"
+import { getAutoPasswordResetSettings, updateAutoPasswordResetSettings } from "@/app/actions/security-actions"
 
 export function SettingsSection() {
   const [loading, setLoading] = useState(false)
@@ -65,6 +66,9 @@ export function SettingsSection() {
   const [footerLoading, setFooterLoading] = useState(false)
   const supabase = createClient()
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
+  const [autoResetEnabled, setAutoResetEnabled] = useState(false)
+  const [autoResetDays, setAutoResetDays] = useState("30")
+  const [autoResetLoading, setAutoResetLoading] = useState(false)
 
   useEffect(() => {
     loadSettings()
@@ -73,6 +77,7 @@ export function SettingsSection() {
     loadLandingPopupSettings()
     loadTutorialVideoUrl()
     loadSupportInfo()
+    loadAutoResetSettings()
   }, [])
 
   async function loadSettings() {
@@ -200,6 +205,16 @@ export function SettingsSection() {
       setSupportInfo(supportInfoData?.value || "For support, please contact your administrator at support@example.com")
     } catch (error) {
       console.error("Error loading support info:", error)
+    }
+  }
+
+  async function loadAutoResetSettings() {
+    try {
+      const settings = await getAutoPasswordResetSettings()
+      setAutoResetEnabled(settings.enabled)
+      setAutoResetDays(settings.days.toString())
+    } catch (error) {
+      console.error("Failed to load auto reset settings:", error)
     }
   }
 
@@ -561,8 +576,29 @@ export function SettingsSection() {
     }
   }
 
+  async function handleAutoResetUpdate() {
+    setAutoResetLoading(true)
+
+    try {
+      await updateAutoPasswordResetSettings(autoResetEnabled, Number.parseInt(autoResetDays))
+
+      toast({
+        title: "Success",
+        description: "Automated password reset settings updated",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive",
+      })
+    } finally {
+      setAutoResetLoading(false)
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
         <p className="text-sm text-gray-600 mt-1">Configure platform settings and content</p>
@@ -869,34 +905,94 @@ export function SettingsSection() {
 
       <Card className="p-6">
         <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold">Security Settings</h3>
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-5 w-5 text-gray-700" />
+            <h3 className="text-lg font-semibold">Security Settings</h3>
+          </div>
 
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-amber-900 mb-1">Force Password Reset</h4>
-                  <p className="text-sm text-amber-700 mb-3">
-                    Force all users (excluding admins) to reset their passwords on their next login. Use this if you
-                    suspect a security breach or want to enforce new password policies.
-                  </p>
-                  <Button
-                    onClick={handleForcePasswordReset}
-                    disabled={passwordResetLoading}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    {passwordResetLoading ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-amber-900 mb-1">Force Password Reset (Manual)</h4>
+                <p className="text-sm text-amber-700 mb-3">
+                  Immediately force all users (excluding admins) to reset their passwords on their next login. Users
+                  cannot reuse their last 5 passwords. Use this if you suspect a security breach.
+                </p>
+                <Button
+                  onClick={handleForcePasswordReset}
+                  disabled={passwordResetLoading}
+                  variant="destructive"
+                  size="sm"
+                >
+                  {passwordResetLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Force All Users to Reset Password"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold mb-1">Automated Password Reset Schedule</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Automatically force users to reset their passwords periodically. The system checks daily and requires
+                  password resets based on the schedule you set.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="auto-reset-enabled"
+                      checked={autoResetEnabled}
+                      onChange={(e) => setAutoResetEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="auto-reset-enabled" className="cursor-pointer">
+                      Enable automated password resets
+                    </Label>
+                  </div>
+
+                  {autoResetEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-days">Reset password every:</Label>
+                      <select
+                        id="reset-days"
+                        value={autoResetDays}
+                        onChange={(e) => setAutoResetDays(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      >
+                        <option value="7">7 days (1 week)</option>
+                        <option value="15">15 days</option>
+                        <option value="20">20 days</option>
+                        <option value="30">30 days (1 month)</option>
+                        <option value="60">60 days (2 months)</option>
+                        <option value="90">90 days (3 months)</option>
+                      </select>
+                      <p className="text-xs text-gray-500">
+                        Users will be required to reset their password if they haven't changed it in the selected time
+                        period.
+                      </p>
+                    </div>
+                  )}
+
+                  <Button onClick={handleAutoResetUpdate} disabled={autoResetLoading} size="sm">
+                    {autoResetLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
+                        Saving...
                       </>
                     ) : (
-                      "Force All Users to Reset Password"
+                      "Save Settings"
                     )}
                   </Button>
                 </div>

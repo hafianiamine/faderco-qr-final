@@ -72,6 +72,8 @@ export function ForcePasswordResetModal({ isOpen }: { isOpen: boolean }) {
           <DialogTitle className="text-center text-xl">Password Reset Required</DialogTitle>
           <DialogDescription className="text-center">
             For security reasons, you must reset your password before continuing to use the platform.
+            <br />
+            <span className="text-xs text-gray-500 mt-2 block">Note: You cannot reuse your last 5 passwords.</span>
           </DialogDescription>
         </DialogHeader>
 
