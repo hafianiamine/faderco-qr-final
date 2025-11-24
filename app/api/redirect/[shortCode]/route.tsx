@@ -198,7 +198,7 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
                   },
                   {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 30000,
                     maximumAge: 0
                   }
                 );

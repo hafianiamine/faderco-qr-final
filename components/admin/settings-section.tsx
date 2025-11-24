@@ -2,18 +2,22 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, Palette, MessageSquare, ImageIcon } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, MessageSquare, ImageIcon, Video } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-actions"
-import { updateWelcomePopupSettings, updateLandingPopupSettings } from "@/app/actions/admin-actions"
-import { put } from "@vercel/blob"
+import {
+  updateWelcomePopupSettings,
+  updateLandingPopupSettings,
+  updateTutorialVideoUrl,
+  uploadImageToBlob,
+} from "@/app/actions/admin-actions"
 import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
 
@@ -40,19 +44,21 @@ export function SettingsSection() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useState<HTMLInputElement | null>(null)
   const [landingPopup, setLandingPopup] = useState({
     enabled: false,
-    title: "",
-    description: "",
+    title: "Special Offer!",
+    description: "Get 20% off your first QR code campaign...",
     imageUrl: "",
   })
-  const [landingPopupLoading, setLandingPopupLoading] = useState(false)
+  const [landingLoading, setLandingLoading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState("")
+  const [tutorialLoading, setTutorialLoading] = useState(false)
+  const popupImageInputRef = useState<HTMLInputElement | null>(null)
   const [popupImageFile, setPopupImageFile] = useState<File | null>(null)
   const [popupImagePreview, setPopupImagePreview] = useState<string | null>(null)
-  const [popupImageUploading, setPopupImageUploading] = useState(false)
-  const popupImageInputRef = useRef<HTMLInputElement>(null)
-  const { toast } = useToast()
+  const [footerLoading, setFooterLoading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -60,6 +66,7 @@ export function SettingsSection() {
     loadAllowedDomains()
     loadWelcomePopupSettings()
     loadLandingPopupSettings()
+    loadTutorialVideoUrl()
   }, [])
 
   async function loadSettings() {
@@ -145,8 +152,8 @@ export function SettingsSection() {
 
       setLandingPopup({
         enabled: settingsMap.landing_popup_enabled === "true",
-        title: settingsMap.landing_popup_title || "",
-        description: settingsMap.landing_popup_description || "",
+        title: settingsMap.landing_popup_title || "Special Offer!",
+        description: settingsMap.landing_popup_description || "Get 20% off your first QR code campaign...",
         imageUrl: settingsMap.landing_popup_image || "",
       })
 
@@ -155,6 +162,18 @@ export function SettingsSection() {
       }
     } catch (error) {
       console.error("Error loading landing popup settings:", error)
+    }
+  }
+
+  async function loadTutorialVideoUrl() {
+    try {
+      const { data, error } = await supabase.from("settings").select("value").eq("key", "tutorial_video_url").single()
+
+      if (error) throw error
+
+      setTutorialVideoUrl(data?.value || "")
+    } catch (error) {
+      console.error("Error loading tutorial video URL:", error)
     }
   }
 
@@ -202,8 +221,8 @@ export function SettingsSection() {
     setLogoFile(null)
     setLogoPreview(null)
     setSettings({ ...settings, platform_logo_url: "" })
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+    if (fileInputRef) {
+      fileInputRef.value = ""
     }
   }
 
@@ -211,8 +230,8 @@ export function SettingsSection() {
     setPopupImageFile(null)
     setPopupImagePreview(null)
     setLandingPopup({ ...landingPopup, imageUrl: "" })
-    if (popupImageInputRef.current) {
-      popupImageInputRef.current.value = ""
+    if (popupImageInputRef) {
+      popupImageInputRef.value = ""
     }
   }
 
@@ -224,10 +243,15 @@ export function SettingsSection() {
       let logoUrl = settings.platform_logo_url
       if (logoFile) {
         setLogoUploading(true)
-        const blob = await put(`platform-logos/${Date.now()}-${logoFile.name}`, logoFile, {
-          access: "public",
-        })
-        logoUrl = blob.url
+        const formData = new FormData()
+        formData.append("file", logoFile)
+        const uploadResult = await uploadImageToBlob(formData)
+
+        if (uploadResult.error) {
+          throw new Error(uploadResult.error)
+        }
+
+        logoUrl = uploadResult.url!
         setLogoUploading(false)
       }
 
@@ -354,16 +378,21 @@ export function SettingsSection() {
 
   async function handleLandingPopupSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLandingPopupLoading(true)
-    setPopupImageUploading(!!popupImageFile)
+    setLandingLoading(true)
+    setUploadingImage(!!popupImageFile)
 
     try {
       let imageUrl = landingPopup.imageUrl
       if (popupImageFile) {
-        const blob = await put(`landing-popup-images/${Date.now()}-${popupImageFile.name}`, popupImageFile, {
-          access: "public",
-        })
-        imageUrl = blob.url
+        const formData = new FormData()
+        formData.append("file", popupImageFile)
+        const uploadResult = await uploadImageToBlob(formData)
+
+        if (uploadResult.error) {
+          throw new Error(uploadResult.error)
+        }
+
+        imageUrl = uploadResult.url!
       }
 
       const result = await updateLandingPopupSettings(
@@ -388,16 +417,78 @@ export function SettingsSection() {
         variant: "destructive",
       })
     } finally {
-      setLandingPopupLoading(false)
-      setPopupImageUploading(false)
+      setLandingLoading(false)
+      setUploadingImage(false)
+    }
+  }
+
+  async function handleFooterSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFooterLoading(true)
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) throw new Error("Not authenticated")
+
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+      if (profile?.role !== "admin") {
+        throw new Error("Unauthorized")
+      }
+
+      const { error } = await supabase
+        .from("settings")
+        .upsert({ key: "footer_text", value: settings.footer_text }, { onConflict: "key" })
+
+      if (error) throw error
+
+      toast({
+        title: "Success",
+        description: "Footer text updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update footer text",
+        variant: "destructive",
+      })
+    } finally {
+      setFooterLoading(false)
+    }
+  }
+
+  async function handleTutorialVideoSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setTutorialLoading(true)
+
+    try {
+      const result = await updateTutorialVideoUrl(tutorialVideoUrl)
+
+      if (result.error) throw new Error(result.error)
+
+      toast({
+        title: "Success",
+        description: "Tutorial video URL updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update tutorial video URL",
+        variant: "destructive",
+      })
+    } finally {
+      setTutorialLoading(false)
     }
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900">Platform Settings</h2>
-        <p className="text-gray-600 mt-2">Configure your QR platform</p>
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+        <p className="text-sm text-gray-600 mt-1">Configure platform settings and content</p>
       </div>
 
       <LandingPageEditor />
@@ -532,14 +623,14 @@ export function SettingsSection() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => popupImageInputRef.current?.click()}
+                    onClick={() => popupImageInputRef?.click()}
                     className="flex-1"
                     disabled={!landingPopup.enabled}
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    {popupImagePreview ? "Change Image" : "Upload Image"}
+                    {landingPopup.imageUrl ? "Change Image" : "Upload Image"}
                   </Button>
-                  {popupImagePreview && (
+                  {landingPopup.imageUrl && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -551,10 +642,10 @@ export function SettingsSection() {
                     </Button>
                   )}
                 </div>
-                {popupImagePreview && (
+                {landingPopup.imageUrl && (
                   <div className="flex items-center gap-2 rounded border border-border p-2 bg-gray-50">
                     <img
-                      src={popupImagePreview || "/placeholder.svg"}
+                      src={landingPopup.imageUrl || "/placeholder.svg"}
                       alt="Popup image preview"
                       className="h-24 w-24 rounded object-cover"
                     />
@@ -566,11 +657,11 @@ export function SettingsSection() {
             </div>
           </div>
 
-          <Button type="submit" disabled={landingPopupLoading || popupImageUploading} className="w-full">
-            {landingPopupLoading || popupImageUploading ? (
+          <Button type="submit" disabled={landingLoading || uploadingImage} className="w-full">
+            {landingLoading || uploadingImage ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {popupImageUploading ? "Uploading image..." : "Saving..."}
+                {uploadingImage ? "Uploading image..." : "Saving..."}
               </>
             ) : (
               "Save Landing Page Popup Settings"
@@ -580,146 +671,80 @@ export function SettingsSection() {
       </Card>
 
       <Card className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleFooterSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="footer_text">Footer Text</Label>
+            <Input
+              id="footer_text"
+              value={settings.footer_text}
+              onChange={(e) => setSettings({ ...settings, footer_text: e.target.value })}
+              placeholder="© 2025 FADERCO QR. All rights reserved."
+            />
+            <p className="text-xs text-gray-500 mt-1">This text appears in the footer across all pages</p>
+          </div>
+          <Button type="submit" disabled={footerLoading}>
+            {footerLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Footer Text"
+            )}
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-6">
+        <form onSubmit={handleTutorialVideoSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <Palette className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold">Platform Branding</h3>
+              <Video className="h-5 w-5 text-gray-700" />
+              <h3 className="text-lg font-semibold">Platform Tutorial Video</h3>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Customize the look and feel of your platform. Changes will be reflected globally.
+              Add a YouTube video URL to help users understand how the platform works. The video will appear in the user
+              dashboard menu.
             </p>
 
             <div>
-              <Label htmlFor="navbar_title">Navbar Title</Label>
+              <Label htmlFor="tutorial_video">YouTube Video URL</Label>
               <Input
-                id="navbar_title"
-                value={settings.navbar_title}
-                onChange={(e) => setSettings({ ...settings, navbar_title: e.target.value })}
-                placeholder="FADERCO QR"
+                id="tutorial_video"
+                value={tutorialVideoUrl}
+                onChange={(e) => setTutorialVideoUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                type="url"
               />
-              <p className="text-xs text-gray-500 mt-1">The title displayed in the navigation bar</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Paste the full YouTube video URL. Users will see a video icon with a pulse animation in their dashboard.
+              </p>
             </div>
 
-            <div>
-              <Label>Platform Logo</Label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                    id="logo-upload"
+            {tutorialVideoUrl && (
+              <div className="rounded-lg border p-4 bg-gray-50">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <div className="aspect-video bg-black rounded">
+                  <iframe
+                    className="w-full h-full rounded"
+                    src={tutorialVideoUrl.replace("watch?v=", "embed/")}
+                    title="Tutorial Video Preview"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {logoPreview ? "Change Logo" : "Upload Logo"}
-                  </Button>
-                  {logoPreview && (
-                    <Button type="button" variant="ghost" size="icon" onClick={removeLogo}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
-                {logoPreview && (
-                  <div className="flex items-center gap-2 rounded border border-border p-2 bg-gray-50">
-                    <img
-                      src={logoPreview || "/placeholder.svg"}
-                      alt="Logo preview"
-                      className="h-12 w-12 rounded object-contain"
-                    />
-                    <span className="text-xs text-muted-foreground">{logoFile?.name || "Current logo"}</span>
-                  </div>
-                )}
-                <p className="text-xs text-gray-500">Upload a logo for your platform (max 2MB)</p>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="footer_text">Footer Text</Label>
-              <Textarea
-                id="footer_text"
-                value={settings.footer_text}
-                onChange={(e) => setSettings({ ...settings, footer_text: e.target.value })}
-                placeholder="© 2025 FADERCO QR. All rights reserved."
-                rows={2}
-              />
-              <p className="text-xs text-gray-500 mt-1">The text displayed in the footer</p>
-            </div>
+            )}
           </div>
 
-          <div className="border-t pt-6 space-y-4">
-            <h3 className="text-lg font-semibold">General Settings</h3>
-
-            <div>
-              <Label htmlFor="site_name">Site Name</Label>
-              <Input
-                id="site_name"
-                value={settings.site_name}
-                onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
-                placeholder="FADERCO QR"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="site_description">Site Description</Label>
-              <Input
-                id="site_description"
-                value={settings.site_description}
-                onChange={(e) => setSettings({ ...settings, site_description: e.target.value })}
-                placeholder="Next-Gen QR Platform"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="support_email">Support Email</Label>
-              <Input
-                id="support_email"
-                type="email"
-                value={settings.support_email}
-                onChange={(e) => setSettings({ ...settings, support_email: e.target.value })}
-                placeholder="support@fadercoqr.com"
-              />
-            </div>
-          </div>
-
-          <div className="border-t pt-6 space-y-4">
-            <h3 className="text-lg font-semibold">User Limits</h3>
-
-            <div>
-              <Label htmlFor="max_qr_codes_per_user">Max QR Codes Per User</Label>
-              <Input
-                id="max_qr_codes_per_user"
-                type="number"
-                min="1"
-                value={settings.max_qr_codes_per_user}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    max_qr_codes_per_user: e.target.value,
-                  })
-                }
-                placeholder="10"
-              />
-              <p className="text-sm text-gray-500 mt-1">Maximum number of QR codes each user can create</p>
-            </div>
-          </div>
-
-          <Button type="submit" disabled={loading || logoUploading} className="w-full">
-            {loading || logoUploading ? (
+          <Button type="submit" disabled={tutorialLoading} className="w-full">
+            {tutorialLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {logoUploading ? "Uploading logo..." : "Saving..."}
+                Saving...
               </>
             ) : (
-              "Save Settings"
+              "Save Tutorial Video URL"
             )}
           </Button>
         </form>

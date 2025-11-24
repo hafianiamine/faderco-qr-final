@@ -21,7 +21,22 @@ export function CompaniesSection() {
         const companyMap = new Map<string, number>()
         profiles.forEach((p) => {
           if (p.company) {
-            companyMap.set(p.company, (companyMap.get(p.company) || 0) + 1)
+            const normalizedName = p.company.toLowerCase()
+            const originalName = p.company
+
+            let existingKey = ""
+            for (const [key] of companyMap) {
+              if (key.toLowerCase() === normalizedName) {
+                existingKey = key
+                break
+              }
+            }
+
+            if (existingKey) {
+              companyMap.set(existingKey, (companyMap.get(existingKey) || 0) + 1)
+            } else {
+              companyMap.set(originalName, 1)
+            }
           }
         })
 
