@@ -2,12 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Download, Eye, FileType } from "lucide-react" // Added FileType icon for SVG download
+import { ExternalLink, Download, Eye, FileType } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { generateQRCodeSVG } from "@/lib/utils/qr-generator" // Added SVG generator import
+import { generateQRCodeSVG } from "@/lib/utils/qr-generator"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface QRCodeCardProps {
   qrCode: {
@@ -23,7 +24,7 @@ interface QRCodeCardProps {
 
 export function QRCodeCard({ qrCode }: QRCodeCardProps) {
   const [showPreview, setShowPreview] = useState(false)
-  const [downloadingSVG, setDownloadingSVG] = useState(false) // Added SVG download state
+  const [downloadingSVG, setDownloadingSVG] = useState(false)
 
   const handleDownload = () => {
     if (!qrCode.qr_image_url) {
@@ -92,18 +93,23 @@ export function QRCodeCard({ qrCode }: QRCodeCardProps) {
               <Eye className="mr-2 h-4 w-4" />
               View
             </Button>
-            <Button variant="outline" size="sm" className="bg-white/30 border-gray-200" onClick={handleDownload}>
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/30 border-gray-200"
-              onClick={handleDownloadSVG}
-              disabled={downloadingSVG}
-            >
-              <FileType className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-white/30 border-gray-200">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownload}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PNG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadSVG} disabled={downloadingSVG}>
+                  <FileType className="mr-2 h-4 w-4" />
+                  Download SVG
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardContent>
       </Card>

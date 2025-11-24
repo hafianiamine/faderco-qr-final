@@ -678,3 +678,77 @@ export async function uploadImageToBlob(formData: FormData) {
     return { error: "Failed to upload image" }
   }
 }
+
+export async function getTutorialVideoUrl() {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "tutorial_video_url")
+      .maybeSingle()
+
+    if (error) {
+      console.error("Error fetching tutorial video URL:", error)
+      return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+    }
+
+    return { videoUrl: data?.value || "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+  } catch (error) {
+    console.error("Error in getTutorialVideoUrl:", error)
+    return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
+  }
+}
+
+export async function updateSupportInfo(supportInfo: string) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (adminProfile?.role !== "admin") {
+      return { error: "Unauthorized" }
+    }
+
+    const { error } = await supabase
+      .from("settings")
+      .upsert({ key: "support_info", value: supportInfo }, { onConflict: "key" })
+
+    if (error) {
+      return { error: "Failed to update support info" }
+    }
+
+    revalidatePath("/dashboard")
+    revalidatePath("/admin")
+    return { success: true }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}
+
+export async function getSupportInfo() {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase.from("settings").select("value").eq("key", "support_info").maybeSingle()
+
+    if (error) {
+      console.error("Error fetching support info:", error)
+      return { supportInfo: "For support, please contact your administrator." }
+    }
+
+    return { supportInfo: data?.value || "For support, please contact your administrator." }
+  } catch (error) {
+    console.error("Error in getSupportInfo:", error)
+    return { supportInfo: "For support, please contact your administrator." }
+  }
+}

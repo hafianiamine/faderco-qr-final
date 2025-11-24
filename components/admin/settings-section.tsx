@@ -16,6 +16,7 @@ import {
   updateLandingPopupSettings,
   updateTutorialVideoUrl,
   uploadImageToBlob,
+  updateSupportInfo,
 } from "@/app/actions/admin-actions"
 import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
@@ -54,6 +55,8 @@ export function SettingsSection() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [tutorialVideoUrl, setTutorialVideoUrl] = useState("")
   const [tutorialLoading, setTutorialLoading] = useState(false)
+  const [supportInfo, setSupportInfo] = useState("")
+  const [supportLoading, setSupportLoading] = useState(false)
   const popupImageInputRef = useRef<HTMLInputElement | null>(null)
   const [popupImageFile, setPopupImageFile] = useState<File | null>(null)
   const [popupImagePreview, setPopupImagePreview] = useState<string | null>(null)
@@ -66,6 +69,7 @@ export function SettingsSection() {
     loadWelcomePopupSettings()
     loadLandingPopupSettings()
     loadTutorialVideoUrl()
+    loadSupportInfo()
   }, [])
 
   async function loadSettings() {
@@ -177,6 +181,22 @@ export function SettingsSection() {
       setTutorialVideoUrl(tutorialVideoData?.value || "")
     } catch (error) {
       console.error("Error loading tutorial video URL:", error)
+    }
+  }
+
+  async function loadSupportInfo() {
+    try {
+      const { data: supportInfoData, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "support_info")
+        .maybeSingle()
+
+      if (error) throw error
+
+      setSupportInfo(supportInfoData?.value || "For support, please contact your administrator at support@example.com")
+    } catch (error) {
+      console.error("Error loading support info:", error)
     }
   }
 
@@ -487,6 +507,30 @@ export function SettingsSection() {
     }
   }
 
+  async function handleSupportInfoSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSupportLoading(true)
+
+    try {
+      const result = await updateSupportInfo(supportInfo)
+
+      if (result.error) throw new Error(result.error)
+
+      toast({
+        title: "Success",
+        description: "Support info updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update support info",
+        variant: "destructive",
+      })
+    } finally {
+      setSupportLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -730,7 +774,7 @@ export function SettingsSection() {
                 <div className="aspect-video bg-black rounded">
                   <iframe
                     className="w-full h-full rounded"
-                    src={tutorialVideoUrl.replace("watch?v=", "embed/")}
+                    src={tutorialVideoUrl.replace("watch?v=", "embed/").split("&")[0]}
                     title="Tutorial Video Preview"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -748,6 +792,46 @@ export function SettingsSection() {
               </>
             ) : (
               "Save Tutorial Video URL"
+            )}
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-6">
+        <form onSubmit={handleSupportInfoSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="h-5 w-5 text-gray-700" />
+              <h3 className="text-lg font-semibold">Support Information</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure the support contact information shown to users in the platform notice. This appears in the
+              feature tour.
+            </p>
+
+            <div>
+              <Label htmlFor="support_info">Support Info</Label>
+              <Textarea
+                id="support_info"
+                value={supportInfo}
+                onChange={(e) => setSupportInfo(e.target.value)}
+                placeholder="For support, please contact your administrator at support@example.com"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Provide contact information for users who need help or have questions about the platform
+              </p>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={supportLoading} className="w-full">
+            {supportLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Support Information"
             )}
           </Button>
         </form>

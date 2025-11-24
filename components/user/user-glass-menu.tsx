@@ -1,10 +1,11 @@
 "use client"
-import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus, Lightbulb } from "lucide-react"
+import { QrCode, BarChart3, LogOut, LayoutDashboard, Settings, Plus, Lightbulb, Video } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
+import { getTutorialVideoUrl } from "@/app/actions/admin-actions"
 
 interface UserGlassMenuProps {
   userEmail?: string
@@ -16,6 +17,8 @@ interface UserGlassMenuProps {
 export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onShowFeatureTour }: UserGlassMenuProps) {
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState<string>("")
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("https://www.youtube.com/embed/dQw4w9WgXcQ")
+  const [showVideoModal, setShowVideoModal] = useState(false)
 
   useEffect(() => {
     async function loadAvatar() {
@@ -24,11 +27,21 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
         data: { user },
       } = await supabase.auth.getUser()
 
+      console.log("[v0] UserGlassMenu: Loading user data")
+
       if (user) {
         const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle()
 
         if (data?.avatar_url) {
           setAvatarUrl(data.avatar_url)
+        }
+
+        console.log("[v0] UserGlassMenu: Fetching tutorial video URL using server action")
+        const { videoUrl } = await getTutorialVideoUrl()
+        console.log("[v0] UserGlassMenu: Tutorial video URL from server:", videoUrl)
+
+        if (videoUrl) {
+          setTutorialVideoUrl(videoUrl)
         }
       }
     }
@@ -120,14 +133,14 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
             title="Logout"
           >
             <LogOut className="h-5 w-5" />
-            <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
               Logout
             </span>
           </button>
         </div>
 
-        {onShowFeatureTour && (
-          <div className="flex flex-col gap-3 rounded-full border border-gray-200 bg-white/80 p-3 backdrop-blur-xl shadow-lg">
+        <div className="flex flex-col gap-3 rounded-full border border-gray-200 bg-white/80 p-3 backdrop-blur-xl shadow-lg">
+          {onShowFeatureTour && (
             <button
               onClick={onShowFeatureTour}
               className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/50"
@@ -138,9 +151,49 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
                 Feature Tour
               </span>
             </button>
-          </div>
-        )}
+          )}
+
+          {tutorialVideoUrl && (
+            <button
+              onClick={() => setShowVideoModal(true)}
+              className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/50"
+              title="Watch Tutorial"
+            >
+              <Video className="h-5 w-5" />
+              <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
+                Watch Tutorial
+              </span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {showVideoModal && tutorialVideoUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setShowVideoModal(false)}
+        >
+          <div className="bg-white rounded-lg max-w-4xl w-full aspect-video" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full h-full">
+              <button
+                onClick={() => setShowVideoModal(false)}
+                className="absolute -top-10 right-0 text-white hover:text-gray-300"
+              >
+                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <iframe
+                className="w-full h-full rounded-lg"
+                src={tutorialVideoUrl.replace("watch?v=", "embed/")}
+                title="Tutorial Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

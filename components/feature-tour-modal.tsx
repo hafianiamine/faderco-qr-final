@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +15,9 @@ import {
   X,
   RefreshCw,
   Target,
+  AlertTriangle,
 } from "lucide-react"
+import { getSupportInfo } from "@/app/actions/admin-actions"
 
 interface FeatureTourModalProps {
   isOpen: boolean
@@ -24,6 +26,17 @@ interface FeatureTourModalProps {
 }
 
 const features = [
+  {
+    icon: AlertTriangle,
+    title: "Important Notice & Responsibility",
+    description:
+      "You are solely responsible for all QR codes you create and the content they link to. Please ensure you comply with all applicable laws and regulations when using this platform.",
+    benefit:
+      "Keep your password secure and update it regularly. We are not responsible for any misuse of the system or unauthorized access to your account. Always follow best security practices.",
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+    isNotice: true,
+  },
   {
     icon: RefreshCw,
     title: "Update QR Anytime — No Reprinting",
@@ -100,6 +113,15 @@ const features = [
 
 export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
+  const [supportInfo, setSupportInfo] = useState("For support, please contact your administrator.")
+
+  useEffect(() => {
+    if (isOpen) {
+      getSupportInfo().then((result) => {
+        setSupportInfo(result.supportInfo)
+      })
+    }
+  }, [isOpen])
 
   const handleNext = () => {
     if (currentStep < features.length - 1) {
@@ -128,22 +150,16 @@ export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModal
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {currentStep === 0 ? (
-              <span>Hello {userName ? userName.split("@")[0] : "there"}! 👋</span>
+              <span>Important Notice</span>
             ) : (
               <span>
-                Feature {currentStep + 1} of {features.length}
+                Feature {currentStep} of {features.length - 1}
               </span>
             )}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {currentStep === 0 && (
-            <p className="text-gray-600 text-base">
-              Welcome to your QR code management platform! Let's show you what you can do with our system.
-            </p>
-          )}
-
           <div className={`rounded-xl ${currentFeature.bgColor} p-6 transition-all duration-300`}>
             <div className="flex items-start gap-4">
               <div className={`rounded-full bg-white p-3 shadow-lg flex-shrink-0`}>
@@ -155,7 +171,18 @@ export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModal
                 {currentFeature.benefit && (
                   <div className="mt-3 rounded-lg bg-white/60 p-3 border-l-4 border-current">
                     <p className="text-xs font-semibold text-gray-900">
-                      💡 <span className={currentFeature.color}>Why it matters:</span> {currentFeature.benefit}
+                      {currentFeature.isNotice ? "⚠️" : "💡"}{" "}
+                      <span className={currentFeature.color}>
+                        {currentFeature.isNotice ? "Security Notice:" : "Why it matters:"}
+                      </span>{" "}
+                      {currentFeature.benefit}
+                    </p>
+                  </div>
+                )}
+                {currentFeature.isNotice && (
+                  <div className="mt-3 rounded-lg bg-white/80 p-3 border border-gray-300">
+                    <p className="text-xs font-medium text-gray-900">
+                      <span className="font-bold">Support:</span> {supportInfo}
                     </p>
                   </div>
                 )}
