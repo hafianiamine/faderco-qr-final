@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useRef, useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,7 +43,7 @@ export function SettingsSection() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
-  const fileInputRef = useState<HTMLInputElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [landingPopup, setLandingPopup] = useState({
     enabled: false,
     title: "Special Offer!",
@@ -55,7 +54,7 @@ export function SettingsSection() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [tutorialVideoUrl, setTutorialVideoUrl] = useState("")
   const [tutorialLoading, setTutorialLoading] = useState(false)
-  const popupImageInputRef = useState<HTMLInputElement | null>(null)
+  const popupImageInputRef = useRef<HTMLInputElement | null>(null)
   const [popupImageFile, setPopupImageFile] = useState<File | null>(null)
   const [popupImagePreview, setPopupImagePreview] = useState<string | null>(null)
   const [footerLoading, setFooterLoading] = useState(false)
@@ -167,11 +166,15 @@ export function SettingsSection() {
 
   async function loadTutorialVideoUrl() {
     try {
-      const { data, error } = await supabase.from("settings").select("value").eq("key", "tutorial_video_url").single()
+      const { data: tutorialVideoData, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "tutorial_video_url")
+        .maybeSingle()
 
       if (error) throw error
 
-      setTutorialVideoUrl(data?.value || "")
+      setTutorialVideoUrl(tutorialVideoData?.value || "")
     } catch (error) {
       console.error("Error loading tutorial video URL:", error)
     }
@@ -221,8 +224,8 @@ export function SettingsSection() {
     setLogoFile(null)
     setLogoPreview(null)
     setSettings({ ...settings, platform_logo_url: "" })
-    if (fileInputRef) {
-      fileInputRef.value = ""
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
     }
   }
 
@@ -230,8 +233,8 @@ export function SettingsSection() {
     setPopupImageFile(null)
     setPopupImagePreview(null)
     setLandingPopup({ ...landingPopup, imageUrl: "" })
-    if (popupImageInputRef) {
-      popupImageInputRef.value = ""
+    if (popupImageInputRef.current) {
+      popupImageInputRef.current.value = ""
     }
   }
 
