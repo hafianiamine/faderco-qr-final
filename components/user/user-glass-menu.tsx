@@ -35,13 +35,14 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
         }
 
         const { videoUrl } = await getTutorialVideoUrl()
+        console.log("[v0] Tutorial video URL from database:", videoUrl)
         if (videoUrl) {
           setTutorialVideoUrl(videoUrl)
         }
       }
     }
     loadAvatar()
-  }, [currentSection])
+  }, [])
 
   const menuItems = [
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },
@@ -180,7 +181,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
               </button>
               <iframe
                 className="w-full h-full rounded-lg"
-                src={tutorialVideoUrl.replace("watch?v=", "embed/")}
+                src={tutorialVideoUrl}
                 title="Tutorial Video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
