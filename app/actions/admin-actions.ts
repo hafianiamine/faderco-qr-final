@@ -629,27 +629,9 @@ export async function updateTutorialVideoUrl(videoUrl: string) {
       return { error: "Unauthorized" }
     }
 
-    let embedUrl = videoUrl
-
-    // Handle youtu.be short links
-    if (videoUrl.includes("youtu.be/")) {
-      const videoId = videoUrl.split("youtu.be/")[1].split("?")[0]
-      embedUrl = `https://www.youtube.com/embed/${videoId}`
-    }
-    // Handle youtube.com watch links
-    else if (videoUrl.includes("youtube.com/watch?v=")) {
-      const videoId = videoUrl.split("watch?v=")[1].split("&")[0]
-      embedUrl = `https://www.youtube.com/embed/${videoId}`
-    }
-    // Handle m.youtube.com mobile links
-    else if (videoUrl.includes("m.youtube.com/watch?v=")) {
-      const videoId = videoUrl.split("watch?v=")[1].split("&")[0]
-      embedUrl = `https://www.youtube.com/embed/${videoId}`
-    }
-
     const { error } = await supabase
       .from("settings")
-      .upsert({ key: "tutorial_video_url", value: embedUrl }, { onConflict: "key" })
+      .upsert({ key: "tutorial_video_url", value: videoUrl }, { onConflict: "key" })
 
     if (error) {
       return { error: "Failed to update tutorial video URL" }
@@ -658,6 +640,39 @@ export async function updateTutorialVideoUrl(videoUrl: string) {
     revalidatePath("/dashboard")
     revalidatePath("/admin")
     return { success: true }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}
+
+export async function uploadImageToBlob(formData: FormData) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (adminProfile?.role !== "admin") {
+      return { error: "Unauthorized" }
+    }
+
+    const file = formData.get("file") as File
+    if (!file) {
+      return { error: "No file provided" }
+    }
+
+    const blob = await put(file.name, file, {
+      access: "public",
+    })
+
+    return { success: true, url: blob.url }
   } catch (error) {
     console.error("Error uploading image:", error)
     return { error: "Failed to upload image" }
@@ -676,13 +691,13 @@ export async function getTutorialVideoUrl() {
 
     if (error) {
       console.error("Error fetching tutorial video URL:", error)
-      return { videoUrl: null }
+      return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
     }
 
-    return { videoUrl: data?.value || null }
+    return { videoUrl: data?.value || "https://www.youtube.com/embed/dQw4w9WgXcQ" }
   } catch (error) {
     console.error("Error in getTutorialVideoUrl:", error)
-    return { videoUrl: null }
+    return { videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ" }
   }
 }
 
@@ -735,39 +750,5 @@ export async function getSupportInfo() {
   } catch (error) {
     console.error("Error in getSupportInfo:", error)
     return { supportInfo: "For support, please contact your administrator." }
-  }
-}
-
-export async function uploadImageToBlob(formData: FormData) {
-  try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { error: "Unauthorized" }
-    }
-
-    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (adminProfile?.role !== "admin") {
-      return { error: "Unauthorized" }
-    }
-
-    const file = formData.get("file") as File
-    if (!file) {
-      return { error: "No file provided" }
-    }
-
-    const blob = await put(file.name, file, {
-      access: "public",
-    })
-
-    return { success: true, url: blob.url }
-  } catch (error) {
-    console.error("Error uploading image:", error)
-    return { error: "Failed to upload image" }
   }
 }

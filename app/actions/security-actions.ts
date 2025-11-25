@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { logActivity, getRealIP, parseUserAgent } from "@/lib/activity-logger"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { checkPasswordHistory, savePasswordToHistory } from "@/lib/password-utils"
+import { createHash } from "crypto"
 
 // Force all users to reset password
 export async function forceAllPasswordResets() {
@@ -54,6 +54,50 @@ export async function checkPasswordResetRequired() {
   return { required: profile?.force_password_reset || false }
 }
 
+// Hash password for comparison (without storing)
+function hashPassword(password: string): string {
+  return createHash("sha256").update(password).digest("hex")
+}
+
+async function isPasswordReused(userId: string, newPassword: string): Promise<boolean> {
+  const supabase = await createClient()
+  const passwordHash = hashPassword(newPassword)
+
+  // Check last 5 passwords
+  const { data } = await supabase
+    .from("password_history")
+    .select("password_hash")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(5)
+
+  if (!data) return false
+
+  return data.some((record) => record.password_hash === passwordHash)
+}
+
+async function savePasswordHistory(userId: string, password: string) {
+  const supabase = await createClient()
+  const passwordHash = hashPassword(password)
+
+  await supabase.from("password_history").insert({
+    user_id: userId,
+    password_hash: passwordHash,
+  })
+
+  // Keep only last 5 passwords
+  const { data: history } = await supabase
+    .from("password_history")
+    .select("id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (history && history.length > 5) {
+    const idsToDelete = history.slice(5).map((h) => h.id)
+    await supabase.from("password_history").delete().in("id", idsToDelete)
+  }
+}
+
 // Reset user password and clear the flag
 export async function resetUserPassword(newPassword: string) {
   const supabase = await createClient()
@@ -62,32 +106,24 @@ export async function resetUserPassword(newPassword: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { error: "Unauthorized" }
 
-  // Check password history (last 5 passwords)
-  const isPasswordReused = await checkPasswordHistory(user.id, newPassword, 5)
-
-  if (isPasswordReused) {
-    return {
-      success: false,
-      error: "You cannot reuse any of your last 5 passwords. Please choose a different password.",
-    }
+  const isReused = await isPasswordReused(user.id, newPassword)
+  if (isReused) {
+    return { error: "You cannot reuse your last 5 passwords. Please choose a different password." }
   }
 
   // Update password
-  const { error } = await supabase.auth.updateUser({
+  const { error: authError } = await supabase.auth.updateUser({
     password: newPassword,
   })
 
-  if (error) {
-    return { success: false, error: error.message }
-  }
+  if (authError) return { error: authError.message }
 
-  // Save password to history
-  await savePasswordToHistory(user.id, newPassword)
+  await savePasswordHistory(user.id, newPassword)
 
-  // Clear force_password_reset flag and update last_password_change
-  await supabase
+  // Clear the force reset flag and update last password change
+  const { error: profileError } = await supabase
     .from("profiles")
     .update({
       force_password_reset: false,
@@ -95,13 +131,16 @@ export async function resetUserPassword(newPassword: string) {
     })
     .eq("id", user.id)
 
-  // Log activity
+  if (profileError) return { error: profileError.message }
+
+  // Log the action
   await logActivity({
     userId: user.id,
     action: "password_changed",
+    entityType: "user",
+    entityId: user.id,
     ipAddress: getRealIP(headersList),
-    deviceInfo: parseUserAgent(headersList.get("user-agent") || ""),
-    userAgent: headersList.get("user-agent") || "",
+    deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
   })
 
   revalidatePath("/dashboard")
