@@ -17,7 +17,7 @@ interface UserGlassMenuProps {
 export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onShowFeatureTour }: UserGlassMenuProps) {
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState<string>("")
-  const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("https://www.youtube.com/embed/dQw4w9WgXcQ")
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("https://www.youtube.com/watch?v=jwiSLaQyZ0U)
   const [showVideoModal, setShowVideoModal] = useState(false)
 
   useEffect(() => {
