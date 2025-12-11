@@ -15,6 +15,9 @@ import { toast } from "sonner"
 export function CreateQRCodeForm() {
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
+  const [qrCodeType, setQRCodeType] = useState<"standard" | "business_card" | "wifi">("standard")
+  const [wifiSsid, setWifiSsid] = useState("")
+  const [wifiPassword, setWifiPassword] = useState("")
   const [colorDark, setColorDark] = useState("#000000")
   const [colorLight, setColorLight] = useState("#FFFFFF")
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -56,10 +59,18 @@ export function CreateQRCodeForm() {
     try {
       toast.loading("Generating your QR code...", { id: "qr-generation" })
 
-      const result = await createQRCode(title, destinationUrl, {
+      let finalDestinationUrl = destinationUrl
+      if (qrCodeType === "wifi" && wifiSsid) {
+        finalDestinationUrl = `WIFI:T:WPA;S:${wifiSsid};P:${wifiPassword};;`
+      } else if (qrCodeType === "business_card") {
+        // Store business card type in metadata for formatting
+      }
+
+      const result = await createQRCode(title, finalDestinationUrl, {
         colorDark,
         colorLight,
         logoUrl: logoPreview || undefined,
+        qrCodeType,
       })
 
       toast.dismiss("qr-generation")
@@ -88,6 +99,21 @@ export function CreateQRCodeForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
+        <Label htmlFor="qrCodeType">QR Code Type</Label>
+        <select
+          id="qrCodeType"
+          value={qrCodeType}
+          onChange={(e) => setQRCodeType(e.target.value as "standard" | "business_card" | "wifi")}
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+        >
+          <option value="standard">Standard QR Code (URL)</option>
+          <option value="business_card">Business Card QR Code (Vertical)</option>
+          <option value="wifi">WiFi QR Code</option>
+        </select>
+        <p className="text-xs text-muted-foreground">Choose the type of QR code you want to create</p>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
@@ -100,20 +126,49 @@ export function CreateQRCodeForm() {
         <p className="text-xs text-muted-foreground">A descriptive name for your QR code</p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="destinationUrl">Destination URL</Label>
-        <Input
-          id="destinationUrl"
-          type="url"
-          placeholder="https://example.com/landing-page"
-          value={destinationUrl}
-          onChange={(e) => setDestinationUrl(e.target.value)}
-          required
-        />
-        <p className="text-xs text-muted-foreground">
-          The URL where users will be redirected when they scan the QR code
-        </p>
-      </div>
+      {qrCodeType === "wifi" ? (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="wifiSsid">WiFi Network Name (SSID)</Label>
+            <Input
+              id="wifiSsid"
+              type="text"
+              placeholder="MyNetwork"
+              value={wifiSsid}
+              onChange={(e) => setWifiSsid(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground">The SSID of your WiFi network</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="wifiPassword">WiFi Password</Label>
+            <Input
+              id="wifiPassword"
+              type="password"
+              placeholder="••••••••"
+              value={wifiPassword}
+              onChange={(e) => setWifiPassword(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Leave blank if no password is required</p>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="destinationUrl">Destination URL</Label>
+          <Input
+            id="destinationUrl"
+            type="url"
+            placeholder="https://example.com/landing-page"
+            value={destinationUrl}
+            onChange={(e) => setDestinationUrl(e.target.value)}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            The URL where users will be redirected when they scan the QR code
+          </p>
+        </div>
+      )}
 
       <div className="space-y-4 rounded-lg border border-border p-4">
         <h3 className="text-sm font-medium">Customize QR Code</h3>

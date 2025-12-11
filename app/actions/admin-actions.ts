@@ -282,12 +282,24 @@ export async function deleteUser(userId: string) {
       return { error: "Unauthorized" }
     }
 
-    // Delete user profile (cascade will handle related records)
-    const { error } = await supabase.from("profiles").delete().eq("id", userId)
+    // Use Supabase Admin API to delete the auth user first
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
+    )
 
-    if (error) {
-      console.error("Error deleting user:", error)
-      return { error: "Failed to delete user" }
+    // Delete auth user (this will cascade delete the profile due to FK constraint)
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    if (authDeleteError) {
+      console.error("Error deleting auth user:", authDeleteError)
+      return { error: "Failed to delete user account" }
     }
 
     revalidatePath("/admin")
@@ -691,7 +703,7 @@ export async function getTutorialVideoUrl() {
 
     if (error) {
       console.error("Error fetching tutorial video URL:", error)
-      return { videoUrl: "hhttps://www.youtube.com/watch?v=jwiSLaQyZ0U" }
+      return { videoUrl: "https://www.youtube.com/watch?v=jwiSLaQyZ0U" }
     }
 
     return { videoUrl: data?.value || "https://www.youtube.com/watch?v=jwiSLaQyZ0U" }

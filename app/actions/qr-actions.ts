@@ -20,6 +20,7 @@ export interface QRCustomization {
   geofenceLatitude?: number
   geofenceLongitude?: number
   geofenceRadius?: number
+  qrCodeType?: "standard" | "business_card" | "wifi"
 }
 
 export async function createQRCode(title: string, destinationUrl: string, customization?: QRCustomization) {
@@ -85,6 +86,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
+      qr_code_type: customization?.qrCodeType || "standard",
     }
 
     const { data: qrCode, error: insertError } = await supabase.from("qr_codes").insert(insertData).select().single()
@@ -98,7 +100,12 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       action: "qr_created",
       entityType: "qr_code",
       entityId: qrCode.id,
-      newValue: JSON.stringify({ title, destinationUrl, shortCode: qrCode.short_code }),
+      newValue: JSON.stringify({
+        title,
+        destinationUrl,
+        shortCode: qrCode.short_code,
+        type: customization?.qrCodeType,
+      }),
       ipAddress: getRealIP(headersList),
       deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
       userAgent: headersList.get("user-agent") || undefined,
@@ -363,6 +370,7 @@ export async function updateQRCodeSettings(
     geofenceLatitude?: number
     geofenceLongitude?: number
     geofenceRadius?: number
+    qrCodeType?: "standard" | "business_card" | "wifi"
   },
 ) {
   try {
@@ -407,6 +415,10 @@ export async function updateQRCodeSettings(
 
     if (settings.geofenceRadius !== undefined) {
       updateData.geofence_radius = settings.geofenceRadius
+    }
+
+    if (settings.qrCodeType !== undefined) {
+      updateData.qr_code_type = settings.qrCodeType
     }
 
     const { error: updateError } = await supabase
