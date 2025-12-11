@@ -3,6 +3,21 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Users, QrCode, Building2, MousePointerClick } from "lucide-react"
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Stats {
   totalUsers: number
@@ -18,6 +33,9 @@ export function DashboardSection() {
     totalCompanies: 0,
     totalScans: 0,
   })
+  const [scansData, setScansData] = useState<{ date: string; count: number }[]>([])
+  const [qrTypeData, setQrTypeData] = useState<{ type: string; count: number }[]>([])
+  const [topQRCodes, setTopQRCodes] = useState<{ title: string; scans: number }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,15 +45,67 @@ export function DashboardSection() {
   async function loadStats() {
     const supabase = createClient()
 
-    const [{ count: usersCount }, { count: qrCodesCount }, { count: scansCount }, { data: companies }] =
-      await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("qr_codes").select("*", { count: "exact", head: true }),
-        supabase.from("scans").select("*", { count: "exact", head: true }),
-        supabase.from("profiles").select("company"),
-      ])
+    const [
+      { count: usersCount },
+      { count: qrCodesCount },
+      { count: scansCount },
+      { data: companies },
+      { data: scansData },
+      { data: qrTypeCounts },
+      { data: topCodes },
+    ] = await Promise.all([
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("qr_codes").select("*", { count: "exact", head: true }),
+      supabase.from("scans").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("company"),
+      // Get scans data for last 7 days
+      supabase
+        .from("scans")
+        .select("created_at")
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      // Get QR codes by type
+      supabase
+        .from("qr_codes")
+        .select("type"),
+      // Get top 5 most scanned QR codes
+      supabase
+        .from("qr_codes")
+        .select("title, id")
+        .limit(5),
+    ])
 
     const uniqueCompanies = new Set(companies?.map((p) => p.company).filter(Boolean))
+
+    // Process scans data by date
+    const scansByDate: Record<string, number> = {}
+    scansData?.forEach((scan: any) => {
+      const date = new Date(scan.created_at).toLocaleDateString()
+      scansByDate[date] = (scansByDate[date] || 0) + 1
+    })
+    const chartScansData = Object.entries(scansByDate).map(([date, count]) => ({ date, count: count as number }))
+
+    // Process QR code types
+    const typeCount: Record<string, number> = {}
+    qrTypeCounts?.forEach((qr: any) => {
+      typeCount[qr.type || "standard"] = (typeCount[qr.type || "standard"] || 0) + 1
+    })
+    const chartQrTypeData = Object.entries(typeCount).map(([type, count]) => ({
+      type: type === "business_card" ? "Business Card" : type === "wifi" ? "WiFi" : "Standard",
+      count: count as number,
+    }))
+
+    // Get scan counts for top QR codes
+    const topCodesWithScans = []
+    for (const code of topCodes || []) {
+      const { count } = await supabase
+        .from("scans")
+        .select("*", { count: "exact", head: true })
+        .eq("qr_code_id", code.id)
+      topCodesWithScans.push({
+        title: code.title || "Untitled QR",
+        scans: count || 0,
+      })
+    }
 
     setStats({
       totalUsers: usersCount || 0,
@@ -43,6 +113,9 @@ export function DashboardSection() {
       totalCompanies: uniqueCompanies.size,
       totalScans: scansCount || 0,
     })
+    setScansData(chartScansData)
+    setQrTypeData(chartQrTypeData)
+    setTopQRCodes(topCodesWithScans)
     setLoading(false)
   }
 
@@ -77,6 +150,8 @@ export function DashboardSection() {
     },
   ]
 
+  const COLORS = ["#3B82F6", "#8B5CF6", "#EC4899", "#F59E0B"]
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -87,11 +162,13 @@ export function DashboardSection() {
 
   return (
     <div className="space-y-6">
+      {/* Dashboard Header */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-600">Platform overview and statistics</p>
       </div>
 
+      {/* Stat Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon
@@ -113,6 +190,96 @@ export function DashboardSection() {
           )
         })}
       </div>
+
+      {/* Charts Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Scans Trend Chart */}
+        {scansData.length > 0 && (
+          <Card className="rounded-2xl border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle>Scans Trend (Last 7 Days)</CardTitle>
+              <CardDescription>Daily scan activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={scansData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="date" stroke="#6B7280" />
+                  <YAxis stroke="#6B7280" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "8px" }}
+                    cursor={{ stroke: "#3B82F6", strokeWidth: 2 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#3B82F6"
+                    strokeWidth={3}
+                    dot={{ fill: "#3B82F6", r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* QR Code Types Distribution */}
+        {qrTypeData.length > 0 && (
+          <Card className="rounded-2xl border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle>QR Code Types</CardTitle>
+              <CardDescription>Distribution of QR code types</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={qrTypeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ type, count }) => `${type}: ${count}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {qrTypeData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "8px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Top QR Codes */}
+      {topQRCodes.length > 0 && (
+        <Card className="rounded-2xl border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle>Top 5 Most Scanned QR Codes</CardTitle>
+            <CardDescription>Your most popular QR codes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topQRCodes}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="title" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "8px" }}
+                />
+                <Bar dataKey="scans" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
