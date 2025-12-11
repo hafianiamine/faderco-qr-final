@@ -358,13 +358,13 @@ export async function getAutoPasswordResetSettings() {
     .from("settings")
     .select("value")
     .eq("key", "auto_password_reset_enabled")
-    .single()
+    .maybeSingle()
 
   const { data: daysSetting } = await supabase
     .from("settings")
     .select("value")
     .eq("key", "auto_password_reset_days")
-    .single()
+    .maybeSingle()
 
   return {
     enabled: enabledSetting?.value === "true",

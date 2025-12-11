@@ -2,101 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { AuthModals } from "@/components/auth-modals"
-import { WelcomeBanner } from "@/components/welcome-banner"
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
 
 export function HomePageClient() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(false)
-  const [locationData, setLocationData] = useState({ city: "", country: "" })
-  const [welcomeSettings, setWelcomeSettings] = useState({
-    enabled: true,
-    title: "Welcome to Our New Brand Tool",
-    description: "Experience the power of FADERCO QR tracking",
-  })
-  const searchParams = useSearchParams()
-  const supabase = createClient()
-
-  useEffect(() => {
-    loadWelcomeSettings()
-
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome")
-
-    if (searchParams.get("tracked") === "true") {
-      const city = searchParams.get("city") || "Unknown"
-      const country = searchParams.get("country") || "Unknown"
-
-      setLocationData({ city, country })
-
-      setTimeout(() => {
-        setShowWelcome(true)
-      }, 500)
-
-      const newUrl = new URL(window.location.href)
-      newUrl.searchParams.delete("tracked")
-      newUrl.searchParams.delete("city")
-      newUrl.searchParams.delete("country")
-      newUrl.searchParams.delete("ip")
-      window.history.replaceState({}, "", newUrl.toString())
-    } else if (!hasSeenWelcome) {
-      setTimeout(() => {
-        setShowWelcome(true)
-      }, 1000)
-    }
-
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault()
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        (e.ctrlKey && e.key === "u")
-      ) {
-        e.preventDefault()
-      }
-    }
-
-    document.addEventListener("contextmenu", handleContextMenu)
-    document.addEventListener("keydown", handleKeyDown)
-
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu)
-      document.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [searchParams])
-
-  async function loadWelcomeSettings() {
-    try {
-      const { data, error } = await supabase
-        .from("settings")
-        .select("key, value")
-        .in("key", ["welcome_popup_enabled", "welcome_popup_title", "welcome_popup_description"])
-
-      if (error) throw error
-
-      const settingsMap: Record<string, string> = {}
-      data?.forEach((setting) => {
-        settingsMap[setting.key] = setting.value
-      })
-
-      setWelcomeSettings({
-        enabled: settingsMap.welcome_popup_enabled === "true",
-        title: settingsMap.welcome_popup_title || "Welcome to Our New Brand Tool",
-        description: settingsMap.welcome_popup_description || "Experience the power of FADERCO QR tracking",
-      })
-    } catch (error) {}
-  }
-
-  const handleCloseWelcome = () => {
-    setShowWelcome(false)
-    localStorage.setItem("hasSeenWelcome", "true")
-  }
 
   return (
     <>
@@ -106,20 +16,6 @@ export function HomePageClient() {
         onLoginOpenChange={setLoginOpen}
         onRegisterOpenChange={setRegisterOpen}
       />
-
-      {showWelcome && welcomeSettings.enabled && (
-        <WelcomeBanner
-          city={locationData.city}
-          country={locationData.country}
-          onClose={handleCloseWelcome}
-          onCreateAccount={() => {
-            handleCloseWelcome()
-            setRegisterOpen(true)
-          }}
-          title={welcomeSettings.title}
-          description={welcomeSettings.description}
-        />
-      )}
 
       <nav className="flex items-center gap-2 md:gap-4">
         <Button

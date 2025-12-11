@@ -1,0 +1,120 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+interface CarouselSlide {
+  id: string
+  image_url: string
+  duration_seconds: number
+  link_url?: string
+}
+
+interface LandingCarouselProps {
+  slides: CarouselSlide[]
+}
+
+export function LandingCarousel({ slides }: LandingCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [autoPlay, setAutoPlay] = useState(true)
+
+  useEffect(() => {
+    if (!slides || slides.length === 0) return
+
+    const currentSlide = slides[currentIndex]
+    const timer = setTimeout(
+      () => {
+        setCurrentIndex((prev) => (prev + 1) % slides.length)
+      },
+      (currentSlide?.duration_seconds || 5) * 1000,
+    )
+
+    return () => clearTimeout(timer)
+  }, [currentIndex, autoPlay, slides])
+
+  const goToPrevious = () => {
+    setAutoPlay(false)
+    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)
+  }
+
+  const goToNext = () => {
+    setAutoPlay(false)
+    setCurrentIndex((prev) => (prev + 1) % slides.length)
+  }
+
+  const currentSlide = slides[currentIndex]
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-none">
+      <div className="relative w-full max-w-2xl pointer-events-auto">
+        {/* Image */}
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-900 shadow-2xl">
+          <img
+            src={currentSlide?.image_url || "/placeholder.svg"}
+            alt={`Slide ${currentIndex + 1}`}
+            className="w-full h-full object-cover"
+          />
+
+          {/* Navigation Buttons */}
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={goToPrevious}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 transition-all"
+              >
+                <ChevronLeft className="h-6 w-6 text-gray-900" />
+              </button>
+              <button
+                onClick={goToNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 transition-all"
+              >
+                <ChevronRight className="h-6 w-6 text-gray-900" />
+              </button>
+            </>
+          )}
+
+          {/* Slide Counter */}
+          <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+            {currentIndex + 1} / {slides.length}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-4 flex gap-2 justify-center">
+          {currentSlide?.link_url && (
+            <a href={currentSlide.link_url} target="_blank" rel="noopener noreferrer">
+              <Button className="bg-blue-500 hover:bg-blue-600">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View More
+              </Button>
+            </a>
+          )}
+          {slides.length > 1 && (
+            <Button variant="outline" onClick={() => setAutoPlay(!autoPlay)} className="bg-white">
+              {autoPlay ? "Pause" : "Play"}
+            </Button>
+          )}
+        </div>
+
+        {/* Dot Navigation */}
+        {slides.length > 1 && (
+          <div className="mt-4 flex justify-center gap-2">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setAutoPlay(false)
+                  setCurrentIndex(idx)
+                }}
+                className={`h-2 rounded-full transition-all ${
+                  idx === currentIndex ? "bg-blue-500 w-8" : "bg-gray-400 w-2"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

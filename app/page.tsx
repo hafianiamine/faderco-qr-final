@@ -4,7 +4,8 @@ import { SiteFooter } from "@/components/site-footer"
 import { HomePageClient } from "@/components/home-page-client"
 import { AnimatedBackground } from "@/components/animated-background"
 import { FadeWords } from "@/components/fade-words"
-import { LandingPagePopup } from "@/components/landing-page-popup" // Added landing page popup import
+import { LandingCarousel } from "@/components/landing-carousel"
+import { getCarouselSlides } from "@/app/actions/carousel-actions"
 import { createClient } from "@/lib/supabase/server"
 
 async function getLandingPageSettings() {
@@ -29,26 +30,18 @@ async function getLandingPageSettings() {
     feature3Desc: settingsMap.landing_feature_3_desc || "Built-in short links",
     feature4Title: settingsMap.landing_feature_4_title || "Who, When, Where",
     feature4Desc: settingsMap.landing_feature_4_desc || "Complete scan details",
-    popupEnabled: settingsMap.landing_popup_enabled === "true", // Added popup settings
-    popupTitle: settingsMap.landing_popup_title || "",
-    popupDescription: settingsMap.landing_popup_description || "",
-    popupImage: settingsMap.landing_popup_image || "",
   }
 }
 
 export default async function HomePage() {
   const content = await getLandingPageSettings()
+  const carouselSlides = await getCarouselSlides()
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <AnimatedBackground />
 
-      <LandingPagePopup
-        enabled={content.popupEnabled}
-        title={content.popupTitle}
-        description={content.popupDescription}
-        imageUrl={content.popupImage}
-      />
+      <LandingCarousel slides={carouselSlides} />
 
       <header className="relative z-10 border-b border-border backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-8 lg:px-12">
