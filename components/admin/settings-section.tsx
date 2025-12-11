@@ -8,7 +8,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Shield, Globe, Trash2, Plus, Upload, X, MessageSquare, ImageIcon, Video, Clock } from "lucide-react"
+import {
+  Loader2,
+  Shield,
+  Globe,
+  Trash2,
+  Plus,
+  Upload,
+  MessageSquare,
+  Video,
+  Clock,
+  Images,
+  Link2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-actions"
 import {
@@ -18,11 +32,16 @@ import {
   uploadImageToBlob,
   updateSupportInfo,
 } from "@/app/actions/admin-actions"
-import { Switch } from "@/components/ui/switch"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
 import { forceAllPasswordResets } from "@/app/actions/security-actions"
 import { AlertTriangle } from "lucide-react"
 import { getAutoPasswordResetSettings, updateAutoPasswordResetSettings } from "@/app/actions/security-actions"
+import {
+  createCarouselSlide,
+  deleteCarouselSlide,
+  getAllCarouselSlides,
+  updateCarouselSlide,
+} from "@/app/actions/carousel-actions"
 
 export function SettingsSection() {
   const [loading, setLoading] = useState(false)
@@ -70,6 +89,17 @@ export function SettingsSection() {
   const [autoResetDays, setAutoResetDays] = useState("30")
   const [autoResetLoading, setAutoResetLoading] = useState(false)
 
+  // New state for Carousel Manager
+  const [carouselSlides, setCarouselSlides] = useState<any[]>([])
+  const [carouselLoading, setCarouselLoading] = useState(false)
+  const [slideImageFile, setSlideImageFile] = useState<File | null>(null)
+  const [slideImagePreview, setSlideImagePreview] = useState<string | null>(null)
+  const [newSlide, setNewSlide] = useState({
+    duration: 5,
+    linkUrl: "",
+  })
+  const slideImageInputRef = useRef<HTMLInputElement | null>(null)
+
   useEffect(() => {
     loadSettings()
     loadAllowedDomains()
@@ -78,6 +108,7 @@ export function SettingsSection() {
     loadTutorialVideoUrl()
     loadSupportInfo()
     loadAutoResetSettings()
+    loadCarouselSlides() // Load carousel slides on mount
   }, [])
 
   async function loadSettings() {
@@ -218,6 +249,16 @@ export function SettingsSection() {
     }
   }
 
+  // New function to load carousel slides
+  async function loadCarouselSlides() {
+    try {
+      const slides = await getAllCarouselSlides()
+      setCarouselSlides(slides)
+    } catch (error) {
+      console.error("Error loading carousel slides:", error)
+    }
+  }
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -253,6 +294,19 @@ export function SettingsSection() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setPopupImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // New handler for carousel slide image upload
+  function handleSlideImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSlideImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSlideImagePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
     }
@@ -597,6 +651,95 @@ export function SettingsSection() {
     }
   }
 
+  // New handler to add a carousel slide
+  async function handleAddCarouselSlide(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!slideImageFile) {
+      toast({
+        title: "Error",
+        description: "Please select an image for the slide",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setCarouselLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", slideImageFile)
+      const uploadResult = await uploadImageToBlob(formData)
+
+      if (uploadResult.error) {
+        throw new Error(uploadResult.error)
+      }
+
+      await createCarouselSlide(uploadResult.url!, newSlide.duration, newSlide.linkUrl || undefined)
+
+      toast({
+        title: "Success",
+        description: "Carousel slide added successfully",
+      })
+
+      setSlideImageFile(null)
+      setSlideImagePreview(null)
+      setNewSlide({ duration: 5, linkUrl: "" })
+      await loadCarouselSlides()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add carousel slide",
+        variant: "destructive",
+      })
+    } finally {
+      setCarouselLoading(false)
+    }
+  }
+
+  // New handler to delete a carousel slide
+  async function handleDeleteSlide(slideId: string) {
+    if (!confirm("Are you sure you want to delete this slide?")) return
+
+    try {
+      await deleteCarouselSlide(slideId)
+      toast({
+        title: "Success",
+        description: "Slide deleted successfully",
+      })
+      await loadCarouselSlides()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete slide",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // New handler to reorder carousel slides
+  async function handleReorderSlide(slideId: string, direction: "up" | "down") {
+    const currentIndex = carouselSlides.findIndex((s) => s.id === slideId)
+    if (direction === "up" && currentIndex === 0) return
+    if (direction === "down" && currentIndex === carouselSlides.length - 1) return
+
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+    const currentSlide = carouselSlides[currentIndex]
+    const swapSlide = carouselSlides[newIndex]
+
+    try {
+      await updateCarouselSlide(currentSlide.id, { display_order: newIndex })
+      await updateCarouselSlide(swapSlide.id, { display_order: currentIndex })
+      await loadCarouselSlides()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to reorder slides",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -606,181 +749,166 @@ export function SettingsSection() {
 
       <LandingPageEditor />
 
+      {/* REMOVED: Welcome Popup Settings */}
+      {/* REMOVED: Landing Page Popup Settings */}
+
+      {/* New Carousel Manager section */}
       <Card className="p-6">
-        <form onSubmit={handleWelcomePopupSubmit} className="space-y-6">
-          <div className="space-y-4">
+        <div className="space-y-6">
+          <div>
             <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold">Welcome Popup Settings</h3>
+              <Images className="h-5 w-5 text-gray-700" />
+              <h3 className="text-lg font-semibold">Carousel Slides Manager</h3>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Configure the welcome banner that appears when visitors are tracked from QR code scans.
+              Upload images that will appear as a slideshow on your landing page. Each slide displays for the duration
+              you set, with optional click-through links.
             </p>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 bg-gray-50">
-              <div className="space-y-0.5">
-                <Label htmlFor="welcome-enabled" className="text-base font-medium">
-                  Enable Welcome Popup
-                </Label>
-                <p className="text-sm text-muted-foreground">Show welcome banner to tracked visitors</p>
-              </div>
-              <Switch
-                id="welcome-enabled"
-                checked={welcomePopup.enabled}
-                onCheckedChange={(checked) => setWelcomePopup({ ...welcomePopup, enabled: checked })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="welcome_title">Popup Title</Label>
-              <Input
-                id="welcome_title"
-                value={welcomePopup.title}
-                onChange={(e) => setWelcomePopup({ ...welcomePopup, title: e.target.value })}
-                placeholder="Welcome to Our New Brand Tool"
-                disabled={!welcomePopup.enabled}
-              />
-              <p className="text-xs text-gray-500 mt-1">The main heading shown in the welcome banner</p>
-            </div>
-
-            <div>
-              <Label htmlFor="welcome_description">Popup Description</Label>
-              <Textarea
-                id="welcome_description"
-                value={welcomePopup.description}
-                onChange={(e) => setWelcomePopup({ ...welcomePopup, description: e.target.value })}
-                placeholder="Experience the power of FADERCO QR tracking..."
-                rows={3}
-                disabled={!welcomePopup.enabled}
-              />
-              <p className="text-xs text-gray-500 mt-1">The description text shown below the title</p>
-            </div>
           </div>
 
-          <Button type="submit" disabled={welcomeLoading} className="w-full">
-            {welcomeLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Welcome Popup Settings"
-            )}
-          </Button>
-        </form>
-      </Card>
-
-      <Card className="p-6">
-        <form onSubmit={handleLandingPopupSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ImageIcon className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold">Landing Page Popup</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Configure a promotional popup that appears on your landing page with an optional image.
-            </p>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 bg-gray-50">
-              <div className="space-y-0.5">
-                <Label htmlFor="landing-popup-enabled" className="text-base font-medium">
-                  Enable Landing Page Popup
-                </Label>
-                <p className="text-sm text-muted-foreground">Show popup to landing page visitors</p>
-              </div>
-              <Switch
-                id="landing-popup-enabled"
-                checked={landingPopup.enabled}
-                onCheckedChange={(checked) => setLandingPopup({ ...landingPopup, enabled: checked })}
-              />
-            </div>
+          {/* Add New Slide Form */}
+          <form onSubmit={handleAddCarouselSlide} className="border rounded-lg p-4 space-y-4 bg-gray-50">
+            <h4 className="font-semibold text-sm">Add New Slide</h4>
 
             <div>
-              <Label htmlFor="landing_popup_title">Popup Title</Label>
-              <Input
-                id="landing_popup_title"
-                value={landingPopup.title}
-                onChange={(e) => setLandingPopup({ ...landingPopup, title: e.target.value })}
-                placeholder="Special Offer!"
-                disabled={!landingPopup.enabled}
-              />
-              <p className="text-xs text-gray-500 mt-1">The main heading shown in the popup</p>
-            </div>
-
-            <div>
-              <Label htmlFor="landing_popup_description">Popup Description</Label>
-              <Textarea
-                id="landing_popup_description"
-                value={landingPopup.description}
-                onChange={(e) => setLandingPopup({ ...landingPopup, description: e.target.value })}
-                placeholder="Get 20% off your first QR code campaign..."
-                rows={3}
-                disabled={!landingPopup.enabled}
-              />
-              <p className="text-xs text-gray-500 mt-1">The description text shown in the popup</p>
-            </div>
-
-            <div>
-              <Label>Popup Image (Optional)</Label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={popupImageInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePopupImageUpload}
-                    className="hidden"
-                    id="popup-image-upload"
-                    disabled={!landingPopup.enabled}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => popupImageInputRef?.click()}
-                    className="flex-1"
-                    disabled={!landingPopup.enabled}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {landingPopup.imageUrl ? "Change Image" : "Upload Image"}
-                  </Button>
-                  {landingPopup.imageUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={removePopupImage}
-                      disabled={!landingPopup.enabled}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                {landingPopup.imageUrl && (
-                  <div className="flex items-center gap-2 rounded border border-border p-2 bg-gray-50">
+              <Label>Slide Image</Label>
+              <div className="space-y-2 mt-2">
+                <input
+                  ref={slideImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSlideImageUpload}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" onClick={() => slideImageInputRef?.click()} className="w-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Select Image
+                </Button>
+                {slideImagePreview && (
+                  <div className="flex items-center gap-2 rounded border p-2">
                     <img
-                      src={landingPopup.imageUrl || "/placeholder.svg"}
-                      alt="Popup image preview"
-                      className="h-24 w-24 rounded object-cover"
+                      src={slideImagePreview || "/placeholder.svg"}
+                      alt="Slide preview"
+                      className="h-20 w-20 rounded object-cover"
                     />
-                    <span className="text-xs text-muted-foreground">{popupImageFile?.name || "Current image"}</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium">{slideImageFile?.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSlideImageFile(null)
+                          setSlideImagePreview(null)
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 )}
-                <p className="text-xs text-gray-500">Upload an image for the popup (max 5MB)</p>
               </div>
             </div>
-          </div>
 
-          <Button type="submit" disabled={landingLoading || uploadingImage} className="w-full">
-            {landingLoading || uploadingImage ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {uploadingImage ? "Uploading image..." : "Saving..."}
-              </>
-            ) : (
-              "Save Landing Page Popup Settings"
-            )}
-          </Button>
-        </form>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="slide_duration">Duration (seconds)</Label>
+                <Input
+                  id="slide_duration"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={newSlide.duration}
+                  onChange={(e) => setNewSlide({ ...newSlide, duration: Number.parseInt(e.target.value) })}
+                />
+                <p className="text-xs text-gray-500 mt-1">How long to display this slide</p>
+              </div>
+              <div>
+                <Label htmlFor="slide_link">Link (Optional)</Label>
+                <Input
+                  id="slide_link"
+                  type="url"
+                  placeholder="https://example.com"
+                  value={newSlide.linkUrl}
+                  onChange={(e) => setNewSlide({ ...newSlide, linkUrl: e.target.value })}
+                />
+                <p className="text-xs text-gray-500 mt-1">URL to open when clicked</p>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={carouselLoading || !slideImageFile} className="w-full">
+              {carouselLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding Slide...
+                </>
+              ) : (
+                "Add Slide"
+              )}
+            </Button>
+          </form>
+
+          {/* Existing Slides List */}
+          {carouselSlides.length > 0 ? (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Current Slides ({carouselSlides.length})</h4>
+              {carouselSlides.map((slide, index) => (
+                <div key={slide.id} className="border rounded-lg p-3 flex gap-3 bg-white">
+                  <img
+                    src={slide.image_url || "/placeholder.svg"}
+                    alt="Slide"
+                    className="h-16 w-16 rounded object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium">{slide.duration_seconds}s</span>
+                    </div>
+                    {slide.link_url && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link2 className="h-4 w-4 text-gray-500" />
+                        <span className="text-xs text-blue-600 truncate">{slide.link_url}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleReorderSlide(slide.id, "up")}
+                      disabled={index === 0}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleReorderSlide(slide.id, "down")}
+                      disabled={index === carouselSlides.length - 1}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDeleteSlide(slide.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <Images className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No slides yet. Add one to get started!</p>
+            </div>
+          )}
+        </div>
       </Card>
 
       <Card className="p-6">
