@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface CarouselSlide {
@@ -18,9 +18,12 @@ interface LandingCarouselProps {
 export function LandingCarousel({ slides }: LandingCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
+  const [showCarousel, setShowCarousel] = useState(true)
 
   useEffect(() => {
-    if (!slides || slides.length === 0) return
+    if (!slides || slides.length === 0 || !showCarousel) {
+      return
+    }
 
     const currentSlide = slides[currentIndex]
     const timer = setTimeout(
@@ -31,7 +34,7 @@ export function LandingCarousel({ slides }: LandingCarouselProps) {
     )
 
     return () => clearTimeout(timer)
-  }, [currentIndex, autoPlay, slides])
+  }, [currentIndex, autoPlay, slides, showCarousel])
 
   const goToPrevious = () => {
     setAutoPlay(false)
@@ -45,6 +48,10 @@ export function LandingCarousel({ slides }: LandingCarouselProps) {
 
   const currentSlide = slides[currentIndex]
 
+  if (!slides || slides.length === 0 || !showCarousel) {
+    return null
+  }
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-none">
       <div className="relative w-full max-w-2xl pointer-events-auto">
@@ -55,6 +62,14 @@ export function LandingCarousel({ slides }: LandingCarouselProps) {
             alt={`Slide ${currentIndex + 1}`}
             className="w-full h-full object-cover"
           />
+
+          <button
+            onClick={() => setShowCarousel(false)}
+            className="absolute top-4 right-4 z-20 bg-white/80 hover:bg-white rounded-full p-2 transition-all"
+            aria-label="Close carousel"
+          >
+            <X className="h-6 w-6 text-gray-900" />
+          </button>
 
           {/* Navigation Buttons */}
           {slides.length > 1 && (
