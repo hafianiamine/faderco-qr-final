@@ -740,6 +740,12 @@ export function SettingsSection() {
     }
   }
 
+  const handleUploadSlideImage = () => {
+    if (slideImageInputRef.current) {
+      slideImageInputRef.current.click()
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -780,7 +786,12 @@ export function SettingsSection() {
                   onChange={handleSlideImageUpload}
                   className="hidden"
                 />
-                <Button type="button" variant="outline" onClick={() => slideImageInputRef?.click()} className="w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadSlideImage}
+                  className="w-full bg-transparent"
+                >
                   <Upload className="mr-2 h-4 w-4" />
                   Select Image
                 </Button>
