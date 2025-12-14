@@ -33,15 +33,23 @@ async function getLandingPageSettings() {
   }
 }
 
+async function getNotificationBannerText() {
+  const supabase = await createClient()
+  const { data } = await supabase.from("settings").select("value").eq("key", "notification_banner_text").maybeSingle()
+
+  return data?.value || "Discover what we made for FADERCO"
+}
+
 export default async function HomePage() {
   const content = await getLandingPageSettings()
   const carouselSlides = await getCarouselSlides()
+  const notificationText = await getNotificationBannerText()
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <AnimatedBackground />
 
-      <LandingCarousel slides={carouselSlides} />
+      <LandingCarousel slides={carouselSlides} notificationText={notificationText} />
 
       <header className="relative z-10 border-b border-border backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-8 lg:px-12">

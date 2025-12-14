@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, X, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface CarouselSlide {
@@ -13,12 +13,14 @@ interface CarouselSlide {
 
 interface LandingCarouselProps {
   slides: CarouselSlide[]
+  notificationText?: string
 }
 
-export function LandingCarousel({ slides }: LandingCarouselProps) {
+export function LandingCarousel({ slides, notificationText }: LandingCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
   const [showCarousel, setShowCarousel] = useState(true)
+  const [showNotification, setShowNotification] = useState(true)
 
   useEffect(() => {
     if (!slides || slides.length === 0 || !showCarousel) {
@@ -55,6 +57,20 @@ export function LandingCarousel({ slides }: LandingCarouselProps) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-none">
       <div className="relative w-full max-w-2xl pointer-events-auto">
+        {notificationText && showNotification && (
+          <div className="relative mb-4 flex items-center justify-center gap-2 text-center px-4 py-2 animate-fade-in">
+            <Sparkles className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+            <p className="text-sm font-medium text-white drop-shadow-lg">{notificationText}</p>
+            <button
+              onClick={() => setShowNotification(false)}
+              className="ml-2 text-white/80 hover:text-white transition-colors"
+              aria-label="Close notification"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Image */}
         <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-900 shadow-2xl">
           <img
@@ -101,7 +117,7 @@ export function LandingCarousel({ slides }: LandingCarouselProps) {
             <a href={currentSlide.link_url} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-500 hover:bg-blue-600">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                View More
+                Discover the Tool
               </Button>
             </a>
           )}

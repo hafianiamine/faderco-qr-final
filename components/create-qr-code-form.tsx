@@ -107,10 +107,12 @@ export function CreateQRCodeForm() {
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
         >
           <option value="standard">Standard QR Code (URL)</option>
-          <option value="business_card">Business Card QR Code (Vertical)</option>
-          <option value="wifi">WiFi QR Code</option>
+          <option value="business_card">Business Card QR Code (Vertical) - Coming Soon</option>
+          <option value="wifi">WiFi QR Code - Coming Soon</option>
         </select>
-        <p className="text-xs text-muted-foreground">Choose the type of QR code you want to create</p>
+        <p className="text-xs text-muted-foreground">
+          Choose the type of QR code. Business Card and WiFi features coming soon!
+        </p>
       </div>
 
       <div className="space-y-2">

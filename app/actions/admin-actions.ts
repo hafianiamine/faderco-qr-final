@@ -764,3 +764,30 @@ export async function getSupportInfo() {
     return { supportInfo: "For support, please contact your administrator." }
   }
 }
+
+export async function updateNotificationBannerText(text: string) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (adminProfile?.role !== "admin") {
+      return { error: "Unauthorized" }
+    }
+
+    await supabase.from("settings").upsert({ key: "notification_banner_text", value: text }, { onConflict: "key" })
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}

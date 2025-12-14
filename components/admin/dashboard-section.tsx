@@ -51,61 +51,70 @@ export function DashboardSection() {
       { count: scansCount },
       { data: companies },
       { data: scansData },
-      { data: qrTypeCounts },
+      { data: qrCodes },
       { data: topCodes },
     ] = await Promise.all([
       supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("qr_codes").select("*", { count: "exact", head: true }),
+      supabase.from("qr_codes").select("*", { count: "exact", head: true }).eq("deleted", false),
       supabase.from("scans").select("*", { count: "exact", head: true }),
       supabase.from("profiles").select("company"),
-      // Get scans data for last 7 days
       supabase
         .from("scans")
         .select("created_at")
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-      // Get QR codes by type
-      supabase
-        .from("qr_codes")
-        .select("type"),
-      // Get top 5 most scanned QR codes
-      supabase
-        .from("qr_codes")
-        .select("title, id")
-        .limit(5),
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("created_at", { ascending: true }),
+      supabase.from("qr_codes").select("type, id, title").eq("deleted", false),
+      supabase.from("scans").select("qr_code_id").order("created_at", { ascending: false }),
     ])
 
     const uniqueCompanies = new Set(companies?.map((p) => p.company).filter(Boolean))
 
-    // Process scans data by date
     const scansByDate: Record<string, number> = {}
-    scansData?.forEach((scan: any) => {
-      const date = new Date(scan.created_at).toLocaleDateString()
-      scansByDate[date] = (scansByDate[date] || 0) + 1
-    })
-    const chartScansData = Object.entries(scansByDate).map(([date, count]) => ({ date, count: count as number }))
-
-    // Process QR code types
-    const typeCount: Record<string, number> = {}
-    qrTypeCounts?.forEach((qr: any) => {
-      typeCount[qr.type || "standard"] = (typeCount[qr.type || "standard"] || 0) + 1
-    })
-    const chartQrTypeData = Object.entries(typeCount).map(([type, count]) => ({
-      type: type === "business_card" ? "Business Card" : type === "wifi" ? "WiFi" : "Standard",
-      count: count as number,
-    }))
-
-    // Get scan counts for top QR codes
-    const topCodesWithScans = []
-    for (const code of topCodes || []) {
-      const { count } = await supabase
-        .from("scans")
-        .select("*", { count: "exact", head: true })
-        .eq("qr_code_id", code.id)
-      topCodesWithScans.push({
-        title: code.title || "Untitled QR",
-        scans: count || 0,
-      })
+    const last7Days = []
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
+      const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      scansByDate[dateStr] = 0
+      last7Days.push(dateStr)
     }
+
+    scansData?.forEach((scan: any) => {
+      const date = new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      if (scansByDate[date] !== undefined) {
+        scansByDate[date]++
+      }
+    })
+
+    const chartScansData = last7Days.map((date) => ({ date, count: scansByDate[date] }))
+
+    const typeCount: Record<string, number> = { standard: 0, business_card: 0, wifi: 0 }
+    qrCodes?.forEach((qr: any) => {
+      const type = qr.type || "standard"
+      typeCount[type] = (typeCount[type] || 0) + 1
+    })
+    const chartQrTypeData = Object.entries(typeCount)
+      .filter(([_, count]) => count > 0)
+      .map(([type, count]) => ({
+        type: type === "business_card" ? "Business Card" : type === "wifi" ? "WiFi" : "Standard",
+        count: count as number,
+      }))
+
+    const qrScanCounts: Record<string, number> = {}
+    topCodes?.forEach((scan: any) => {
+      qrScanCounts[scan.qr_code_id] = (qrScanCounts[scan.qr_code_id] || 0) + 1
+    })
+
+    const sortedQrIds = Object.entries(qrScanCounts)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 5)
+
+    const topCodesWithScans = sortedQrIds.map(([qrId, count]) => {
+      const qr = qrCodes?.find((q: any) => q.id === qrId)
+      return {
+        title: qr?.title || "Untitled",
+        scans: count as number,
+      }
+    })
 
     setStats({
       totalUsers: usersCount || 0,

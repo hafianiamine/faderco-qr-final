@@ -22,6 +22,7 @@ import {
   Link2,
   ChevronUp,
   ChevronDown,
+  Sparkles,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { addAllowedDomain, removeAllowedDomain } from "@/app/actions/settings-actions"
@@ -31,6 +32,7 @@ import {
   updateTutorialVideoUrl,
   uploadImageToBlob,
   updateSupportInfo,
+  updateNotificationBannerText,
 } from "@/app/actions/admin-actions"
 import { LandingPageEditor } from "@/components/admin/landing-page-editor"
 import { forceAllPasswordResets } from "@/app/actions/security-actions"
@@ -100,6 +102,10 @@ export function SettingsSection() {
   })
   const slideImageInputRef = useRef<HTMLInputElement | null>(null)
 
+  // State for notification banner text
+  const [notificationBannerText, setNotificationBannerText] = useState("")
+  const [notificationLoading, setNotificationLoading] = useState(false)
+
   useEffect(() => {
     loadSettings()
     loadAllowedDomains()
@@ -109,6 +115,7 @@ export function SettingsSection() {
     loadSupportInfo()
     loadAutoResetSettings()
     loadCarouselSlides() // Load carousel slides on mount
+    loadNotificationBannerText() // Load notification banner text on mount
   }, [])
 
   async function loadSettings() {
@@ -256,6 +263,15 @@ export function SettingsSection() {
       setCarouselSlides(slides)
     } catch (error) {
       console.error("Error loading carousel slides:", error)
+    }
+  }
+
+  // Function to load notification banner text
+  async function loadNotificationBannerText() {
+    const { data } = await supabase.from("settings").select("value").eq("key", "notification_banner_text").maybeSingle()
+
+    if (data) {
+      setNotificationBannerText(data.value || "Discover what we made for FADERCO")
     }
   }
 
@@ -746,6 +762,22 @@ export function SettingsSection() {
     }
   }
 
+  // Handler for notification banner text
+  async function handleNotificationBannerSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setNotificationLoading(true)
+
+    const result = await updateNotificationBannerText(notificationBannerText)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Notification banner text updated successfully!")
+    }
+
+    setNotificationLoading(false)
+  }
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -1037,6 +1069,45 @@ export function SettingsSection() {
               </>
             ) : (
               "Save Support Information"
+            )}
+          </Button>
+        </form>
+      </Card>
+
+      {/* New Notification Banner Settings Section */}
+      <Card className="p-6">
+        <form onSubmit={handleNotificationBannerSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-5 w-5 text-gray-700" />
+              <h3 className="text-lg font-semibold">Notification Banner</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure the notification banner text that appears at the top of the landing page
+            </p>
+
+            <div>
+              <Label htmlFor="notification_banner">Banner Text</Label>
+              <Input
+                id="notification_banner"
+                value={notificationBannerText}
+                onChange={(e) => setNotificationBannerText(e.target.value)}
+                placeholder="Discover what we made for FADERCO"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This text appears in a colorful banner at the top of your landing page
+              </p>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={notificationLoading} className="w-full">
+            {notificationLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Banner Text"
             )}
           </Button>
         </form>
