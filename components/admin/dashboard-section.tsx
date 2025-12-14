@@ -45,27 +45,25 @@ export function DashboardSection() {
   async function loadStats() {
     const supabase = createClient()
 
-    const [
-      { count: usersCount },
-      { count: qrCodesCount },
-      { count: scansCount },
-      { data: companies },
-      { data: scansData },
-      { data: qrCodes },
-      { data: topCodes },
-    ] = await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("qr_codes").select("*", { count: "exact", head: true }).eq("deleted", false),
-      supabase.from("scans").select("*", { count: "exact", head: true }),
-      supabase.from("profiles").select("company"),
-      supabase
-        .from("scans")
-        .select("created_at")
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order("created_at", { ascending: true }),
-      supabase.from("qr_codes").select("type, id, title").eq("deleted", false),
-      supabase.from("scans").select("qr_code_id").order("created_at", { ascending: false }),
-    ])
+    const { data: qrCodesData, error: qrError } = await supabase
+      .from("qr_codes")
+      .select("id, type, title, deleted")
+      .eq("deleted", false)
+
+    console.log("[v0] QR Codes Count:", qrCodesData?.length, "Error:", qrError)
+
+    const [{ count: usersCount }, { count: scansCount }, { data: companies }, { data: scansData }, { data: topCodes }] =
+      await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("scans").select("*", { count: "exact", head: true }),
+        supabase.from("profiles").select("company"),
+        supabase
+          .from("scans")
+          .select("created_at")
+          .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: true }),
+        supabase.from("scans").select("qr_code_id").order("created_at", { ascending: false }),
+      ])
 
     const uniqueCompanies = new Set(companies?.map((p) => p.company).filter(Boolean))
 
@@ -88,7 +86,7 @@ export function DashboardSection() {
     const chartScansData = last7Days.map((date) => ({ date, count: scansByDate[date] }))
 
     const typeCount: Record<string, number> = { standard: 0, business_card: 0, wifi: 0 }
-    qrCodes?.forEach((qr: any) => {
+    qrCodesData?.forEach((qr: any) => {
       const type = qr.type || "standard"
       typeCount[type] = (typeCount[type] || 0) + 1
     })
@@ -109,7 +107,7 @@ export function DashboardSection() {
       .slice(0, 5)
 
     const topCodesWithScans = sortedQrIds.map(([qrId, count]) => {
-      const qr = qrCodes?.find((q: any) => q.id === qrId)
+      const qr = qrCodesData?.find((q: any) => q.id === qrId)
       return {
         title: qr?.title || "Untitled",
         scans: count as number,
@@ -118,7 +116,7 @@ export function DashboardSection() {
 
     setStats({
       totalUsers: usersCount || 0,
-      totalQRCodes: qrCodesCount || 0,
+      totalQRCodes: qrCodesData?.length || 0, // Use actual data length
       totalCompanies: uniqueCompanies.size,
       totalScans: scansCount || 0,
     })
