@@ -47,6 +47,7 @@ interface User {
   created_at: string
   qr_count?: number
   scan_count?: number
+  phone_number: string | null
 }
 
 export function UsersSection() {
@@ -61,11 +62,13 @@ export function UsersSection() {
   const [viewingUserQRs, setViewingUserQRs] = useState<any>(null)
   const [userQRCodes, setUserQRCodes] = useState<any[]>([])
   const [loadingQRs, setLoadingQRs] = useState(false)
+  const [viewingUserDetails, setViewingUserDetails] = useState<User | null>(null)
   const [createFormData, setCreateFormData] = useState({
     email: "",
     password: "",
     fullName: "",
     company: "",
+    phoneNumber: "",
   })
   const { toast } = useToast()
 
@@ -237,6 +240,7 @@ export function UsersSection() {
       createFormData.password,
       createFormData.fullName,
       createFormData.company,
+      createFormData.phoneNumber,
     )
 
     if (result.error) {
@@ -251,7 +255,7 @@ export function UsersSection() {
         description: "User created successfully",
       })
       setShowCreateModal(false)
-      setCreateFormData({ email: "", password: "", fullName: "", company: "" })
+      setCreateFormData({ email: "", password: "", fullName: "", company: "", phoneNumber: "" })
       loadUsers()
     }
   }
@@ -353,6 +357,17 @@ export function UsersSection() {
                     id="company"
                     value={createFormData.company}
                     onChange={(e) => setCreateFormData({ ...createFormData, company: e.target.value })}
+                    className="border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber" className="text-gray-900">
+                    Phone Number (Optional)
+                  </Label>
+                  <Input
+                    id="phoneNumber"
+                    value={createFormData.phoneNumber}
+                    onChange={(e) => setCreateFormData({ ...createFormData, phoneNumber: e.target.value })}
                     className="border-gray-200 bg-white text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
@@ -504,6 +519,14 @@ export function UsersSection() {
                     <div className="flex items-center justify-center gap-2 flex-wrap">
                       <Button
                         size="sm"
+                        onClick={() => setViewingUserDetails(user)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
                         onClick={() => handleLoginAsUser(user)}
                         className="bg-indigo-500 hover:bg-indigo-600 text-white"
                         title="Login as this user"
@@ -516,7 +539,7 @@ export function UsersSection() {
                         className="bg-purple-500 hover:bg-purple-600 text-white"
                         title="View QR Codes"
                       >
-                        <Eye className="h-4 w-4" />
+                        <QrCode className="h-4 w-4" />
                       </Button>
                       {user.status === "pending" && (
                         <>
@@ -595,7 +618,85 @@ export function UsersSection() {
         </div>
       </div>
 
-      <Dialog open={!!viewingUserQRs} onOpenChange={(open) => !open && setViewingUserQRs(null)}>
+      {/* User Details Dialog */}
+      <Dialog open={!!viewingUserDetails} onOpenChange={() => setViewingUserDetails(null)}>
+        <DialogContent className="border-gray-200 bg-white backdrop-blur-xl text-gray-900 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 text-xl">User Details</DialogTitle>
+          </DialogHeader>
+          {viewingUserDetails && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Full Name</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.full_name || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Email</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.email}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Phone Number</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.phone_number || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Company</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.company || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Department</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.department || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Country</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.country || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Status</p>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                      viewingUserDetails.status === "approved"
+                        ? "bg-green-100 text-green-700"
+                        : viewingUserDetails.status === "rejected"
+                          ? "bg-red-100 text-red-700"
+                          : viewingUserDetails.status === "blocked"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {viewingUserDetails.status}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Role</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.role}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">QR Codes</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.qr_count || 0}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500">Total Scans</p>
+                  <p className="text-base text-gray-900">{viewingUserDetails.scan_count || 0}</p>
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <p className="text-sm font-semibold text-gray-500">Account Created</p>
+                  <p className="text-base text-gray-900">{new Date(viewingUserDetails.created_at).toLocaleString()}</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setViewingUserDetails(null)}
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white"
+              >
+                Close
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* User QR Codes Dialog */}
+      <Dialog open={!!viewingUserQRs} onOpenChange={() => setViewingUserQRs(null)}>
         <DialogContent className="max-w-4xl border-gray-200 bg-white backdrop-blur-xl text-gray-900">
           <DialogHeader>
             <DialogTitle className="text-gray-900">
