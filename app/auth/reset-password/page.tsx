@@ -52,10 +52,22 @@ export default function ResetPasswordPage() {
 
       if (updateError) throw updateError
 
-      setSuccess(true)
-      setTimeout(() => {
-        router.push("/auth/login")
-      }, 2000)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+        setSuccess(true)
+        setTimeout(() => {
+          if (profile?.role === "admin") {
+            router.push("/admin")
+          } else {
+            router.push("/dashboard")
+          }
+        }, 2000)
+      }
     } catch (error: unknown) {
       console.error("Password reset error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")

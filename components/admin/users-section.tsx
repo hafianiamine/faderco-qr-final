@@ -72,6 +72,9 @@ export function UsersSection() {
   })
   const { toast } = useToast()
 
+  const [loginConfirmOpen, setLoginConfirmOpen] = useState(false)
+  const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null)
+
   const companies = Array.from(new Set(users.map((u) => u.company).filter(Boolean))) as string[]
   const countries = Array.from(new Set(users.map((u) => u.country).filter(Boolean))) as string[]
   const departments = Array.from(new Set(users.map((u) => u.department).filter(Boolean))) as string[]
@@ -275,7 +278,6 @@ export function UsersSection() {
       sessionStorage.setItem("impersonating_user_id", result.targetUserId!)
       sessionStorage.setItem("original_admin_id", result.originalAdminId!)
 
-      // Redirect to user dashboard
       window.location.href = "/dashboard"
     }
   }
@@ -525,9 +527,13 @@ export function UsersSection() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {/* Button for login confirmation modal */}
                       <Button
                         size="sm"
-                        onClick={() => handleLoginAsUser(user)}
+                        onClick={() => {
+                          setSelectedUserForLogin(user)
+                          setLoginConfirmOpen(true)
+                        }}
                         className="bg-indigo-500 hover:bg-indigo-600 text-white"
                         title="Login as this user"
                       >
@@ -617,6 +623,33 @@ export function UsersSection() {
           </table>
         </div>
       </div>
+
+      <Dialog open={loginConfirmOpen} onOpenChange={setLoginConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login as User</DialogTitle>
+            <p className="text-sm text-gray-500">
+              You will be logged in as {selectedUserForLogin?.email} and redirected to their dashboard.
+            </p>
+          </DialogHeader>
+          <div className="flex gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setLoginConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedUserForLogin) {
+                  handleLoginAsUser(selectedUserForLogin)
+                }
+                setLoginConfirmOpen(false)
+              }}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white"
+            >
+              Confirm
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Details Dialog */}
       <Dialog open={!!viewingUserDetails} onOpenChange={() => setViewingUserDetails(null)}>
