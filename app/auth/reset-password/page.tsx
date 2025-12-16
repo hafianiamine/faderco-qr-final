@@ -57,6 +57,16 @@ export default function ResetPasswordPage() {
       } = await supabase.auth.getUser()
 
       if (user) {
+        await supabase.from("activity_logs").insert({
+          user_id: user.id,
+          action_type: "password_changed",
+          entity_type: "user",
+          entity_id: user.id,
+          ip_address: "",
+          user_agent: navigator.userAgent,
+          device_info: navigator.platform,
+        })
+
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
         setSuccess(true)

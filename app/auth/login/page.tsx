@@ -97,6 +97,20 @@ export default function LoginPage() {
 
       if (error) throw error
 
+      const { data: userData } = await supabase.from("profiles").select("id").eq("email", resetEmail).single()
+
+      if (userData) {
+        await supabase.from("activity_logs").insert({
+          user_id: userData.id,
+          action_type: "password_reset_request",
+          entity_type: "user",
+          entity_id: userData.id,
+          ip_address: "",
+          user_agent: navigator.userAgent,
+          device_info: navigator.platform,
+        })
+      }
+
       setResetSent(true)
       setTimeout(() => {
         setShowForgotPassword(false)
