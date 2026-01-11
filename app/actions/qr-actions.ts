@@ -41,7 +41,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
     let attempts = 0
 
     while (!isUnique && attempts < 10) {
-      const { data: existing } = await supabase.from("qr_codes").select("id").eq("short_code", shortCode).single()
+      const { data: existing } = await supabase.from("qr_codes").select("id").eq("short_code", shortCode).maybeSingle()
 
       if (!existing) {
         isUnique = true
@@ -86,7 +86,6 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
-      qr_code_type: customization?.qrCodeType || "standard",
     }
 
     const { data: qrCode, error: insertError } = await supabase.from("qr_codes").insert(insertData).select().single()
