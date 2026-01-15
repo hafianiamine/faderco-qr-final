@@ -254,7 +254,17 @@ export function SecurityDashboard() {
                     </td>
                     <td className="px-4 py-3 text-sm font-mono text-xs">{log.ip_address || "N/A"}</td>
                     <td className="px-4 py-3 text-sm text-xs">
-                      {log.device_info ? JSON.parse(log.device_info).deviceType : "N/A"}
+                      {log.device_info
+                        ? (() => {
+                            try {
+                              const deviceInfo = JSON.parse(log.device_info)
+                              return deviceInfo.deviceType || "N/A"
+                            } catch {
+                              // If not JSON, use the string directly
+                              return log.device_info
+                            }
+                          })()
+                        : "N/A"}
                     </td>
                   </tr>
                 ))}

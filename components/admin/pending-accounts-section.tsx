@@ -29,25 +29,19 @@ export function PendingAccountsSection() {
   async function loadPendingUsers() {
     const supabase = createClient()
 
-    // Get all users with pending status or unconfirmed emails
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, full_name, email, company, status, created_at")
       .eq("status", "pending")
       .order("created_at", { ascending: false })
 
     if (profiles) {
-      // Get auth users to check email confirmation status
-      const usersWithEmailStatus = await Promise.all(
-        profiles.map(async (profile) => {
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.id)
-          return {
-            ...profile,
-            email_confirmed_at: authUser?.user?.email_confirmed_at || null,
-          }
-        }),
+      setPendingUsers(
+        profiles.map((p: any) => ({
+          ...p,
+          email_confirmed_at: null, // Can't check auth status from client, so mark as null
+        })),
       )
-      setPendingUsers(usersWithEmailStatus)
     }
     setLoading(false)
   }

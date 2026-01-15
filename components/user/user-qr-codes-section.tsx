@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { QrCode, Eye, Download, Plus, X, Edit, Trash2, Power, PowerOff, Copy, Check, Clock } from "lucide-react"
+import { QrCode, Eye, Download, Plus, X, Edit, Trash2, Copy, Check, Clock } from "lucide-react"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import {
   scheduleQRCodeDeletion,
@@ -200,6 +200,13 @@ export function UserQRCodesSection() {
     return `${hours}h ${minutes}m remaining`
   }
 
+  function isNewQRCode(createdAt: string) {
+    const created = new Date(createdAt).getTime()
+    const now = new Date().getTime()
+    const fiveMinutesAgo = now - 5 * 60 * 1000
+    return created > fiveMinutesAgo
+  }
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -262,116 +269,83 @@ export function UserQRCodesSection() {
             return (
               <div
                 key={qr.id}
-                className={`group rounded-2xl border p-6 shadow-lg backdrop-blur-xl transition-all ${
-                  pendingDeletion
-                    ? "border-red-300 bg-red-50/20"
-                    : "border-gray-200 bg-white/10 hover:border-gray-300 hover:bg-white/20"
+                className={`group relative rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg ${
+                  pendingDeletion ? "border-red-300 bg-red-50/20" : ""
                 }`}
               >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-900 truncate">{qr.title}</h3>
-                      {qr.status === "inactive" && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 flex-shrink-0">
-                          Inactive
-                        </Badge>
-                      )}
-                      {qr.scan_limit && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 flex-shrink-0">
-                          {qr.scans_used || 0}/{qr.scan_limit}
-                        </Badge>
-                      )}
-                      {pendingDeletion && (
-                        <Badge variant="destructive" className="flex-shrink-0 uppercase">
-                          <Clock className="mr-1 h-3 w-3" />
-                          Scheduled for Deletion
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-600 truncate break-all" title={qr.destination_url}>
-                      {qr.destination_url}
-                    </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    {isNewQRCode(qr.created_at) && <Badge className="mb-2 bg-green-500 text-white">NEW</Badge>}
                     {pendingDeletion && (
-                      <p className="mt-1 text-xs text-red-600 font-medium">
-                        {getTimeRemaining(pendingDeletion.scheduled_deletion_at)}
-                      </p>
+                      <Badge className="mb-2 bg-red-500 text-white">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Scheduled for Deletion
+                      </Badge>
                     )}
                   </div>
                 </div>
 
-                <div className="mb-4 rounded-lg bg-white/50 p-4">
-                  {qr.qr_logo_url ? (
-                    <QRWithLogo qr={qr} />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{qr.title}</h3>
+                <p className="text-sm text-gray-600 mb-4 truncate">{qr.destination_url}</p>
+
+                <div className="mb-4 rounded-lg bg-gray-50 p-4 flex items-center justify-center">
+                  {qr.qr_image_url ? (
+                    <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="h-32 w-32" />
                   ) : (
-                    <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
+                    <div className="h-32 w-32 flex items-center justify-center bg-gray-200 rounded">
+                      <span className="text-gray-400 text-sm">No image</span>
+                    </div>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  {pendingDeletion ? (
+                {pendingDeletion && (
+                  <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
+                    <p className="text-xs text-gray-700">
+                      This QR code will be permanently deleted in{" "}
+                      {getTimeRemaining(pendingDeletion.scheduled_deletion_at)}
+                    </p>
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="w-full border-green-200 bg-green-50/30 text-green-700 hover:bg-green-100/50"
+                      variant="outline"
+                      className="mt-2 w-full bg-transparent"
                       onClick={() => handleCancelDeletion(qr.id)}
                     >
-                      <X className="mr-1 h-4 w-4" />
                       Cancel Deletion
                     </Button>
-                  ) : (
-                    <>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleView(qr)}
-                        >
-                          <Eye className="mr-1 h-4 w-4" />
-                          View
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-200 bg-white/30 hover:bg-white/50"
-                          asChild
-                        >
-                          <a href={qr.qr_image_url} download={`${qr.title}.png`}>
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleEdit(qr)}
-                        >
-                          <Edit className="mr-1 h-4 w-4" />
-                          Edit URL
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleToggleStatus(qr)}
-                        >
-                          {qr.status === "active" ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-200 bg-red-50/30 text-red-600 hover:bg-red-100/50"
-                          onClick={() => handleRequestDeletion(qr)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => handleView(qr)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
+                    <Download className="h-4 w-4" />
+                  </Button>
                 </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2 bg-transparent"
+                  onClick={() => handleEdit(qr)}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit URL
+                </Button>
+
+                {!pendingDeletion && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleRequestDeletion(qr)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
               </div>
             )
           })}
@@ -460,11 +434,11 @@ export function UserQRCodesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm QR Code Deletion</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <p>
+              <div>
                 You are about to schedule "{deletingQR?.title}" for deletion. This QR code will be permanently deleted
                 in <strong>12 hours</strong>.
-              </p>
-              <p className="text-sm">To confirm, please copy the code below and paste it in the input field:</p>
+              </div>
+              <div className="text-sm">To confirm, please copy the code below and paste it in the input field:</div>
               <div className="rounded-lg bg-gray-100 p-3 font-mono text-center text-lg font-bold tracking-wider">
                 {confirmationCode}
               </div>
