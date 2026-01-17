@@ -49,7 +49,7 @@ export function UserQRCodesSection() {
         return prev.filter((qr) => {
           if (qr.scheduled_deletion_at) {
             const scheduledTime = new Date(qr.scheduled_deletion_at).getTime()
-            const deletionTime = new Date(scheduledTime + 12 * 60 * 60 * 1000).getTime()
+            const deletionTime = scheduledTime + 12 * 60 * 60 * 1000
             const now = new Date().getTime()
             if (now >= deletionTime) {
               return false // Remove from list
@@ -205,8 +205,8 @@ export function UserQRCodesSection() {
   function getTimeRemaining(scheduledAt: string) {
     const now = new Date()
     const scheduled = new Date(scheduledAt)
-    const deletionTime = new Date(scheduled.getTime() + 12 * 60 * 60 * 1000).getTime()
-    const diff = deletionTime.getTime() - now.getTime()
+    const deletionTime = scheduled.getTime() + 12 * 60 * 60 * 1000
+    const diff = deletionTime - now.getTime()
 
     if (diff <= 0) return "Deleting soon..."
 
