@@ -473,3 +473,36 @@ export async function getPendingDeletions() {
     return { error: "An unexpected error occurred" }
   }
 }
+
+export async function deletePendingQRCodes() {
+  try {
+    const supabase = await createClient()
+
+    const now = new Date().toISOString()
+
+    // Find all pending deletions that have passed their scheduled time
+    const { data: expiredDeletions, error: fetchError } = await supabase
+      .from("pending_deletions")
+      .select("qr_code_id, user_id")
+      .lt("scheduled_deletion_at", now)
+
+    if (fetchError || !expiredDeletions || expiredDeletions.length === 0) {
+      return { deleted: 0 }
+    }
+
+    // Delete the QR codes
+    for (const deletion of expiredDeletions) {
+      await supabase.from("qr_codes").delete().eq("id", deletion.qr_code_id).eq("user_id", deletion.user_id)
+
+      await supabase.from("pending_deletions").delete().eq("qr_code_id", deletion.qr_code_id)
+    }
+
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/qr-codes")
+
+    return { deleted: expiredDeletions.length }
+  } catch (error) {
+    console.error("Error deleting pending QR codes:", error)
+    return { deleted: 0 }
+  }
+}

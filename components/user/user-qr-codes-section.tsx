@@ -279,7 +279,7 @@ export function UserQRCodesSection() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {qrCodes.map((qr) => {
             const pendingDeletion = isPendingDeletion(qr)
             return (
@@ -341,10 +341,22 @@ export function UserQRCodesSection() {
                     variant="ghost"
                     className="text-blue-600 hover:text-blue-700"
                     onClick={() => handleToggleStatus(qr)}
+                    title="Toggle pause/resume"
                   >
                     <Clock className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => {
+                      const link = document.createElement("a")
+                      link.href = qr.qr_image_url
+                      link.download = `${qr.title}.png`
+                      link.click()
+                    }}
+                    title="Download QR code"
+                  >
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
