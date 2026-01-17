@@ -44,6 +44,22 @@ export function UserQRCodesSection() {
   useEffect(() => {
     loadQRCodes()
     loadPendingDeletions()
+    const deleteCheckInterval = setInterval(() => {
+      setQrCodes((prev) => {
+        return prev.filter((qr) => {
+          if (qr.scheduled_deletion_at) {
+            const scheduledTime = new Date(qr.scheduled_deletion_at).getTime()
+            const deletionTime = new Date(scheduledTime + 12 * 60 * 60 * 1000).getTime()
+            const now = new Date().getTime()
+            if (now >= deletionTime) {
+              return false // Remove from list
+            }
+          }
+          return true
+        })
+      })
+    }, 1000)
+    return () => clearInterval(deleteCheckInterval)
   }, [])
 
   async function loadQRCodes() {
@@ -189,7 +205,7 @@ export function UserQRCodesSection() {
   function getTimeRemaining(scheduledAt: string) {
     const now = new Date()
     const scheduled = new Date(scheduledAt)
-    const deletionTime = new Date(scheduled.getTime() + 12 * 60 * 60 * 1000)
+    const deletionTime = new Date(scheduled.getTime() + 12 * 60 * 60 * 1000).getTime()
     const diff = deletionTime.getTime() - now.getTime()
 
     if (diff <= 0) return "Deleting soon..."
@@ -319,6 +335,14 @@ export function UserQRCodesSection() {
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => handleView(qr)}>
                     <Eye className="h-4 w-4 mr-1" />
                     View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => handleToggleStatus(qr)}
+                  >
+                    <Clock className="h-4 w-4" />
                   </Button>
                   <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
                     <Download className="h-4 w-4" />
