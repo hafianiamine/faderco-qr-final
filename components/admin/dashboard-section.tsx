@@ -49,26 +49,20 @@ export function DashboardSection() {
 
     console.log("[v0] QR Codes Count:", qrCodesData?.length, "Error:", qrError)
 
-    const [
-      { count: usersCount },
-      { count: scansCount },
-      { data: companiesData },
-      { data: scansDataResult },
-      { data: topCodes },
-    ] = await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("scans").select("*", { count: "exact", head: true }),
-      supabase.from("profiles").select("company").neq("company", null),
-      supabase
-        .from("scans")
-        .select("scanned_at")
-        .gte("scanned_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order("scanned_at", { ascending: true }),
-      supabase.from("scans").select("qr_code_id").order("scanned_at", { ascending: false }),
-    ])
+    const [{ count: usersCount }, { count: scansCount }, { data: companies }, { data: scansData }, { data: topCodes }] =
+      await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("scans").select("*", { count: "exact", head: true }),
+        supabase.from("companies").select("id, name", { count: "exact", head: true }),
+        supabase
+          .from("scans")
+          .select("created_at")
+          .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: true }),
+        supabase.from("scans").select("qr_code_id").order("created_at", { ascending: false }),
+      ])
 
-    const uniqueCompanies = new Set(companiesData?.map((p: any) => p.company).filter(Boolean))
-    const companiesCount = uniqueCompanies.size
+    const companiesCount = companies?.length || 0
 
     const scansByDate: Record<string, number> = {}
     const last7Days = []
@@ -79,8 +73,8 @@ export function DashboardSection() {
       last7Days.push(dateStr)
     }
 
-    scansDataResult?.forEach((scan: any) => {
-      const date = new Date(scan.scanned_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    scansData?.forEach((scan: any) => {
+      const date = new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       if (scansByDate[date] !== undefined) {
         scansByDate[date]++
       }

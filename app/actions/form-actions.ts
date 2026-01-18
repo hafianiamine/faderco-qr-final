@@ -120,10 +120,9 @@ export async function getFormWithFields(formId: string) {
       .select("*")
       .eq("id", formId)
       .eq("user_id", user.id)
-      .maybeSingle()
+      .single()
 
     if (formError) throw formError
-    if (!form) return { error: "Form not found" }
 
     const { data: fields, error: fieldsError } = await supabase
       .from("form_fields")

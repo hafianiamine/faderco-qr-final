@@ -21,10 +21,9 @@ import { v4 as uuidv4 } from "uuid"
 
 interface CreateQRCodeFormInlineProps {
   onSuccess?: () => void
-  setShowCreateForm: (show: boolean) => void
 }
 
-export function CreateQRCodeFormInline({ onSuccess, setShowCreateForm }: CreateQRCodeFormInlineProps) {
+export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProps) {
   const [activeTab, setActiveTab] = useState("standard")
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
@@ -997,50 +996,50 @@ END:VCARD`
       </Tabs>
 
       {successQRData && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className="rounded-lg border border-green-200 bg-white shadow-lg p-4 max-w-sm">
-            <div className="mb-3">
-              <h2 className="text-lg font-bold text-gray-900">QR Code Created! ✓</h2>
-              <p className="text-sm text-gray-600 mt-1">{successQRData.title}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">QR Code Created!</h2>
+              <p className="text-sm text-gray-600">{successQRData.title}</p>
             </div>
 
-            <div className="mb-3 rounded-lg bg-gray-50 p-3 flex items-center justify-center">
+            <div className="mb-6 rounded-lg bg-gray-50 p-4">
               {successQRData.qrImage ? (
-                <img src={successQRData.qrImage || "/placeholder.svg"} alt="QR Code" className="h-32 w-32" />
+                <img src={successQRData.qrImage || "/placeholder.svg"} alt="QR Code" className="mx-auto h-48 w-48" />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded bg-gray-200">
-                  <span className="text-gray-400 text-sm">Loading...</span>
+                <div className="flex h-48 w-48 items-center justify-center rounded bg-gray-200">
+                  <span className="text-gray-400">Loading...</span>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2">
-              <Button size="sm" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white" asChild>
+            <div className="mb-6 flex gap-3">
+              <Button variant="outline" className="flex-1 bg-transparent" asChild>
                 <a href={successQRData.qrImage} download={`${successQRData.title}.png`}>
                   <Download className="mr-2 h-4 w-4" />
                   Download
                 </a>
               </Button>
+            </div>
+
+            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm font-medium text-gray-900 mb-2">Your QR code is ready!</p>
+              <p className="text-xs text-gray-600 mb-3">
+                You can view and edit it anytime in the "My QR Codes" section.
+              </p>
               <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 bg-transparent"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
                   setSuccessQRData(null)
-                  window.location.hash = "#go-to-my-qr"
-                  setShowCreateForm(false)
+                  // Navigate to MyQR section
+                  window.location.hash = "#myqr"
                 }}
               >
-                View in My QRs
+                Go to My QR Codes
               </Button>
             </div>
 
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-full mt-2 text-gray-600 hover:text-gray-700"
-              onClick={() => setSuccessQRData(null)}
-            >
+            <Button variant="ghost" className="w-full" onClick={() => setSuccessQRData(null)}>
               Close
             </Button>
           </div>
