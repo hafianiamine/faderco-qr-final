@@ -50,13 +50,13 @@ export function UserQRCodesSection() {
   const filteredQRCodes = qrCodes.filter((qr) => {
     if (selectedFilter === "all") return true
     if (selectedFilter === "standard") {
-      return !qr.qr_code_type || qr.qr_code_type === "standard"
+      return !qr.type || qr.type === "standard"
     }
     if (selectedFilter === "wifi") {
-      return qr.qr_code_type === "wifi"
+      return qr.type === "wifi"
     }
     if (selectedFilter === "business_card") {
-      return qr.qr_code_type === "business_card"
+      return qr.type === "business_card"
     }
     return true
   })

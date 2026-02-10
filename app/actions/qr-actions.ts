@@ -86,7 +86,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
-      qr_code_type: customization?.qrCodeType || "standard",
+      type: customization?.qrCodeType || "standard",
     }
 
     const { data: qrCode, error: insertError } = await supabase.from("qr_codes").insert(insertData).select().single()
@@ -418,7 +418,7 @@ export async function updateQRCodeSettings(
     }
 
     if (settings.qrCodeType !== undefined) {
-      updateData.qr_code_type = settings.qrCodeType
+      updateData.type = settings.qrCodeType
     }
 
     const { error: updateError } = await supabase
