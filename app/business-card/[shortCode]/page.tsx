@@ -48,10 +48,13 @@ export default async function BusinessCardPage({ params }: { params: { shortCode
     )
   }
 
-  // Check if it's vCard data
-  if (!qrCode.destination_url.startsWith('BEGIN:VCARD')) {
+  // Check if it's a business card (with business_card:: prefix)
+  if (!qrCode.destination_url.startsWith('business_card::')) {
     redirect('/404')
   }
 
-  return <BusinessCardDisplay vCardData={qrCode.destination_url} />
+  // Extract vCard data from after the business_card:: prefix
+  const vCardData = qrCode.destination_url.substring('business_card::'.length)
+
+  return <BusinessCardDisplay vCardData={vCardData} />
 }

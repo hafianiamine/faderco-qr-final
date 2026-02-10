@@ -86,6 +86,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
+      qr_code_type: customization?.qrCodeType || "standard",
     }
 
     const { data: qrCode, error: insertError } = await supabase.from("qr_codes").insert(insertData).select().single()

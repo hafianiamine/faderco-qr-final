@@ -538,8 +538,8 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
       console.error("Scan tracking error:", trackError)
     }
 
-    // Check if destination URL is vCard data (business card)
-    if (qrCode.destination_url.startsWith("BEGIN:VCARD")) {
+    // Check if destination URL is a business card (marked with business_card:: prefix)
+    if (qrCode.destination_url.startsWith("business_card::")) {
       // Return a redirect to the business card display page
       return NextResponse.redirect(
         new URL(`/business-card/${qrCode.short_code}`, request.url).toString(),

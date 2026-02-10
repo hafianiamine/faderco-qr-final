@@ -311,7 +311,11 @@ ${cardInstagram ? `X-SOCIALPROFILE;TYPE=Instagram:${cardInstagram}` : ""}
 ${cardPhotoPreview ? `PHOTO;ENCODING=BASE64;TYPE=JPEG:${cardPhotoPreview.split(",")[1]}` : ""}
 END:VCARD`
 
-      const result = await createQRCode(`Business Card - ${cardFirstName} ${cardLastName}`, vCardData, {
+      // For business cards, we'll set a placeholder destination URL that will be updated after creation
+      // The vCard data will be stored with a "business_card::" prefix so we know it's a business card
+      const businessCardMarker = `business_card::${vCardData}`
+
+      const result = await createQRCode(`Business Card - ${cardFirstName} ${cardLastName}`, businessCardMarker, {
         colorDark,
         colorLight,
         qrCodeType: "business_card",
