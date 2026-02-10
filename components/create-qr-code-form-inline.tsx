@@ -16,7 +16,6 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { LocationPicker } from "@/components/location-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FormBuilderUI } from "@/components/form-builder-ui"
 import { v4 as uuidv4 } from "uuid"
 
 interface CreateQRCodeFormInlineProps {
@@ -54,6 +53,13 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
   const [cardCompany, setCardCompany] = useState("")
   const [cardPosition, setCardPosition] = useState("")
   const [cardWebsite, setCardWebsite] = useState("")
+  const [cardLinkedIn, setCardLinkedIn] = useState("")
+  const [cardTwitter, setCardTwitter] = useState("")
+  const [cardFacebook, setCardFacebook] = useState("")
+  const [cardInstagram, setCardInstagram] = useState("")
+  const [cardPhotoFile, setCardPhotoFile] = useState<File | null>(null)
+  const [cardPhotoPreview, setCardPhotoPreview] = useState<string | null>(null)
+  const cardPhotoRef = useRef<HTMLInputElement>(null)
   const [successQRData, setSuccessQRData] = useState<{
     qrCodeId: string
     title: string
@@ -150,13 +156,39 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
       if (result.error) {
         setError(result.error)
         toast.error(result.error)
-      } else if (result.qrCodeId) {
+      } else if (result.qrCodeId && result.shortCode) {
         const qrCodeId = result.qrCodeId
-        setSuccessQRData({
-          qrCodeId,
-          title: title,
-          qrImage: qrPreview || "",
-        })
+        const shortCode = result.shortCode
+        
+        // Generate the actual QR code for the real short code (not the preview)
+        try {
+          const actualQrUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/redirect/${shortCode}`
+          const baseQr = await generateQRCode(actualQrUrl, {
+            color: {
+              dark: colorDark,
+              light: colorLight,
+            },
+          })
+          
+          let actualQrImage = baseQr
+          if (logoPreview && typeof window !== "undefined") {
+            actualQrImage = await addLogoToQRClient(baseQr, logoPreview, 512, logoSize, logoOutlineColor)
+          }
+          
+          setSuccessQRData({
+            qrCodeId,
+            title: title,
+            qrImage: actualQrImage || "",
+          })
+        } catch (err) {
+          console.error("Error generating actual QR code:", err)
+          setSuccessQRData({
+            qrCodeId,
+            title: title,
+            qrImage: qrPreview || "",
+          })
+        }
+        
         setTitle("")
         setDestinationUrl("")
         setColorDark("#000000")
@@ -225,6 +257,30 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
     }
   }
 
+  const handleCardPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Photo file size must be less than 2MB")
+        return
+      }
+      setCardPhotoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCardPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removeCardPhoto = () => {
+    setCardPhotoFile(null)
+    setCardPhotoPreview(null)
+    if (cardPhotoRef.current) {
+      cardPhotoRef.current.value = ""
+    }
+  }
+
   const handleBusinessCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -248,6 +304,11 @@ EMAIL:${cardEmail}
 ORG:${cardCompany}
 TITLE:${cardPosition}
 URL:${cardWebsite}
+${cardLinkedIn ? `X-SOCIALPROFILE;TYPE=LinkedIn:${cardLinkedIn}` : ""}
+${cardTwitter ? `X-SOCIALPROFILE;TYPE=Twitter:${cardTwitter}` : ""}
+${cardFacebook ? `X-SOCIALPROFILE;TYPE=Facebook:${cardFacebook}` : ""}
+${cardInstagram ? `X-SOCIALPROFILE;TYPE=Instagram:${cardInstagram}` : ""}
+${cardPhotoPreview ? `PHOTO;ENCODING=BASE64;TYPE=JPEG:${cardPhotoPreview.split(",")[1]}` : ""}
 END:VCARD`
 
       const result = await createQRCode(`Business Card - ${cardFirstName} ${cardLastName}`, vCardData, {
@@ -270,6 +331,11 @@ END:VCARD`
         setCardCompany("")
         setCardPosition("")
         setCardWebsite("")
+        setCardLinkedIn("")
+        setCardTwitter("")
+        setCardFacebook("")
+        setCardInstagram("")
+        removeCardPhoto()
         onSuccess?.()
       }
     } catch (err) {
@@ -284,14 +350,10 @@ END:VCARD`
   return (
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="standard" className="flex items-center gap-2">
             <QrCode className="h-4 w-4" />
             Standard QR
-          </TabsTrigger>
-          <TabsTrigger value="forms" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Forms
           </TabsTrigger>
           <TabsTrigger value="wifi" className="flex items-center gap-2">
             <Wifi className="h-4 w-4" />
@@ -677,9 +739,7 @@ END:VCARD`
           </div>
         </TabsContent>
 
-        <TabsContent value="forms" className="mt-0">
-          <FormBuilderUI formId={uuidv4()} />
-        </TabsContent>
+
 
         <TabsContent value="wifi" className="mt-0">
           <div className="grid gap-6 lg:grid-cols-2">
@@ -852,143 +912,221 @@ END:VCARD`
 
         <TabsContent value="business-card" className="mt-0">
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Create Business Card QR Code
-                </h3>
-                <form onSubmit={handleBusinessCardSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName" className="text-gray-900">
-                        First Name
-                      </Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="John"
-                        value={cardFirstName}
-                        onChange={(e) => setCardFirstName(e.target.value)}
-                        className="bg-white/30 border-gray-200"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName" className="text-gray-900">
-                        Last Name
-                      </Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Doe"
-                        value={cardLastName}
-                        onChange={(e) => setCardLastName(e.target.value)}
-                        className="bg-white/30 border-gray-200"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardPhone" className="text-gray-900">
-                      Phone
-                    </Label>
-                    <Input
-                      id="cardPhone"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      value={cardPhone}
-                      onChange={(e) => setCardPhone(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardEmail" className="text-gray-900">
-                      Email
-                    </Label>
-                    <Input
-                      id="cardEmail"
-                      type="email"
-                      placeholder="john@company.com"
-                      value={cardEmail}
-                      onChange={(e) => setCardEmail(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardCompany" className="text-gray-900">
-                      Company
-                    </Label>
-                    <Input
-                      id="cardCompany"
-                      type="text"
-                      placeholder="Acme Inc"
-                      value={cardCompany}
-                      onChange={(e) => setCardCompany(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardPosition" className="text-gray-900">
-                      Position/Title
-                    </Label>
-                    <Input
-                      id="cardPosition"
-                      type="text"
-                      placeholder="CEO"
-                      value={cardPosition}
-                      onChange={(e) => setCardPosition(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardWebsite" className="text-gray-900">
-                      Website
-                    </Label>
-                    <Input
-                      id="cardWebsite"
-                      type="url"
-                      placeholder="https://acme.com"
-                      value={cardWebsite}
-                      onChange={(e) => setCardWebsite(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Business Card QR"
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </div>
-
-            <div className="flex items-start justify-center">
-              <div className="w-full max-w-md space-y-4 sticky top-6">
-                <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">💡 How it Works</h4>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex gap-2">
-                      <span className="text-blue-600 font-semibold">📇</span>
-                      <span>
-                        <strong>Business Card:</strong> Users scan to save your contact info to their phone
-                      </span>
-                    </li>
-                  </ul>
+            <form onSubmit={handleBusinessCardSubmit} className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="cardFirstName" className="text-gray-900">
+                    First Name
+                  </Label>
+                  <Input
+                    id="cardFirstName"
+                    type="text"
+                    placeholder="John"
+                    value={cardFirstName}
+                    onChange={(e) => setCardFirstName(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardLastName" className="text-gray-900">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="cardLastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={cardLastName}
+                    onChange={(e) => setCardLastName(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardPhoto" className="text-gray-900">
+                  Photo (Optional)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={cardPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCardPhotoUpload}
+                    className="hidden"
+                    id="card-photo-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => cardPhotoRef.current?.click()}
+                    className="flex-1 bg-white/30 border-gray-200"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {cardPhotoFile ? "Change Photo" : "Upload Photo"}
+                  </Button>
+                  {cardPhotoPreview && (
+                    <Button type="button" variant="ghost" size="icon" onClick={removeCardPhoto}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {cardPhotoPreview && (
+                  <div className="flex items-center gap-2 rounded border border-gray-200 bg-white/20 p-2">
+                    <img
+                      src={cardPhotoPreview || "/placeholder.svg"}
+                      alt="Photo preview"
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                    <span className="text-xs text-gray-600">{cardPhotoFile?.name}</span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-600">Add a photo to your business card (max 2MB)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardPhone" className="text-gray-900">
+                  Phone
+                </Label>
+                <Input
+                  id="cardPhone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={cardPhone}
+                  onChange={(e) => setCardPhone(e.target.value)}
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardEmail" className="text-gray-900">
+                  Email
+                </Label>
+                <Input
+                  id="cardEmail"
+                  type="email"
+                  placeholder="john@company.com"
+                  value={cardEmail}
+                  onChange={(e) => setCardEmail(e.target.value)}
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardCompany" className="text-gray-900">
+                  Company
+                </Label>
+                <Input
+                  id="cardCompany"
+                  type="text"
+                  placeholder="Acme Inc"
+                  value={cardCompany}
+                  onChange={(e) => setCardCompany(e.target.value)}
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardPosition" className="text-gray-900">
+                  Position/Title
+                </Label>
+                <Input
+                  id="cardPosition"
+                  type="text"
+                  placeholder="CEO"
+                  value={cardPosition}
+                  onChange={(e) => setCardPosition(e.target.value)}
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cardWebsite" className="text-gray-900">
+                  Website
+                </Label>
+                <Input
+                  id="cardWebsite"
+                  type="url"
+                  placeholder="https://acme.com"
+                  value={cardWebsite}
+                  onChange={(e) => setCardWebsite(e.target.value)}
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-gray-200 bg-white/20 p-4 backdrop-blur-sm">
+                <h3 className="text-sm font-medium text-gray-900">Social Media Links (Optional)</h3>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardLinkedIn" className="text-gray-900">
+                    LinkedIn
+                  </Label>
+                  <Input
+                    id="cardLinkedIn"
+                    type="url"
+                    placeholder="https://linkedin.com/in/johndoe"
+                    value={cardLinkedIn}
+                    onChange={(e) => setCardLinkedIn(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardTwitter" className="text-gray-900">
+                    Twitter/X
+                  </Label>
+                  <Input
+                    id="cardTwitter"
+                    type="url"
+                    placeholder="https://twitter.com/johndoe"
+                    value={cardTwitter}
+                    onChange={(e) => setCardTwitter(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardFacebook" className="text-gray-900">
+                    Facebook
+                  </Label>
+                  <Input
+                    id="cardFacebook"
+                    type="url"
+                    placeholder="https://facebook.com/johndoe"
+                    value={cardFacebook}
+                    onChange={(e) => setCardFacebook(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardInstagram" className="text-gray-900">
+                    Instagram
+                  </Label>
+                  <Input
+                    id="cardInstagram"
+                    type="url"
+                    placeholder="https://instagram.com/johndoe"
+                    value={cardInstagram}
+                    onChange={(e) => setCardInstagram(e.target.value)}
+                    className="bg-white/30 border-gray-200"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create Business Card QR
+              </Button>
+            </form>
+
+            <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white/20 p-8">
+              <div className="text-center">
+                <div className="mb-4 text-4xl">💡</div>
+                <h3 className="mb-3 font-semibold text-gray-900">How it Works</h3>
+                <p className="text-sm text-gray-600">
+                  <strong>Business Card:</strong> Users scan to save your contact info, photo, and social media links to their phone
+                </p>
               </div>
             </div>
           </div>

@@ -40,11 +40,26 @@ export function UserQRCodesSection() {
   const [userInputCode, setUserInputCode] = useState("")
   const [copied, setCopied] = useState(false)
   const [pendingDeletions, setPendingDeletions] = useState<any[]>([])
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
   useEffect(() => {
     loadQRCodes()
     loadPendingDeletions()
   }, [])
+
+  const filteredQRCodes = qrCodes.filter((qr) => {
+    if (selectedFilter === "all") return true
+    if (selectedFilter === "standard") {
+      return !qr.qr_code_type || qr.qr_code_type === "standard"
+    }
+    if (selectedFilter === "wifi") {
+      return qr.qr_code_type === "wifi"
+    }
+    if (selectedFilter === "business_card") {
+      return qr.qr_code_type === "business_card"
+    }
+    return true
+  })
 
   async function loadQRCodes() {
     try {
@@ -253,7 +268,65 @@ export function UserQRCodesSection() {
         </div>
       )}
 
-      {qrCodes.length === 0 ? (
+      {qrCodes.length > 0 && (
+        <div className="rounded-2xl border border-gray-200 bg-white/10 p-4 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedFilter("all")}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                selectedFilter === "all"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+              }`}
+            >
+              All QR Codes
+            </button>
+            <button
+              onClick={() => setSelectedFilter("standard")}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                selectedFilter === "standard"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+              }`}
+            >
+              Standard QR
+            </button>
+            <button
+              onClick={() => setSelectedFilter("wifi")}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                selectedFilter === "wifi"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+              }`}
+            >
+              WiFi QR
+            </button>
+            <button
+              onClick={() => setSelectedFilter("business_card")}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                selectedFilter === "business_card"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+              }`}
+            >
+              Business Card
+            </button>
+          </div>
+          {filteredQRCodes.length > 0 && (
+            <p className="mt-3 text-sm text-gray-600">
+              Showing {filteredQRCodes.length} of {qrCodes.length} QR codes
+            </p>
+          )}
+        </div>
+      )}
+
+      {filteredQRCodes.length === 0 && qrCodes.length > 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white/10 p-12 text-center shadow-lg backdrop-blur-xl">
+          <QrCode className="mx-auto h-16 w-16 text-gray-400" />
+          <h3 className="mt-4 text-lg font-semibold text-gray-900">No QR codes found</h3>
+          <p className="mt-2 text-sm text-gray-600">Try selecting a different filter</p>
+        </div>
+      ) : qrCodes.length === 0 ? (
         <div className="rounded-2xl border border-gray-200 bg-white/10 p-12 text-center shadow-lg backdrop-blur-xl">
           <QrCode className="mx-auto h-16 w-16 text-gray-400" />
           <h3 className="mt-4 text-lg font-semibold text-gray-900">No QR codes yet</h3>
@@ -264,7 +337,7 @@ export function UserQRCodesSection() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {qrCodes.map((qr) => {
+          {filteredQRCodes.map((qr) => {
             const pendingDeletion = isPendingDeletion(qr)
             return (
               <div
