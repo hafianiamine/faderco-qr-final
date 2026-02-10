@@ -484,20 +484,20 @@ export function UserQRCodesSection() {
               </div>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="font-semibold">Destination URL:</span>
-                  <p className="text-muted-foreground break-all">{viewingQR?.destination_url}</p>
+                  <div className="font-semibold">Destination URL:</div>
+                  <div className="text-muted-foreground break-all text-xs">{viewingQR?.destination_url}</div>
                 </div>
                 <div>
-                  <span className="font-semibold">Short Code:</span>
-                  <p className="text-muted-foreground font-mono">{viewingQR?.short_code}</p>
+                  <div className="font-semibold">Short Code:</div>
+                  <div className="text-muted-foreground font-mono text-xs">{viewingQR?.short_code}</div>
                 </div>
                 <div>
-                  <span className="font-semibold">Total Scans:</span>
-                  <p className="text-muted-foreground">{viewingQR?.scans_used || 0}</p>
+                  <div className="font-semibold">Total Scans:</div>
+                  <div className="text-muted-foreground text-xs">{viewingQR?.scans_used || 0}</div>
                 </div>
                 <div>
-                  <span className="font-semibold">Status:</span>
-                  <p className="text-muted-foreground capitalize">{viewingQR?.status}</p>
+                  <div className="font-semibold">Status:</div>
+                  <div className="text-muted-foreground capitalize text-xs">{viewingQR?.status}</div>
                 </div>
               </div>
             </AlertDialogDescription>
@@ -518,7 +518,7 @@ export function UserQRCodesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Edit Destination URL</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <p>Update the destination URL for "{editingQR?.title}". The QR code image will remain the same.</p>
+              <div>Update the destination URL for "{editingQR?.title}". The QR code image will remain the same.</div>
               <Input
                 placeholder="https://example.com"
                 value={newDestinationUrl}

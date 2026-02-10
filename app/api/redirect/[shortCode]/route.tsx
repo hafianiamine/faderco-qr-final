@@ -540,93 +540,10 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
 
     // Check if destination URL is vCard data (business card)
     if (qrCode.destination_url.startsWith("BEGIN:VCARD")) {
-      return new NextResponse(
-        `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Business Card</title>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                margin: 0;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                text-align: center;
-                padding: 20px;
-              }
-              .container {
-                max-width: 500px;
-                background: rgba(0, 0, 0, 0.3);
-                border-radius: 12px;
-                padding: 30px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-              }
-              .emoji {
-                font-size: 4rem;
-                margin: 0 0 1rem 0;
-              }
-              h1 {
-                font-size: 2.5rem;
-                margin: 0 0 1rem 0;
-              }
-              p {
-                font-size: 1.1rem;
-                opacity: 0.9;
-                line-height: 1.6;
-              }
-              button {
-                background: white;
-                color: #667eea;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-                font-size: 1rem;
-                font-weight: 600;
-                cursor: pointer;
-                margin-top: 20px;
-                transition: all 0.3s ease;
-              }
-              button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="emoji">👤</div>
-              <h1>Business Card</h1>
-              <p>Tap the button below to save this contact to your phone.</p>
-              <button onclick="downloadVCard()">Save Contact</button>
-            </div>
-            <script>
-              function downloadVCard() {
-                const vCardData = \`${qrCode.destination_url.replace(/`/g, "\\`")}\`;
-                const element = document.createElement("a");
-                element.setAttribute("href", "data:text/vcard;charset=utf-8," + encodeURIComponent(vCardData));
-                element.setAttribute("download", "contact.vcf");
-                element.style.display = "none";
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-              }
-            </script>
-          </body>
-        </html>
-        `,
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "text/html; charset=utf-8",
-          },
-        },
+      // Return a redirect to the business card display page
+      return NextResponse.redirect(
+        new URL(`/business-card/${qrCode.short_code}`, request.url).toString(),
+        { status: 307 }
       )
     }
 
