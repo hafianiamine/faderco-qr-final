@@ -538,12 +538,60 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
       console.error("Scan tracking error:", trackError)
     }
 
-    // Check if destination URL is a business card (marked with business_card:: prefix)
-    if (qrCode.destination_url.startsWith("business_card::")) {
+    // Check if this is a business card (vcard_data is present)
+    if (qrCode.vcard_data || qrCode.type === "business_card") {
       // Return a redirect to the business card display page
       return NextResponse.redirect(
         new URL(`/business-card/${qrCode.short_code}`, request.url).toString(),
         { status: 307 }
+      )
+    }
+
+    // If no destination URL, return error
+    if (!qrCode.destination_url) {
+      return new NextResponse(
+        `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code Not Found</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+                padding: 20px;
+              }
+              .container {
+                max-width: 500px;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 12px;
+                padding: 30px;
+              }
+              h1 { font-size: 2.5rem; margin: 0 0 1rem 0; }
+              p { font-size: 1.1rem; opacity: 0.9; line-height: 1.6; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Invalid QR Code</h1>
+              <p>This QR code does not have a valid destination URL.</p>
+            </div>
+          </body>
+        </html>
+        `,
+        {
+          status: 404,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        },
       )
     }
 

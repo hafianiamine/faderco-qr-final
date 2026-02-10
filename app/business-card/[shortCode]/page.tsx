@@ -7,11 +7,11 @@ export async function generateMetadata({ params }: { params: { shortCode: string
 
   const { data: qrCode } = await supabase
     .from('qr_codes')
-    .select('title, destination_url')
+    .select('title, vcard_data, type')
     .eq('short_code', params.shortCode)
     .single()
 
-  if (!qrCode) {
+  if (!qrCode || !qrCode.vcard_data) {
     return {
       title: 'Business Card Not Found',
     }
@@ -28,7 +28,7 @@ export default async function BusinessCardPage({ params }: { params: { shortCode
 
   const { data: qrCode, error } = await supabase
     .from('qr_codes')
-    .select('destination_url, is_active, status')
+    .select('vcard_data, type, is_active, status')
     .eq('short_code', params.shortCode)
     .single()
 
@@ -48,13 +48,10 @@ export default async function BusinessCardPage({ params }: { params: { shortCode
     )
   }
 
-  // Check if it's a business card (with business_card:: prefix)
-  if (!qrCode.destination_url.startsWith('business_card::')) {
+  // Check if it's a business card with vCard data
+  if (!qrCode.vcard_data || qrCode.type !== 'business_card') {
     redirect('/404')
   }
 
-  // Extract vCard data from after the business_card:: prefix
-  const vCardData = qrCode.destination_url.substring('business_card::'.length)
-
-  return <BusinessCardDisplay vCardData={vCardData} />
+  return <BusinessCardDisplay vCardData={qrCode.vcard_data} />
 }

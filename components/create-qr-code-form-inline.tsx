@@ -311,14 +311,13 @@ ${cardInstagram ? `X-SOCIALPROFILE;TYPE=Instagram:${cardInstagram}` : ""}
 ${cardPhotoPreview ? `PHOTO;ENCODING=BASE64;TYPE=JPEG:${cardPhotoPreview.split(",")[1]}` : ""}
 END:VCARD`
 
-      // For business cards, we'll set a placeholder destination URL that will be updated after creation
-      // The vCard data will be stored with a "business_card::" prefix so we know it's a business card
-      const businessCardMarker = `business_card::${vCardData}`
+      // Import the createBusinessCardQR function
+      const { createBusinessCardQR } = await import("@/app/actions/qr-actions")
 
-      const result = await createQRCode(`Business Card - ${cardFirstName} ${cardLastName}`, businessCardMarker, {
+      const result = await createBusinessCardQR(`Business Card - ${cardFirstName} ${cardLastName}`, vCardData, {
         colorDark,
         colorLight,
-        qrCodeType: "business_card",
+        vCardData,
       })
 
       toast.dismiss("qr-generation")
