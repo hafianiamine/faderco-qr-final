@@ -141,10 +141,28 @@ export async function createBusinessCardQR(
       return { error: "User not authenticated" }
     }
 
+    // First, create the business card record in virtual_business_cards table
+    const { data: businessCard, error: bcError } = await supabase
+      .from("virtual_business_cards")
+      .insert({
+        user_id: user.id,
+        title,
+        vcard_data: vCardData,
+      })
+      .select()
+      .single()
+
+    if (bcError || !businessCard) {
+      return { error: `Failed to create business card: ${bcError?.message || "Unknown error"}` }
+    }
+
     // Generate a short code for the QR
     const shortCode = generateShortCode()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fadercoqr.com"
     const shortUrl = `${appUrl}/api/redirect/${shortCode}`
+    
+    // For business cards, the destination URL points to the business card display page
+    const businessCardUrl = `${appUrl}/business-card/${businessCard.id}`
 
     // Generate QR code that encodes ONLY the short URL (not vCard data)
     const qrImageDataUrl = await generateQRCode(shortUrl, {
@@ -157,8 +175,8 @@ export async function createBusinessCardQR(
     const insertData = {
       user_id: user.id,
       title,
-      destination_url: null, // No destination URL for business cards
-      vcard_data: vCardData, // Store vCard data separately
+      destination_url: businessCardUrl, // Store the business card display page URL
+      vcard_data: vCardData, // Also store vCard data for backward compatibility
       short_code: shortCode,
       short_url: shortUrl,
       qr_image_url: qrImageDataUrl,
@@ -178,6 +196,7 @@ export async function createBusinessCardQR(
       is_active: true,
       status: "active",
       type: "business_card",
+      business_card_id: businessCard.id,
     }
 
     const { data: qrCode, error: insertError } = await supabase

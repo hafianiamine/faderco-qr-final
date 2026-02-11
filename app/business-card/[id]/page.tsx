@@ -2,41 +2,41 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BusinessCardDisplay } from '@/components/business-card-display'
 
-export async function generateMetadata({ params }: { params: { shortCode: string } }) {
+export async function generateMetadata({ params }: { params: { id: string } }) {
   const supabase = await createClient()
 
-  const { data: qrCode } = await supabase
-    .from('qr_codes')
-    .select('title, vcard_data, type')
-    .eq('short_code', params.shortCode)
+  const { data: businessCard } = await supabase
+    .from('virtual_business_cards')
+    .select('title, vcard_data')
+    .eq('id', params.id)
     .single()
 
-  if (!qrCode || !qrCode.vcard_data) {
+  if (!businessCard || !businessCard.vcard_data) {
     return {
       title: 'Business Card Not Found',
     }
   }
 
   return {
-    title: qrCode.title || 'Business Card',
+    title: businessCard.title || 'Business Card',
     description: 'View and save this business card',
   }
 }
 
-export default async function BusinessCardPage({ params }: { params: { shortCode: string } }) {
+export default async function BusinessCardPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
 
-  const { data: qrCode, error } = await supabase
-    .from('qr_codes')
-    .select('vcard_data, type, is_active, status')
-    .eq('short_code', params.shortCode)
+  const { data: businessCard, error } = await supabase
+    .from('virtual_business_cards')
+    .select('title, vcard_data, is_active')
+    .eq('id', params.id)
     .single()
 
-  if (error || !qrCode) {
+  if (error || !businessCard) {
     redirect('/404')
   }
 
-  if (!qrCode.is_active || qrCode.status === 'inactive') {
+  if (!businessCard.is_active) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-pink-50 p-4">
         <div className="max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl">
@@ -48,10 +48,10 @@ export default async function BusinessCardPage({ params }: { params: { shortCode
     )
   }
 
-  // Check if it's a business card with vCard data
-  if (!qrCode.vcard_data || qrCode.type !== 'business_card') {
+  // Check if business card has vCard data
+  if (!businessCard.vcard_data) {
     redirect('/404')
   }
 
-  return <BusinessCardDisplay vCardData={qrCode.vcard_data} />
+  return <BusinessCardDisplay vCardData={businessCard.vcard_data} />
 }

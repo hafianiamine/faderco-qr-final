@@ -538,11 +538,11 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
       console.error("Scan tracking error:", trackError)
     }
 
-    // Check if this is a business card (vcard_data is present)
-    if (qrCode.vcard_data || qrCode.type === "business_card") {
-      // Return a redirect to the business card display page
+    // Check if this is a business card (business_card_id is present)
+    if (qrCode.type === "business_card" && qrCode.business_card_id) {
+      // Return a redirect to the business card display page using the business card ID
       return NextResponse.redirect(
-        new URL(`/business-card/${qrCode.short_code}`, request.url).toString(),
+        new URL(`/business-card/${qrCode.business_card_id}`, request.url).toString(),
         { status: 307 }
       )
     }

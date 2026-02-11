@@ -326,7 +326,7 @@ END:VCARD`
         setError(result.error)
         toast.error(result.error)
       } else {
-        toast.success("Business Card QR Code Created!")
+        toast.success("Business Card QR Code Created! Redirecting to My QR Codes...")
         setCardFirstName("")
         setCardLastName("")
         setCardPhone("")
@@ -339,6 +339,12 @@ END:VCARD`
         setCardFacebook("")
         setCardInstagram("")
         removeCardPhoto()
+        
+        // Redirect to My QR Codes after a short delay
+        setTimeout(() => {
+          window.location.href = "/dashboard"
+        }, 1500)
+        
         onSuccess?.()
       }
     } catch (err) {
