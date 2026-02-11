@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* Removed tw-animate-css import - was causing empty @utility blocks in Tailwind v4 */
 /* Removed global Leaflet CSS import - it's now loaded only in the map component to avoid MIME type errors */
 /* @import "leaflet/dist/leaflet.css"; */
 
