@@ -295,7 +295,7 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
     try {
       toast.loading("Generating business card QR code...", { id: "qr-generation" })
 
-      const vCardData = `BEGIN:VCARD
+      let vCardData = `BEGIN:VCARD
 VERSION:3.0
 FN:${cardFirstName} ${cardLastName}
 N:${cardLastName};${cardFirstName};;;
@@ -303,13 +303,26 @@ TEL:${cardPhone}
 EMAIL:${cardEmail}
 ORG:${cardCompany}
 TITLE:${cardPosition}
-URL:${cardWebsite}
-${cardLinkedIn ? `X-SOCIALPROFILE;TYPE=LinkedIn:${cardLinkedIn}` : ""}
-${cardTwitter ? `X-SOCIALPROFILE;TYPE=Twitter:${cardTwitter}` : ""}
-${cardFacebook ? `X-SOCIALPROFILE;TYPE=Facebook:${cardFacebook}` : ""}
-${cardInstagram ? `X-SOCIALPROFILE;TYPE=Instagram:${cardInstagram}` : ""}
-${cardPhotoPreview ? `PHOTO;ENCODING=BASE64;TYPE=JPEG:${cardPhotoPreview.split(",")[1]}` : ""}
-END:VCARD`
+URL:${cardWebsite}`
+
+      if (cardLinkedIn) {
+        vCardData += `\nX-SOCIALPROFILE;TYPE=LinkedIn:${cardLinkedIn}`
+      }
+      if (cardTwitter) {
+        vCardData += `\nX-SOCIALPROFILE;TYPE=Twitter:${cardTwitter}`
+      }
+      if (cardFacebook) {
+        vCardData += `\nX-SOCIALPROFILE;TYPE=Facebook:${cardFacebook}`
+      }
+      if (cardInstagram) {
+        vCardData += `\nX-SOCIALPROFILE;TYPE=Instagram:${cardInstagram}`
+      }
+      if (cardPhotoPreview) {
+        const photoBase64 = cardPhotoPreview.split(",")[1]
+        vCardData += `\nPHOTO;ENCODING=BASE64;TYPE=JPEG:${photoBase64}`
+      }
+      
+      vCardData += "\nEND:VCARD"
 
       // Import the createBusinessCardQR function
       const { createBusinessCardQR } = await import("@/app/actions/qr-actions")
