@@ -141,12 +141,35 @@ export async function createBusinessCardQR(
       return { error: "User not authenticated" }
     }
 
+    // Parse vCard data to extract fields for virtual_business_cards table
+    const vCardLines = vCardData.split('\n')
+    let fullName = ''
+    let email = ''
+    let phone = ''
+    let companyName = ''
+    let jobTitle = ''
+    let website = ''
+    
+    for (const line of vCardLines) {
+      if (line.startsWith('FN:')) fullName = line.substring(3).trim()
+      if (line.startsWith('EMAIL:')) email = line.substring(6).trim()
+      if (line.startsWith('TEL:')) phone = line.substring(4).trim()
+      if (line.startsWith('ORG:')) companyName = line.substring(4).trim()
+      if (line.startsWith('TITLE:')) jobTitle = line.substring(6).trim()
+      if (line.startsWith('URL:')) website = line.substring(4).trim()
+    }
+
     // First, create the business card record in virtual_business_cards table
     const { data: businessCard, error: bcError } = await supabase
       .from("virtual_business_cards")
       .insert({
         user_id: user.id,
-        title,
+        full_name: fullName || title,
+        job_title: jobTitle,
+        company_name: companyName,
+        phone,
+        email,
+        website,
         vcard_data: vCardData,
       })
       .select()
