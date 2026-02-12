@@ -10,7 +10,7 @@ import { QrCode, Edit2, Trash2, Plus, Copy, Download, ExternalLink, Upload, X, L
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
-import { createShortUrl } from "@/lib/utils/url-shortener"
+import { createVirtualCard, updateVirtualCard, deleteVirtualCard } from "@/app/actions/virtual-card-actions"
 
 interface VirtualCard {
   id: string
@@ -127,71 +127,45 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
 
     try {
       setIsSubmitting(true)
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        toast({ title: "Error", description: "User not authenticated" })
-        return
-      }
-
-      let photoUrl = editingCard?.photo_url || null
-
+      
+      let photoBase64: string | undefined = undefined
       if (photoFile) {
-        const fileName = `nfc-${Date.now()}-${photoFile.name}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("nfc-photos")
-          .upload(fileName, photoFile, { upsert: false })
-
-        if (uploadError) throw uploadError
-        photoUrl = uploadData.path
+        const reader = new FileReader()
+        photoBase64 = await new Promise((resolve) => {
+          reader.onloadend = () => {
+            const base64 = reader.result as string
+            resolve(base64.split(",")[1])
+          }
+          reader.readAsDataURL(photoFile)
+        })
       }
 
-      const vcardData = await generateVCard(fullName, email, phone, company, jobTitle, website, linkedin, twitter, facebook, instagram)
+      const cardData = {
+        fullName,
+        email,
+        phone: phone || undefined,
+        company: company || undefined,
+        jobTitle: jobTitle || undefined,
+        website: website || undefined,
+        linkedin: linkedin || undefined,
+        twitter: twitter || undefined,
+        facebook: facebook || undefined,
+        instagram: instagram || undefined,
+      }
 
       if (editingCard) {
-        const { error } = await supabase
-          .from("virtual_business_cards")
-          .update({
-            full_name: fullName,
-            email,
-            phone: phone || null,
-            company_name: company || null,
-            job_title: jobTitle || null,
-            website: website || null,
-            linkedin: linkedin || null,
-            twitter: twitter || null,
-            facebook: facebook || null,
-            instagram: instagram || null,
-            photo_url: photoUrl,
-            vcard_data: vcardData,
-          })
-          .eq("id", editingCard.id)
-          .eq("user_id", user.id)
-
-        if (error) throw error
+        const result = await updateVirtualCard(editingCard.id, cardData, photoBase64)
+        if (result.error) {
+          toast({ title: "Error", description: result.error })
+          return
+        }
         toast({ title: "Success", description: "Virtual card updated" })
       } else {
-        const shortCode = Date.now().toString(36) + Math.random().toString(36).substr(2)
-        const { error } = await supabase
-          .from("virtual_business_cards")
-          .insert({
-            user_id: user.id,
-            full_name: fullName,
-            email,
-            phone: phone || null,
-            company_name: company || null,
-            job_title: jobTitle || null,
-            website: website || null,
-            linkedin: linkedin || null,
-            twitter: twitter || null,
-            facebook: facebook || null,
-            instagram: instagram || null,
-            photo_url: photoUrl,
-            vcard_data: vcardData,
-            short_code: shortCode,
-          })
-
-        if (error) throw error
+        const result = await createVirtualCard(cardData, photoBase64)
+        if (result.error) {
+          toast({ title: "Error", description: result.error })
+          return
+        }
         toast({ title: "Success", description: "Virtual card created" })
       }
 
@@ -243,7 +217,9 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
 
   async function handleShowQR(card: VirtualCard) {
     try {
-      const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
+      // Build the redirect URL using the short code
+      const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+      const cardUrl = `${appUrl}/api/redirect/${card.short_code}`
       const qr = await generateQRCode(cardUrl)
       setQrUrl(qr)
       setShowQRModal(card.id)
@@ -257,12 +233,11 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
     if (!confirm("Are you sure you want to delete this virtual card?")) return
 
     try {
-      const { error } = await supabase
-        .from("virtual_business_cards")
-        .delete()
-        .eq("id", id)
-
-      if (error) throw error
+      const result = await deleteVirtualCard(id)
+      if (result.error) {
+        toast({ title: "Error", description: result.error })
+        return
+      }
       toast({ title: "Success", description: "Virtual card deleted" })
       loadCards()
     } catch (error) {
@@ -272,14 +247,18 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
   }
 
   function copyToClipboard(card: VirtualCard) {
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
+    // Use the short code redirect URL
+    const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+    const url = `${appUrl}/api/redirect/${card.short_code}`
     navigator.clipboard.writeText(url)
     toast({ title: "Success", description: "Link copied to clipboard" })
   }
 
   async function downloadQR(card: VirtualCard) {
     try {
-      const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
+      // Use the short code redirect URL
+      const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+      const cardUrl = `${appUrl}/api/redirect/${card.short_code}`
       const qr = await generateQRCode(cardUrl)
       const link = document.createElement("a")
       link.href = qr
