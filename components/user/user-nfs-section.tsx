@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Edit2, Trash2, Plus, Copy, Download, ExternalLink } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { QrCode, Edit2, Trash2, Plus, Copy, Download, ExternalLink, Upload, X, Loader2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { generateQRCode } from "@/lib/utils/qr-generator"
-import { EditVirtualCardForm } from "@/components/edit-virtual-card-form"
 import { useToast } from "@/hooks/use-toast"
+import { createShortUrl } from "@/lib/utils/url-shortener"
 
 interface VirtualCard {
   id: string
@@ -18,6 +20,11 @@ interface VirtualCard {
   company_name: string | null
   job_title: string | null
   website: string | null
+  linkedin: string | null
+  twitter: string | null
+  facebook: string | null
+  instagram: string | null
+  photo_url: string | null
   vcard_data: string
   short_code: string
   created_at: string
@@ -28,10 +35,26 @@ export function UserNFSSection() {
   const { toast } = useToast()
   const [cards, setCards] = useState<VirtualCard[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCard, setSelectedCard] = useState<VirtualCard | null>(null)
+  const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
   const [qrUrl, setQrUrl] = useState<string>("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Form state
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [company, setCompany] = useState("")
+  const [jobTitle, setJobTitle] = useState("")
+  const [website, setWebsite] = useState("")
+  const [linkedin, setLinkedin] = useState("")
+  const [twitter, setTwitter] = useState("")
+  const [facebook, setFacebook] = useState("")
+  const [instagram, setInstagram] = useState("")
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const photoRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadCards()
@@ -41,7 +64,7 @@ export function UserNFSSection() {
     try {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         toast({ title: "Error", description: "User not authenticated" })
         return
@@ -63,31 +86,164 @@ export function UserNFSSection() {
     }
   }
 
-  async function handleDeleteCard(cardId: string) {
-    try {
-      const { error } = await supabase
-        .from("virtual_business_cards")
-        .delete()
-        .eq("id", cardId)
-
-      if (error) throw error
-      setCards(cards.filter(c => c.id !== cardId))
-      toast({ title: "Success", description: "Virtual card deleted" })
-    } catch (error) {
-      console.error("Error deleting card:", error)
-      toast({ title: "Error", description: "Failed to delete card" })
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ title: "Error", description: "File size must be less than 2MB" })
+        return
+      }
+      setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
-  function getCardUrl(shortCode: string) {
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
-    return `${baseUrl}/api/redirect/${shortCode}`
+  function removePhoto() {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    if (photoRef.current) photoRef.current.value = ""
+  }
+
+  async function generateVCard(fullNameVal: string, emailVal: string, phoneVal?: string, companyVal?: string, jobTitleVal?: string, websiteVal?: string, linkedinVal?: string, twitterVal?: string, facebookVal?: string, instagramVal?: string) {
+    let vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:${fullNameVal}
+EMAIL:${emailVal}
+${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` : ""}${companyVal ? `ORG:${companyVal}\n` : ""}${websiteVal ? `URL:${websiteVal}\n` : ""}${linkedinVal ? `X-LINKEDIN:${linkedinVal}\n` : ""}${twitterVal ? `X-TWITTER:${twitterVal}\n` : ""}${facebookVal ? `X-FACEBOOK:${facebookVal}\n` : ""}${instagramVal ? `X-INSTAGRAM:${instagramVal}\n` : ""}END:VCARD`
+    return vcard
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (!fullName.trim() || !email.trim()) {
+      toast({ title: "Error", description: "Full name and email are required" })
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        toast({ title: "Error", description: "User not authenticated" })
+        return
+      }
+
+      let photoUrl = editingCard?.photo_url || null
+
+      if (photoFile) {
+        const fileName = `nfc-${Date.now()}-${photoFile.name}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("nfc-photos")
+          .upload(fileName, photoFile, { upsert: false })
+
+        if (uploadError) throw uploadError
+        photoUrl = uploadData.path
+      }
+
+      const vcardData = await generateVCard(fullName, email, phone, company, jobTitle, website, linkedin, twitter, facebook, instagram)
+
+      if (editingCard) {
+        const { error } = await supabase
+          .from("virtual_business_cards")
+          .update({
+            full_name: fullName,
+            email,
+            phone: phone || null,
+            company_name: company || null,
+            job_title: jobTitle || null,
+            website: website || null,
+            linkedin: linkedin || null,
+            twitter: twitter || null,
+            facebook: facebook || null,
+            instagram: instagram || null,
+            photo_url: photoUrl,
+            vcard_data: vcardData,
+          })
+          .eq("id", editingCard.id)
+          .eq("user_id", user.id)
+
+        if (error) throw error
+        toast({ title: "Success", description: "Virtual card updated" })
+      } else {
+        const shortCode = Date.now().toString(36) + Math.random().toString(36).substr(2)
+        const { error } = await supabase
+          .from("virtual_business_cards")
+          .insert({
+            user_id: user.id,
+            full_name: fullName,
+            email,
+            phone: phone || null,
+            company_name: company || null,
+            job_title: jobTitle || null,
+            website: website || null,
+            linkedin: linkedin || null,
+            twitter: twitter || null,
+            facebook: facebook || null,
+            instagram: instagram || null,
+            photo_url: photoUrl,
+            vcard_data: vcardData,
+            short_code: shortCode,
+          })
+
+        if (error) throw error
+        toast({ title: "Success", description: "Virtual card created" })
+      }
+
+      resetForm()
+      setShowEditModal(false)
+      loadCards()
+    } catch (error) {
+      console.error("Error saving card:", error)
+      toast({ title: "Error", description: "Failed to save virtual card" })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  function resetForm() {
+    setEditingCard(null)
+    setFullName("")
+    setEmail("")
+    setPhone("")
+    setCompany("")
+    setJobTitle("")
+    setWebsite("")
+    setLinkedin("")
+    setTwitter("")
+    setFacebook("")
+    setInstagram("")
+    removePhoto()
+  }
+
+  function openEditModal(card?: VirtualCard) {
+    if (card) {
+      setEditingCard(card)
+      setFullName(card.full_name)
+      setEmail(card.email)
+      setPhone(card.phone || "")
+      setCompany(card.company_name || "")
+      setJobTitle(card.job_title || "")
+      setWebsite(card.website || "")
+      setLinkedin(card.linkedin || "")
+      setTwitter(card.twitter || "")
+      setFacebook(card.facebook || "")
+      setInstagram(card.instagram || "")
+      if (card.photo_url) setPhotoPreview(card.photo_url)
+    } else {
+      resetForm()
+    }
+    setShowEditModal(true)
   }
 
   async function handleShowQR(card: VirtualCard) {
     try {
-      setSelectedCard(card)
-      const cardUrl = getCardUrl(card.short_code)
+      const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
       const qr = await generateQRCode(cardUrl)
       setQrUrl(qr)
       setShowQRModal(card.id)
@@ -97,206 +253,274 @@ export function UserNFSSection() {
     }
   }
 
-  async function downloadQR() {
+  async function handleDeleteCard(id: string) {
+    if (!confirm("Are you sure you want to delete this virtual card?")) return
+
     try {
-      if (!selectedCard || !qrUrl) return
-      
+      const { error } = await supabase
+        .from("virtual_business_cards")
+        .delete()
+        .eq("id", id)
+
+      if (error) throw error
+      toast({ title: "Success", description: "Virtual card deleted" })
+      loadCards()
+    } catch (error) {
+      console.error("Error deleting card:", error)
+      toast({ title: "Error", description: "Failed to delete virtual card" })
+    }
+  }
+
+  function copyToClipboard(card: VirtualCard) {
+    const url = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
+    navigator.clipboard.writeText(url)
+    toast({ title: "Success", description: "Link copied to clipboard" })
+  }
+
+  async function downloadQR(card: VirtualCard) {
+    try {
+      const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/business-card/${card.id}`
+      const qr = await generateQRCode(cardUrl)
       const link = document.createElement("a")
-      link.href = qrUrl
-      link.download = `nfc-card-${selectedCard.full_name.replace(/\s+/g, "-")}.png`
-      document.body.appendChild(link)
+      link.href = qr
+      link.download = `${card.full_name}-nfc.png`
       link.click()
-      document.body.removeChild(link)
-      
-      toast({ title: "Success", description: "QR code downloaded" })
     } catch (error) {
       console.error("Error downloading QR:", error)
       toast({ title: "Error", description: "Failed to download QR code" })
     }
   }
 
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text)
-    toast({ title: "Copied", description: "Link copied to clipboard" })
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Virtual Cards (NFC)</h1>
-            <p className="text-sm text-gray-600 mt-1">Create and manage virtual cards with NFC tags</p>
+            <p className="text-sm text-gray-600">Create and manage your NFC virtual cards</p>
           </div>
-          <Button
-            onClick={() => {
-              setSelectedCard(null)
-              setShowEditModal(true)
-            }}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Virtual Card
+          <Button onClick={() => openEditModal()} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Card
           </Button>
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500">Loading virtual cards...</p>
-          </div>
-        ) : cards.length === 0 ? (
-          <div className="col-span-full text-center py-12 rounded-2xl border border-dashed border-gray-300 bg-gray-50">
-            <p className="text-gray-500 mb-4">No virtual cards yet</p>
-            <Button
-              onClick={() => {
-                setSelectedCard(null)
-                setShowEditModal(true)
-              }}
-              variant="outline"
-            >
-              Create Your First Card
-            </Button>
-          </div>
-        ) : (
-          cards.map((card) => (
-            <Card key={card.id} className="p-4 hover:shadow-lg transition-shadow">
-              <div className="space-y-4">
-                {/* Card Info */}
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">{card.full_name}</h3>
-                  {card.job_title && <p className="text-sm text-gray-600">{card.job_title}</p>}
-                  {card.company_name && <p className="text-xs text-gray-500">{card.company_name}</p>}
-                </div>
-
-                {/* Contact Info */}
-                <div className="text-sm space-y-1">
-                  {card.email && (
-                    <p className="text-gray-600 truncate">
-                      <span className="text-gray-500">Email:</span> {card.email}
-                    </p>
-                  )}
-                  {card.phone && (
-                    <p className="text-gray-600">
-                      <span className="text-gray-500">Phone:</span> {card.phone}
-                    </p>
-                  )}
-                </div>
-
-                {/* Short Code Display */}
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-1">Short Code:</p>
-                  <p className="font-mono text-sm font-bold text-gray-900">{card.short_code}</p>
-                </div>
-
-                {/* Card URL */}
-                <div className="bg-blue-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-1">Card URL:</p>
-                  <p className="font-mono text-xs text-blue-600 break-all truncate">{getCardUrl(card.short_code)}</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 flex-wrap pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(getCardUrl(card.short_code))}
-                    className="flex-1 gap-1"
-                  >
-                    <Copy className="w-3 h-3" />
-                    <span className="hidden sm:inline">Copy Link</span>
-                    <span className="sm:hidden">Copy</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleShowQR(card)}
-                    className="flex-1 gap-1"
-                  >
-                    <QrCode className="w-3 h-3" />
-                    <span className="hidden sm:inline">QR Code</span>
-                    <span className="sm:hidden">QR</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedCard(card)
-                      setShowEditModal(true)
-                    }}
-                    className="flex-1 gap-1"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    <span className="hidden sm:inline">Edit</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteCard(card.id)}
-                    className="flex-1 gap-1 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span className="hidden sm:inline">Delete</span>
-                  </Button>
+      {cards.length === 0 ? (
+        <Card className="rounded-2xl border border-gray-200 bg-white/10 p-8 text-center shadow-lg backdrop-blur-xl">
+          <div className="text-5xl mb-4">📇</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No virtual cards yet</h3>
+          <p className="text-gray-600 mb-4">Create your first NFC virtual card to get started</p>
+          <Button onClick={() => openEditModal()}>Create Your First Card</Button>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => (
+            <Card key={card.id} className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl overflow-hidden">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{card.full_name}</h3>
+                  <p className="text-sm text-gray-600">{card.job_title || "NFC Card"}</p>
                 </div>
               </div>
-            </Card>
-          ))
-        )}
-      </div>
 
-      {/* Edit Modal */}
+              {card.photo_url && (
+                <img src={card.photo_url} alt={card.full_name} className="w-full h-32 object-cover rounded-lg mb-4" />
+              )}
+
+              <div className="text-sm text-gray-600 space-y-1 mb-4">
+                <p>{card.email}</p>
+                {card.phone && <p>{card.phone}</p>}
+                {card.company_name && <p>{card.company_name}</p>}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleShowQR(card)} className="flex-1">
+                  <QrCode className="h-4 w-4 mr-1" />
+                  QR
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(card)} className="flex-1">
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openEditModal(card)} className="flex-1">
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleDeleteCard(card.id)} className="flex-1 text-red-600">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {selectedCard ? "Edit Virtual Card" : "Create Virtual Card"}
-            </DialogTitle>
+            <DialogTitle>{editingCard ? "Edit Virtual Card" : "Create Virtual Card"}</DialogTitle>
           </DialogHeader>
-          <EditVirtualCardForm
-            card={selectedCard}
-            onSuccess={() => {
-              setShowEditModal(false)
-              loadCards()
-            }}
-          />
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Full Name *</Label>
+                <Input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  required
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Photo (Optional)</Label>
+              <div className="flex gap-2">
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => photoRef.current?.click()}
+                  className="flex-1"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {photoFile ? "Change Photo" : "Upload Photo"}
+                </Button>
+                {photoPreview && (
+                  <Button type="button" variant="ghost" size="icon" onClick={removePhoto}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {photoPreview && (
+                <img src={photoPreview} alt="Preview" className="w-24 h-24 rounded-lg object-cover" />
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Input
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Acme Inc"
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Job Title</Label>
+                <Input
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  placeholder="CEO"
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Website</Label>
+                <Input
+                  type="url"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://example.com"
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-lg border border-gray-200 bg-white/20 p-4">
+              <h4 className="font-semibold text-gray-900">Social Media (Optional)</h4>
+              <div className="space-y-3">
+                <Input
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  placeholder="LinkedIn URL"
+                  className="bg-white/30 border-gray-200"
+                />
+                <Input
+                  value={twitter}
+                  onChange={(e) => setTwitter(e.target.value)}
+                  placeholder="Twitter/X URL"
+                  className="bg-white/30 border-gray-200"
+                />
+                <Input
+                  value={facebook}
+                  onChange={(e) => setFacebook(e.target.value)}
+                  placeholder="Facebook URL"
+                  className="bg-white/30 border-gray-200"
+                />
+                <Input
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  placeholder="Instagram URL"
+                  className="bg-white/30 border-gray-200"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {editingCard ? "Update Card" : "Create Card"}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Modal */}
-      <Dialog open={!!showQRModal} onOpenChange={() => setShowQRModal(null)}>
-        <DialogContent className="max-w-md">
+      <Dialog open={showQRModal !== null} onOpenChange={() => setShowQRModal(null)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Virtual Card QR Code</DialogTitle>
           </DialogHeader>
-          {selectedCard && qrUrl && (
-            <div className="space-y-4">
-              <div className="bg-white p-6 rounded-lg flex justify-center">
-                <img src={qrUrl} alt="QR Code" className="w-64 h-64" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">{selectedCard.full_name}</p>
-                <p className="text-xs text-gray-500 break-all">{getCardUrl(selectedCard.short_code)}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => copyToClipboard(getCardUrl(selectedCard.short_code))}
-                  className="flex-1 gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copy Link
-                </Button>
-                <Button
-                  onClick={downloadQR}
-                  className="flex-1 gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </Button>
-              </div>
+          {qrUrl && (
+            <div className="flex flex-col items-center gap-4">
+              <img src={qrUrl} alt="QR Code" className="w-64 h-64 rounded-lg" />
+              <Button onClick={() => downloadQR(cards.find(c => c.id === showQRModal) || cards[0])} className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download QR
+              </Button>
             </div>
           )}
         </DialogContent>
