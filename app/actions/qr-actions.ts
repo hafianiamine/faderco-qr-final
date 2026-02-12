@@ -180,12 +180,30 @@ export async function createBusinessCardQR(
     }
 
     // Generate a short code for the QR
-    const shortCode = generateShortCode()
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fadercoqr.com"
-    const shortUrl = `${appUrl}/api/redirect/${shortCode}`
+    let shortCode = generateShortCode()
+    let isUnique = false
+    let attempts = 0
+
+    while (!isUnique && attempts < 10) {
+      const { data: existing } = await supabase.from("qr_codes").select("id").eq("short_code", shortCode).maybeSingle()
+
+      if (!existing) {
+        isUnique = true
+      } else {
+        shortCode = generateShortCode()
+        attempts++
+      }
+    }
+
+    if (!isUnique) {
+      return { error: "Failed to generate unique short code" }
+    }
+
+    const shortUrl = createShortUrl(shortCode)
     
-    // For business cards, the destination URL points to the business card display page
-    const businessCardUrl = `${appUrl}/business-card/${businessCard.id}`
+    // Extract base URL from short URL for business card link
+    const shortUrlWithoutRedirect = shortUrl.replace(/\/api\/redirect\/.*/, '')
+    const businessCardUrl = `${shortUrlWithoutRedirect}/business-card/${businessCard.id}`
 
     // Generate QR code that encodes ONLY the short URL (not vCard data)
     const qrImageDataUrl = await generateQRCode(shortUrl, {

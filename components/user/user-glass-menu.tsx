@@ -51,6 +51,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
   const menuItems = [
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },
     { id: "qr-codes", label: "My QR Codes", icon: QrCode },
+    { id: "business-cards", label: "Business Cards", icon: Plus },
     { id: "create", label: "Create QR Code", icon: Plus },
   ]
 

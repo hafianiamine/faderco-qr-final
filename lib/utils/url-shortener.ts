@@ -8,6 +8,19 @@ export function generateShortCode(): string {
 }
 
 export function createShortUrl(shortCode: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  return `${baseUrl}/api/redirect/${shortCode}`
+  // Use NEXT_PUBLIC_APP_URL (available in both client and server)
+  // Fallback to VERCEL_URL for deployed environments, then localhost
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  
+  if (!baseUrl && process.env.VERCEL_URL) {
+    baseUrl = `https://${process.env.VERCEL_URL}`
+  }
+  
+  if (!baseUrl) {
+    baseUrl = "http://localhost:3000"
+  }
+  
+  // Ensure no trailing slash to avoid double slashes
+  const cleanUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  return `${cleanUrl}/api/redirect/${shortCode}`
 }
