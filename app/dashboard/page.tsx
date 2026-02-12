@@ -10,8 +10,7 @@ import { UserAnalyticsSection } from "@/components/user/user-analytics-section"
 import { UserProfileSection } from "@/components/user/user-profile-section"
 import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
-import { UserBusinessCardsSection } from "@/components/user/user-business-cards-section"
-import { CreateBusinessCardForm } from "@/components/create-business-card-form"
+import { UserNFSSection } from "@/components/user/user-nfs-section"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
@@ -90,12 +89,7 @@ export default function UserDashboardPage() {
               </div>
             </div>
           )}
-          {currentSection === "business-cards" && <UserBusinessCardsSection />}
-          {currentSection === "create-card" && (
-            <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
-              <CreateBusinessCardForm onSuccess={() => setCurrentSection("business-cards")} />
-            </div>
-          )}
+          {currentSection === "nfs" && <UserNFSSection />}
         </div>
       </div>
     </div>
