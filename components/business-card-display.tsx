@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, Phone, Briefcase, Globe, Download, MessageCircle, Copy } from 'lucide-react'
+import { Mail, Phone, Briefcase, Globe, Download, MessageCircle, Copy, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
@@ -15,6 +15,10 @@ interface VirtualCard {
   website?: string
   cover_image_url?: string
   accent_color?: string
+  linkedin?: string
+  twitter?: string
+  facebook?: string
+  instagram?: string
   vcard_data: string
 }
 
@@ -136,6 +140,59 @@ export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
                 </a>
               )}
             </div>
+
+            {/* Social Media Links */}
+            {(card.linkedin || card.twitter || card.facebook || card.instagram) && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-4 tracking-wide">Connect</h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {card.linkedin && (
+                    <a
+                      href={card.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="LinkedIn"
+                    >
+                      <Linkedin className="w-5 h-5 text-blue-600" />
+                    </a>
+                  )}
+                  {card.twitter && (
+                    <a
+                      href={card.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-3 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors"
+                      title="Twitter"
+                    >
+                      <Twitter className="w-5 h-5 text-sky-500" />
+                    </a>
+                  )}
+                  {card.facebook && (
+                    <a
+                      href={card.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                      title="Facebook"
+                    >
+                      <Facebook className="w-5 h-5 text-indigo-600" />
+                    </a>
+                  )}
+                  {card.instagram && (
+                    <a
+                      href={card.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors"
+                      title="Instagram"
+                    >
+                      <Instagram className="w-5 h-5 text-pink-600" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3">

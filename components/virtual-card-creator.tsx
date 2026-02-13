@@ -35,6 +35,10 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [company, setCompany] = useState(existingCard?.company_name || '')
   const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
   const [website, setWebsite] = useState(existingCard?.website || '')
+  const [linkedin, setLinkedin] = useState('')
+  const [twitter, setTwitter] = useState('')
+  const [facebook, setFacebook] = useState('')
+  const [instagram, setInstagram] = useState('')
   const [accentColor, setAccentColor] = useState(existingCard?.accent_color || '#6366f1')
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
 
@@ -71,6 +75,10 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         company,
         jobTitle,
         website,
+        linkedin,
+        twitter,
+        facebook,
+        instagram,
         accentColor,
         coverImageBase64: coverImage ? getBase64(coverImage) : undefined,
       }
@@ -151,14 +159,54 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="jobTitle">Job Title</Label>
+              <Label htmlFor="website">Website</Label>
               <Input
-                id="jobTitle"
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="CEO"
+                id="website"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://example.com"
               />
             </div>
+            <div>
+              <Label htmlFor="accentColor">Accent Color</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  id="accentColor"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="w-12 h-10 rounded"
+                />
+                <span className="text-sm text-gray-600">{accentColor}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label>Social Media</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                value={linkedin}
+                onChange={(e) => setLinkedin(e.target.value)}
+                placeholder="LinkedIn URL"
+              />
+              <Input
+                value={twitter}
+                onChange={(e) => setTwitter(e.target.value)}
+                placeholder="Twitter URL"
+              />
+              <Input
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+                placeholder="Facebook URL"
+              />
+              <Input
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                placeholder="Instagram URL"
+              />
+            </div>
+          </div>
             <div>
               <Label htmlFor="website">Website</Label>
               <Input
