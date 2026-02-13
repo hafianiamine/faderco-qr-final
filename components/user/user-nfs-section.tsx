@@ -157,16 +157,23 @@ export function UserNFSSection() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-2xl">
           {cards.map((card) => (
             <Card key={card.id} className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl overflow-hidden">
-              <div className="flex items-start justify-between mb-4">
+              {card.cover_image_url && (
+                <img src={card.cover_image_url} alt={card.full_name} className="w-full h-32 object-cover rounded-lg mb-4" />
+              )}
+
+              <div className="flex items-center gap-4 mb-4">
+                {card.photo_url ? (
+                  <img src={card.photo_url} alt={card.full_name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-gray-600">{card.full_name?.charAt(0)}</span>
+                  </div>
+                )}
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">{card.full_name}</h3>
                   <p className="text-sm text-gray-600">{card.job_title || "NFC Card"}</p>
                 </div>
               </div>
-
-              {card.cover_image_url && (
-                <img src={card.cover_image_url} alt={card.full_name} className="w-full h-32 object-cover rounded-lg mb-4" />
-              )}
 
               <div className="text-sm text-gray-600 space-y-1 mb-4">
                 <p>{card.email}</p>

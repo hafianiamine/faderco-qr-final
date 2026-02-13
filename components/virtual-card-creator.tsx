@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, X } from 'lucide-react'
+import { Upload, X, Mail, Phone, Briefcase, Globe } from 'lucide-react'
 import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
 import { useToast } from '@/hooks/use-toast'
 
-interface VirtualCardData {
-  id: string
+interface VirtualCard {
+  id?: string
   full_name: string
   email: string
   phone?: string | null
@@ -18,11 +18,12 @@ interface VirtualCardData {
   job_title?: string | null
   website?: string | null
   cover_image_url?: string | null
-  accent_color?: string
+  theme_color?: string
+  photo_url?: string | null
 }
 
 interface VirtualCardCreatorProps {
-  existingCard?: VirtualCardData | null
+  existingCard?: VirtualCard | null
   onClose?: () => void
 }
 
@@ -35,12 +36,20 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [company, setCompany] = useState(existingCard?.company_name || '')
   const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
   const [website, setWebsite] = useState(existingCard?.website || '')
-  const [linkedin, setLinkedin] = useState('')
-  const [twitter, setTwitter] = useState('')
-  const [facebook, setFacebook] = useState('')
-  const [instagram, setInstagram] = useState('')
-  const [accentColor, setAccentColor] = useState(existingCard?.accent_color || '#6366f1')
+  const [themeColor, setThemeColor] = useState(existingCard?.theme_color || '#6366f1')
+  const [profileImage, setProfileImage] = useState<string | null>(existingCard?.photo_url || null)
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setProfileImage(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -53,6 +62,12 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
     }
   }
 
+  const getBase64 = (data: string) => {
+    if (!data) return ''
+    const matches = data.match(/base64,(.+)/)
+    return matches ? matches[1] : data
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fullName || !email) {
@@ -62,12 +77,6 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
     setLoading(true)
     try {
-      const getBase64 = (data: string) => {
-        if (!data) return ''
-        const matches = data.match(/base64,(.+)/)
-        return matches ? matches[1] : data
-      }
-
       const cardData = {
         fullName,
         email,
@@ -75,26 +84,27 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         company,
         jobTitle,
         website,
-        linkedin,
-        twitter,
-        facebook,
-        instagram,
-        accentColor,
+        themeColor,
         coverImageBase64: coverImage ? getBase64(coverImage) : undefined,
+        photoBase64: profileImage ? getBase64(profileImage) : undefined,
       }
 
-      let result
-      if (existingCard) {
-        result = await updateVirtualCard(existingCard.id, cardData)
+      if (existingCard?.id) {
+        const result = await updateVirtualCard(existingCard.id, cardData)
+        if (result.error) {
+          toast({ title: 'Error', description: result.error })
+        } else {
+          toast({ title: 'Success', description: 'Virtual card updated successfully!' })
+          onClose?.()
+        }
       } else {
-        result = await createVirtualCard(cardData)
-      }
-
-      if (result.error) {
-        toast({ title: 'Error', description: result.error })
-      } else {
-        toast({ title: 'Success', description: existingCard ? 'Card updated!' : 'Card created!' })
-        onClose?.()
+        const result = await createVirtualCard(cardData)
+        if (result.error) {
+          toast({ title: 'Error', description: result.error })
+        } else {
+          toast({ title: 'Success', description: 'Virtual card created successfully!' })
+          onClose?.()
+        }
       }
     } catch (error) {
       console.error('Error saving card:', error)
@@ -105,149 +115,235 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   }
 
   return (
-    <Dialog open={true} onOpenChange={() => onClose?.()}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
+          <DialogTitle>{existingCard?.id ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fullName">Full Name *</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@example.com"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 (555) 123-4567"
-              />
-            </div>
-            <div>
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="Acme Inc"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="accentColor">Accent Color</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  id="accentColor"
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  className="w-12 h-10 rounded"
+        <div className="grid grid-cols-2 gap-8">
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
                 />
-                <span className="text-sm text-gray-600">{accentColor}</span>
+              </div>
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="company">Company</Label>
+                <Input
+                  id="company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Company Name"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input
+                  id="jobTitle"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  placeholder="Your Position"
+                />
+              </div>
+              <div>
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="themeColor">Theme Color</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    id="themeColor"
+                    value={themeColor}
+                    onChange={(e) => setThemeColor(e.target.value)}
+                    className="w-12 h-10 rounded cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600">{themeColor}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="profileImage">Profile Photo</Label>
+              <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                {profileImage ? (
+                  <div className="space-y-2">
+                    <img src={profileImage} alt="Profile" className="w-24 h-24 rounded-full mx-auto object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setProfileImage(null)}
+                      className="text-red-600 hover:text-red-700 text-sm flex items-center justify-center gap-1 mx-auto"
+                    >
+                      <X className="w-4 h-4" />
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">Click to upload profile photo</p>
+                    <input
+                      type="file"
+                      id="profileImage"
+                      onChange={handleProfileImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="coverImage">Cover Image</Label>
+              <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                {coverImage ? (
+                  <div className="space-y-2">
+                    <img src={coverImage} alt="Cover" className="w-full h-32 rounded object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage(null)}
+                      className="text-red-600 hover:text-red-700 text-sm flex items-center justify-center gap-1 mx-auto"
+                    >
+                      <X className="w-4 h-4" />
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">Click to upload cover image</p>
+                    <input
+                      type="file"
+                      id="coverImage"
+                      onChange={handleCoverImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? 'Saving...' : existingCard?.id ? 'Update Card' : 'Create Card'}
+              </Button>
+            </div>
+          </form>
+
+          {/* Live Preview Section */}
+          <div className="sticky top-0">
+            <Label className="text-base font-semibold mb-4 block">Live Preview</Label>
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden shadow-xl" style={{ borderColor: themeColor, borderWidth: '4px' }}>
+              {/* Cover Image */}
+              {coverImage && (
+                <img src={coverImage} alt="Cover" className="w-full h-32 object-cover" />
+              )}
+
+              <div className="p-6 space-y-4">
+                {/* Profile Image */}
+                {profileImage && (
+                  <div className="flex justify-center -mt-16 mb-4">
+                    <img
+                      src={profileImage}
+                      alt={fullName}
+                      className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                      style={{ borderColor: themeColor }}
+                    />
+                  </div>
+                )}
+
+                {/* Name and Title */}
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold text-gray-900">{fullName || 'Your Name'}</h2>
+                  {jobTitle && <p className="text-sm text-gray-600">{jobTitle}</p>}
+                  {company && <p className="text-xs text-gray-500">{company}</p>}
+                </div>
+
+                {/* Contact Info */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  {email && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="w-4 h-4" style={{ color: themeColor }} />
+                      <a href={`mailto:${email}`} className="text-gray-700 hover:text-gray-900">
+                        {email}
+                      </a>
+                    </div>
+                  )}
+                  {phone && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="w-4 h-4" style={{ color: themeColor }} />
+                      <a href={`tel:${phone}`} className="text-gray-700 hover:text-gray-900">
+                        {phone}
+                      </a>
+                    </div>
+                  )}
+                  {company && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Briefcase className="w-4 h-4" style={{ color: themeColor }} />
+                      <span className="text-gray-700">{company}</span>
+                    </div>
+                  )}
+                  {website && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Globe className="w-4 h-4" style={{ color: themeColor }} />
+                      <a href={website} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 truncate">
+                        {website}
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-
-          <div>
-            <Label>Social Media</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                value={linkedin}
-                onChange={(e) => setLinkedin(e.target.value)}
-                placeholder="LinkedIn URL"
-              />
-              <Input
-                value={twitter}
-                onChange={(e) => setTwitter(e.target.value)}
-                placeholder="Twitter URL"
-              />
-              <Input
-                value={facebook}
-                onChange={(e) => setFacebook(e.target.value)}
-                placeholder="Facebook URL"
-              />
-              <Input
-                value={instagram}
-                onChange={(e) => setInstagram(e.target.value)}
-                placeholder="Instagram URL"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Cover Image</Label>
-            <div className="border-2 border-dashed rounded-lg p-4 text-center">
-              {coverImage ? (
-                <div className="space-y-2">
-                  <img src={coverImage} alt="Cover" className="w-full h-32 object-cover rounded" />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCoverImage(null)}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <label className="cursor-pointer">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">Click to upload cover image</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => onClose?.()}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : existingCard ? 'Update Card' : 'Create Card'}
-            </Button>
-          </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, Phone, Briefcase, Globe, Download, MessageCircle, Copy, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react'
+import { Mail, Phone, Briefcase, Globe, Download, MessageCircle, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
@@ -14,11 +14,8 @@ interface VirtualCard {
   job_title?: string
   website?: string
   cover_image_url?: string
-  accent_color?: string
-  linkedin?: string
-  twitter?: string
-  facebook?: string
-  instagram?: string
+  photo_url?: string
+  theme_color?: string
   vcard_data: string
 }
 
@@ -29,7 +26,7 @@ interface BusinessCardDisplayProps {
 export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
-  const accentColor = card.accent_color || '#6366f1'
+  const accentColor = card.theme_color || '#6366f1'
 
   const downloadVCard = () => {
     const element = document.createElement('a')
@@ -76,9 +73,13 @@ export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
           <div className="relative px-6 pb-8">
             {/* Profile Image */}
             <div className="flex justify-center -mt-20 mb-4">
-              <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-300 to-purple-300 border-4 border-white shadow-xl flex items-center justify-center text-white text-6xl font-bold overflow-hidden">
-                {card.full_name.charAt(0).toUpperCase()}
-              </div>
+              {card.photo_url ? (
+                <img src={card.photo_url} alt={card.full_name} className="w-40 h-40 rounded-full border-4 border-white shadow-xl object-cover" style={{ borderColor: accentColor }} />
+              ) : (
+                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-300 to-purple-300 border-4 border-white shadow-xl flex items-center justify-center text-white text-6xl font-bold" style={{ borderColor: accentColor }}>
+                  {card.full_name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             {/* Name */}
@@ -140,59 +141,6 @@ export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
                 </a>
               )}
             </div>
-
-            {/* Social Media Links */}
-            {(card.linkedin || card.twitter || card.facebook || card.instagram) && (
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-4 tracking-wide">Connect</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {card.linkedin && (
-                    <a
-                      href={card.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="LinkedIn"
-                    >
-                      <Linkedin className="w-5 h-5 text-blue-600" />
-                    </a>
-                  )}
-                  {card.twitter && (
-                    <a
-                      href={card.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center p-3 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors"
-                      title="Twitter"
-                    >
-                      <Twitter className="w-5 h-5 text-sky-500" />
-                    </a>
-                  )}
-                  {card.facebook && (
-                    <a
-                      href={card.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                      title="Facebook"
-                    >
-                      <Facebook className="w-5 h-5 text-indigo-600" />
-                    </a>
-                  )}
-                  {card.instagram && (
-                    <a
-                      href={card.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors"
-                      title="Instagram"
-                    >
-                      <Instagram className="w-5 h-5 text-pink-600" />
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3">

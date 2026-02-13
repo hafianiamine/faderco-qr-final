@@ -11,13 +11,9 @@ export interface VirtualCardData {
   company?: string
   jobTitle?: string
   website?: string
-  linkedin?: string
-  twitter?: string
-  facebook?: string
-  instagram?: string
   photoBase64?: string
   coverImageBase64?: string
-  accentColor?: string
+  themeColor?: string
 }
 
 function generateVCard(card: VirtualCardData, photoBase64?: string): string {
@@ -31,10 +27,6 @@ EMAIL:${card.email}`
   if (card.company) vcard += `\nORG:${card.company}`
   if (card.jobTitle) vcard += `\nTITLE:${card.jobTitle}`
   if (card.website) vcard += `\nURL:${card.website}`
-  if (card.linkedin) vcard += `\nX-SOCIALPROFILE;TYPE=LinkedIn:${card.linkedin}`
-  if (card.twitter) vcard += `\nX-SOCIALPROFILE;TYPE=Twitter:${card.twitter}`
-  if (card.facebook) vcard += `\nX-SOCIALPROFILE;TYPE=Facebook:${card.facebook}`
-  if (card.instagram) vcard += `\nX-SOCIALPROFILE;TYPE=Instagram:${card.instagram}`
   if (photoBase64) vcard += `\nPHOTO;ENCODING=BASE64;TYPE=JPEG:${photoBase64}`
   
   vcard += "\nEND:VCARD"
@@ -94,8 +86,9 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
       website: cardData.website,
       vcard_data: vcard,
       short_code: shortCode,
+      photo_url: cardData.photoBase64 ? `data:image/jpeg;base64,${cardData.photoBase64}` : null,
       cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : null,
-      accent_color: cardData.accentColor || "#6366f1",
+      theme_color: cardData.themeColor || "#6366f1",
     }).select()
 
     if (error) {
@@ -154,8 +147,9 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
         job_title: cardData.jobTitle,
         website: cardData.website,
         vcard_data: vcard,
+        photo_url: cardData.photoBase64 ? `data:image/jpeg;base64,${cardData.photoBase64}` : undefined,
         cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : undefined,
-        accent_color: cardData.accentColor || "#6366f1",
+        theme_color: cardData.themeColor || "#6366f1",
       })
       .eq("id", cardId)
       .select()
