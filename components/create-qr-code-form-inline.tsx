@@ -46,11 +46,6 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
   const [wifiSSID, setWifiSSID] = useState("")
   const [wifiPassword, setWifiPassword] = useState("")
   const [wifiSecurity, setWifiSecurity] = useState("WPA")
-  const [successQRData, setSuccessQRData] = useState<{
-    qrCodeId: string
-    title: string
-    qrImage: string
-  } | null>(null)
 
   useEffect(() => {
     const generatePreview = async () => {
@@ -161,18 +156,14 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
             actualQrImage = await addLogoToQRClient(baseQr, logoPreview, 512, logoSize, logoOutlineColor)
           }
           
-          setSuccessQRData({
-            qrCodeId,
-            title: title,
-            qrImage: actualQrImage || "",
-          })
+          toast.success("QR Code Created!")
+        setSuccessQRData(null)
+        onSuccess?.()
         } catch (err) {
           console.error("Error generating actual QR code:", err)
-          setSuccessQRData({
-            qrCodeId,
-            title: title,
-            qrImage: qrPreview || "",
-          })
+        toast.success("QR Code Created!")
+        setSuccessQRData(null)
+        onSuccess?.()
         }
         
         setTitle("")
@@ -806,57 +797,6 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
 
 
       </Tabs>
-
-      {successQRData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">QR Code Created!</h2>
-              <p className="text-sm text-gray-600">{successQRData.title}</p>
-            </div>
-
-            <div className="mb-6 rounded-lg bg-gray-50 p-4">
-              {successQRData.qrImage ? (
-                <img src={successQRData.qrImage || "/placeholder.svg"} alt="QR Code" className="mx-auto h-48 w-48" />
-              ) : (
-                <div className="flex h-48 w-48 items-center justify-center rounded bg-gray-200">
-                  <span className="text-gray-400">Loading...</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-6 flex gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent" asChild>
-                <a href={successQRData.qrImage} download={`${successQRData.title}.png`}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </a>
-              </Button>
-            </div>
-
-            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-medium text-gray-900 mb-2">Your QR code is ready!</p>
-              <p className="text-xs text-gray-600 mb-3">
-                You can view and edit it anytime in the "My QR Codes" section.
-              </p>
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => {
-                  setSuccessQRData(null)
-                  // Navigate to MyQR section
-                  window.location.hash = "#myqr"
-                }}
-              >
-                Go to My QR Codes
-              </Button>
-            </div>
-
-            <Button variant="ghost" className="w-full" onClick={() => setSuccessQRData(null)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
     </>
   )
 }
