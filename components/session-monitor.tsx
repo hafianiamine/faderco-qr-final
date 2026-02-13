@@ -8,7 +8,7 @@ import { getValidSession, clearSession, resetActivityTimer } from '@/lib/supabas
 export function SessionMonitor() {
   const router = useRouter()
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const activityCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const hasInitializedRef = useRef(false)
 
   useEffect(() => {
@@ -17,43 +17,43 @@ export function SessionMonitor() {
     hasInitializedRef.current = true
 
     const checkSession = async () => {
-      console.log('[v0] SessionMonitor: Checking session validity')
-      const session = getValidSession()
+      try {
+        const supabase = createClient()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
 
-      if (!session) {
-        console.log('[v0] SessionMonitor: No valid session, redirecting to login')
-        clearSession()
-        router.push('/login')
-        return
+        if (!session) {
+          console.log('[v0] SessionMonitor: No Supabase session, redirecting to login')
+          clearSession()
+          router.push('/auth/login')
+          return
+        }
+
+        console.log('[v0] SessionMonitor: Valid Supabase session found for:', session.user?.email)
+        resetActivityTimer()
+      } catch (error) {
+        console.error('[v0] SessionMonitor: Error checking session:', error)
       }
-
-      console.log('[v0] SessionMonitor: Session is valid, user:', session.userId)
     }
 
-    // Initial session check
+    // Initial session check on mount
     checkSession()
 
-    // Set up activity tracking
+    // Set up activity tracking to reset inactivity timer
     const trackActivity = () => {
       resetActivityTimer()
-      console.log('[v0] Activity detected, timer reset')
-
-      // Clear existing timer
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current)
-      }
     }
 
-    // Activity event listeners
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart']
     events.forEach((event) => {
       document.addEventListener(event, trackActivity, true)
     })
 
-    // Periodic session check (every 1 minute)
-    activityCheckIntervalRef.current = setInterval(() => {
+    // Periodic session check (every 5 minutes instead of 1 minute)
+    sessionCheckIntervalRef.current = setInterval(() => {
       checkSession()
-    }, 60 * 1000)
+    }, 5 * 60 * 1000)
 
     // Cleanup
     return () => {
@@ -65,8 +65,8 @@ export function SessionMonitor() {
         clearTimeout(inactivityTimerRef.current)
       }
 
-      if (activityCheckIntervalRef.current) {
-        clearInterval(activityCheckIntervalRef.current)
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current)
       }
     }
   }, [router])

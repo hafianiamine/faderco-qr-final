@@ -4,7 +4,6 @@ import { Inter, JetBrains_Mono, Poppins } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { SecurityProvider } from "@/components/security-provider"
-import { SessionMonitor } from "@/components/session-monitor"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -69,7 +68,6 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <SecurityProvider>
-          <SessionMonitor />
           <Suspense fallback={null}>{children}</Suspense>
         </SecurityProvider>
         <script
