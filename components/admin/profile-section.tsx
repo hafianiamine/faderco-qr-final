@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
-import { Upload, Loader2, Check } from "lucide-react"
+import { Upload, Loader2, Check, Bell } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export function ProfileSection() {
@@ -26,6 +26,11 @@ export function ProfileSection() {
   const [passwords, setPasswords] = useState({
     newPassword: "",
     confirmPassword: "",
+  })
+  const [notifications, setNotifications] = useState({
+    emailNotifications: true,
+    scanAlerts: false,
+    weeklyReports: true,
   })
   const { toast } = useToast()
 
@@ -47,6 +52,11 @@ export function ProfileSection() {
         email: user.email || "",
         phone_number: data?.phone_number || "",
         avatar_url: data?.avatar_url || "",
+      })
+      setNotifications({
+        emailNotifications: data?.notification_email ?? true,
+        scanAlerts: data?.notification_scan_alerts ?? false,
+        weeklyReports: data?.notification_weekly_reports ?? true,
       })
       setAvatarKey(Date.now())
     }
@@ -111,6 +121,9 @@ export function ProfileSection() {
         .update({
           full_name: profile.name,
           phone_number: profile.phone_number,
+          notification_email: notifications.emailNotifications,
+          notification_scan_alerts: notifications.scanAlerts,
+          notification_weekly_reports: notifications.weeklyReports,
         })
         .eq("id", user.id)
 
@@ -264,6 +277,79 @@ export function ProfileSection() {
               />
             </div>
             <p className="text-xs text-muted-foreground">Leave blank to keep current password</p>
+          </div>
+
+          {/* Notification Preferences */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              <h3 className="font-semibold text-gray-900">Notification Preferences</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                <div className="flex-1">
+                  <Label className="text-sm font-medium text-gray-900">Email Notifications</Label>
+                  <p className="text-xs text-gray-600">Receive email updates about your account</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setNotifications(prev => ({ ...prev, emailNotifications: !prev.emailNotifications }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      notifications.emailNotifications ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        notifications.emailNotifications ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                <div className="flex-1">
+                  <Label className="text-sm font-medium text-gray-900">Scan Alerts</Label>
+                  <p className="text-xs text-gray-600">Get notified when your QR codes are scanned</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setNotifications(prev => ({ ...prev, scanAlerts: !prev.scanAlerts }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      notifications.scanAlerts ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        notifications.scanAlerts ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                <div className="flex-1">
+                  <Label className="text-sm font-medium text-gray-900">Weekly Reports</Label>
+                  <p className="text-xs text-gray-600">Receive weekly analytics summaries</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setNotifications(prev => ({ ...prev, weeklyReports: !prev.weeklyReports }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      notifications.weeklyReports ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        notifications.weeklyReports ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Save Button */}
