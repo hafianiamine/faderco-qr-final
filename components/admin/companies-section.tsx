@@ -15,7 +15,6 @@ interface User {
   id: string
   full_name: string
   email: string
-  position: string
   phone_number: string
   company: string
 }
@@ -74,7 +73,7 @@ export function CompaniesSection() {
     console.log("[v0] Loading users for company:", companyName)
     const { data: users, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, position, phone_number, company")
+      .select("id, full_name, email, phone_number, company")
       .eq("company", companyName)
 
     console.log("[v0] Company users loaded:", users?.length || 0, "Error:", error?.message)
@@ -281,9 +280,9 @@ export function CompaniesSection() {
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">{user.full_name}</p>
                       <p className="text-sm text-gray-600">{user.email}</p>
-                      <p className="text-sm text-gray-500">
-                        {user.position} • {user.phone_number}
-                      </p>
+                      {user.phone_number && (
+                        <p className="text-sm text-gray-500">{user.phone_number}</p>
+                      )}
                     </div>
                   </div>
                 ))
