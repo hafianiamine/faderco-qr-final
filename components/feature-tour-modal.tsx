@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
   BarChart3,
@@ -157,6 +157,9 @@ export function FeatureTourModal({ isOpen, onClose, userName }: FeatureTourModal
               </span>
             )}
           </DialogTitle>
+          <DialogDescription>
+            Learn about the amazing features of FADERCO QR Platform
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

@@ -28,8 +28,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
         data: { user },
       } = await supabase.auth.getUser()
 
-      console.log("[v0] UserGlassMenu: Loading user data")
-
       if (user) {
         const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle()
 
@@ -37,9 +35,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
           setAvatarUrl(data.avatar_url)
         }
 
-        console.log("[v0] UserGlassMenu: Fetching tutorial video URL using server action")
         const { videoUrl } = await getTutorialVideoUrl()
-        console.log("[v0] UserGlassMenu: Tutorial video URL from server:", videoUrl)
 
         if (videoUrl) {
           setTutorialVideoUrl(videoUrl)
@@ -47,7 +43,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
       }
     }
     loadAvatar()
-  }, [currentSection])
+  }, [])
 
   const menuItems = [
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },

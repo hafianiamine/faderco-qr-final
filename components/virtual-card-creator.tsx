@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Upload, X, Mail, Phone, Briefcase, Globe, Linkedin, Facebook, Instagram } from 'lucide-react'
 import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
 import { createNFCRequest } from '@/app/actions/nfc-request-actions'
@@ -149,6 +149,11 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
       <DialogContent className="w-[95vw] max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
+          <DialogDescription>
+            {existingCard 
+              ? 'Update your NFC virtual business card details. Your card URL and QR code will remain the same.'
+              : 'Create your NFC virtual business card with a permanent URL and QR code. You can update the details anytime.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-6 items-start">
