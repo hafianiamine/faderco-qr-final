@@ -207,30 +207,6 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
               />
             </div>
           </div>
-            <div>
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="accentColor">Accent Color</Label>
-            <div className="flex gap-2">
-              <input
-                id="accentColor"
-                type="color"
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-                className="h-10 w-20 rounded cursor-pointer"
-              />
-              <Input value={accentColor} readOnly className="flex-1" />
-            </div>
-          </div>
 
           <div>
             <Label>Cover Image</Label>
