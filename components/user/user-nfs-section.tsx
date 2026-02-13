@@ -7,7 +7,7 @@ import { CardAnalyticsDashboard } from "@/components/card-analytics-dashboard"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2, BarChart3 } from "lucide-react"
+import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2, BarChart2 } from "lucide-react"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
 import { deleteVirtualCard } from "@/app/actions/virtual-card-actions"
@@ -183,7 +183,7 @@ export function UserNFSSection() {
                   Edit
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setShowAnalytics(true)} className="flex-1">
-                  <BarChart3 className="h-4 w-4 mr-1" />
+                  <BarChart2 className="h-4 w-4 mr-1" />
                   Analytics
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleShowQR(card)} className="flex-1">
