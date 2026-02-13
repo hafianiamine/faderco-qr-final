@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BusinessCardDisplay } from '@/components/business-card-display'
+import { trackCardView } from '@/app/actions/analytics-actions'
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -35,6 +36,9 @@ export default async function BusinessCardPage({ params }: { params: { id: strin
   if (error || !businessCard) {
     redirect('/404')
   }
+
+  // Track the view
+  await trackCardView(params.id)
 
   return <BusinessCardDisplay card={businessCard} />
 }

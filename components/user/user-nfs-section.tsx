@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { VirtualCardCreator } from "@/components/virtual-card-creator"
+import { CardAnalyticsDashboard } from "@/components/card-analytics-dashboard"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2 } from "lucide-react"
+import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2, BarChart3 } from "lucide-react"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
 import { deleteVirtualCard } from "@/app/actions/virtual-card-actions"
@@ -33,6 +34,7 @@ export function UserNFSSection() {
   const [showCreator, setShowCreator] = useState(false)
   const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
+  const [showAnalytics, setShowAnalytics] = useState(false)
   const [qrUrl, setQrUrl] = useState<string>("")
 
   useEffect(() => {
@@ -180,6 +182,10 @@ export function UserNFSSection() {
                   <Edit2 className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowAnalytics(true)} className="flex-1">
+                  <BarChart3 className="h-4 w-4 mr-1" />
+                  Analytics
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => handleShowQR(card)} className="flex-1">
                   <QrCode className="h-4 w-4 mr-1" />
                   QR
@@ -207,6 +213,17 @@ export function UserNFSSection() {
             loadCards()
           }}
         />
+      )}
+
+      {showAnalytics && cards.length > 0 && (
+        <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Card Analytics</DialogTitle>
+            </DialogHeader>
+            <CardAnalyticsDashboard cardId={cards[0]?.id || ""} />
+          </DialogContent>
+        </Dialog>
       )}
 
       <Dialog open={showQRModal !== null} onOpenChange={() => setShowQRModal(null)}>
