@@ -14,6 +14,7 @@ import { UserNFSSection } from "@/components/user/user-nfs-section"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
+import { ensureDefaultVirtualCard } from "@/app/actions/default-card-actions"
 
 export default function UserDashboardPage() {
   const [currentSection, setCurrentSection] = useState("dashboard")
@@ -30,6 +31,10 @@ export default function UserDashboardPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email)
+        
+        // Ensure user has a default virtual card
+        console.log("[v0] Ensuring default virtual card for user:", user.email)
+        await ensureDefaultVirtualCard()
         
         // Only show tour once per browser session
         const hasSeenTour = sessionStorage.getItem(`tour-seen-${user.id}`)
