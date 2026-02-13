@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, X, Mail, Phone, Briefcase, Globe, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react'
+import { Upload, X, Mail, Phone, Briefcase, Globe, Linkedin, Facebook, Instagram } from 'lucide-react'
 import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
 import { createNFCRequest } from '@/app/actions/nfc-request-actions'
 import { useToast } from '@/hooks/use-toast'
+import { XLogo } from '@/components/x-logo'
 
 interface VirtualCard {
   id?: string
@@ -281,7 +282,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Twitter className="w-4 h-4 text-sky-500" />
+                  <XLogo className="w-4 h-4 text-sky-500" />
                   <Input
                     value={x}
                     onChange={(e) => setX(e.target.value)}
@@ -424,7 +425,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                       )}
                       {x && (
                         <a href={x} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-sky-100 hover:bg-sky-200 rounded-lg transition-colors" title="X (formerly Twitter)">
-                          <Twitter className="w-4 h-4 text-sky-500" />
+                          <XLogo className="w-4 h-4 text-sky-500" />
                         </a>
                       )}
                       {facebook && (

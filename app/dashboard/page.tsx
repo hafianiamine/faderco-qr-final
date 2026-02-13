@@ -13,6 +13,7 @@ import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import { UserNFSSection } from "@/components/user/user-nfs-section"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
+import { NFCNewBadge } from "@/components/nfc-new-badge"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
 
 export default function UserDashboardPage() {
@@ -67,6 +68,7 @@ export default function UserDashboardPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <AnimatedBackground />
+      <NFCNewBadge />
 
       <UserGlassMenu
         userEmail={userEmail}
