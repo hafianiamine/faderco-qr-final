@@ -147,6 +147,7 @@ export function AdminNFCRequestsSection() {
   }
 
   const statusConfig = {
+  const STATUS_CONFIG = {
     pending: { icon: Clock, color: 'bg-yellow-100', textColor: 'text-yellow-800', label: 'Pending' },
     approved: { icon: CheckCircle2, color: 'bg-blue-100', textColor: 'text-blue-800', label: 'Approved' },
     in_progress: { icon: Truck, color: 'bg-purple-100', textColor: 'text-purple-800', label: 'In Progress' },
@@ -155,7 +156,7 @@ export function AdminNFCRequestsSection() {
   }
 
   const getStatusIcon = (status: string) => {
-    const config = statusConfig[status as keyof typeof statusConfig]
+    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]
     const Icon = config?.icon || Clock
     return <Icon className="w-4 h-4" />
   }
@@ -193,8 +194,8 @@ export function AdminNFCRequestsSection() {
       ) : (
         <div className="grid gap-4">
           {requests.map((request) => {
-            const statusConfig = statusConfig[request.status as keyof typeof statusConfig]
-            const StatusIcon = statusConfig.icon
+            const requestStatus = STATUS_CONFIG[request.status as keyof typeof STATUS_CONFIG]
+            const StatusIcon = requestStatus.icon
 
             return (
               <Card key={request.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewRequest(request)}>
@@ -202,9 +203,9 @@ export function AdminNFCRequestsSection() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900 capitalize">{request.request_type} Request</h3>
-                      <Badge className={`${statusConfig.color} ${statusConfig.textColor} border-0`}>
+                      <Badge className={`${requestStatus.color} ${requestStatus.textColor} border-0`}>
                         <StatusIcon className="w-3 h-3 mr-1" />
-                        {statusConfig.label}
+                        {requestStatus.label}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{request.user_email}</p>
