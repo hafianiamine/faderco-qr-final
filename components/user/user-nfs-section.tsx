@@ -218,7 +218,8 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
   async function handleShowQR(card: VirtualCard) {
     try {
       // Build the redirect URL using the short code
-      const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+      // Use NEXT_PUBLIC_APP_URL from environment, fallback to window.location.origin
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com")
       const cardUrl = `${appUrl}/api/redirect/${card.short_code}`
       const qr = await generateQRCode(cardUrl)
       setQrUrl(qr)
@@ -247,8 +248,8 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
   }
 
   function copyToClipboard(card: VirtualCard) {
-    // Use the short code redirect URL
-    const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+    // Use the short code redirect URL with NEXT_PUBLIC_APP_URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com")
     const url = `${appUrl}/api/redirect/${card.short_code}`
     navigator.clipboard.writeText(url)
     toast({ title: "Success", description: "Link copied to clipboard" })
@@ -256,8 +257,8 @@ ${phoneVal ? `TEL:${phoneVal}\n` : ""}${jobTitleVal ? `TITLE:${jobTitleVal}\n` :
 
   async function downloadQR(card: VirtualCard) {
     try {
-      // Use the short code redirect URL
-      const appUrl = typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com"
+      // Use the short code redirect URL with NEXT_PUBLIC_APP_URL
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fadercoqr.com")
       const cardUrl = `${appUrl}/api/redirect/${card.short_code}`
       const qr = await generateQRCode(cardUrl)
       const link = document.createElement("a")
