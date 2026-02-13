@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +30,7 @@ interface VirtualCardCreatorProps {
 }
 
 export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreatorProps) {
+  const supabase = createClient()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [fullName, setFullName] = useState(existingCard?.full_name || '')
@@ -44,6 +46,25 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [themeColor, setThemeColor] = useState(existingCard?.theme_color || '#6366f1')
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
   const [profileImage, setProfileImage] = useState<string | null>(existingCard?.profile_image_url || null)
+
+  // Load user's account profile picture as default
+  useEffect(() => {
+    async function loadUserProfilePicture() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && !profileImage) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single()
+        
+        if (data?.avatar_url) {
+          setProfileImage(data.avatar_url)
+        }
+      }
+    }
+    loadUserProfilePicture()
+  }, [])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isProfile: boolean = false) => {
     const file = e.target.files?.[0]
@@ -86,6 +107,8 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         profileImageBase64: profileImage,
       }
 
+      console.log("[v0] Saving virtual card with profileImage:", profileImage ? "yes" : "no")
+
       let result
       if (existingCard?.id) {
         result = await updateVirtualCard(existingCard.id, cardData)
@@ -97,50 +120,24 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         toast({ title: "Error", description: result.error })
       } else {
         toast({ title: "Success", description: `Virtual card ${existingCard?.id ? 'updated' : 'created'} successfully!` })
+        
+        // If profile image was changed, also update user's account profile picture
+        if (profileImage && profileImage !== existingCard?.profile_image_url) {
+          console.log("[v0] Syncing profile picture to user account")
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase
+              .from('profiles')
+              .update({ avatar_url: profileImage })
+              .eq('id', user.id)
+          }
+        }
+        
         onClose?.()
       }
     } catch (error) {
       console.error("[v0] Virtual card error:", error)
       toast({ title: "Error", description: "Failed to save virtual card" })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-    setLoading(true)
-    try {
-      const cardData = {
-        fullName,
-        email,
-        phone,
-        company,
-        jobTitle,
-        website,
-        themeColor,
-        coverImageBase64: coverImage,
-        profileImageBase64: profileImage,
-      }
-
-      if (existingCard?.id) {
-        const result = await updateVirtualCard(existingCard.id, cardData)
-        if (result.error) {
-          toast({ title: 'Error', description: result.error })
-        } else {
-          toast({ title: 'Success', description: 'Virtual card updated successfully!' })
-          onClose?.()
-        }
-      } else {
-        const result = await createVirtualCard(cardData)
-        if (result.error) {
-          toast({ title: 'Error', description: result.error })
-        } else {
-          toast({ title: 'Success', description: 'Virtual card created successfully!' })
-          onClose?.()
-        }
-      }
-    } catch (error) {
-      console.error('Error saving card:', error)
-      toast({ title: 'Error', description: 'Failed to save virtual card' })
     } finally {
       setLoading(false)
     }
@@ -413,7 +410,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                 </div>
 
                 {/* Social Media Links */}
-                {(linkedin || twitter || facebook || instagram) && (
+                {(linkedin || x || facebook || instagram) && (
                   <div className="pt-4 border-t border-gray-200">
                     <div className="grid grid-cols-4 gap-2">
                       {linkedin && (
@@ -421,8 +418,8 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                           <Linkedin className="w-4 h-4 text-blue-600" />
                         </a>
                       )}
-                      {twitter && (
-                        <a href={twitter} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-sky-100 hover:bg-sky-200 rounded-lg transition-colors" title="Twitter">
+                      {x && (
+                        <a href={x} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-sky-100 hover:bg-sky-200 rounded-lg transition-colors" title="X (formerly Twitter)">
                           <Twitter className="w-4 h-4 text-sky-500" />
                         </a>
                       )}

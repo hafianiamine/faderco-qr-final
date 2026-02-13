@@ -71,13 +71,17 @@ export function CompaniesSection() {
 
   async function loadCompanyUsers(companyName: string) {
     const supabase = createClient()
-    const { data: users } = await supabase
+    console.log("[v0] Loading users for company:", companyName)
+    const { data: users, error } = await supabase
       .from("profiles")
       .select("id, full_name, email, position, phone_number, company")
       .eq("company", companyName)
 
+    console.log("[v0] Company users loaded:", users?.length || 0, "Error:", error?.message)
     if (users) {
       setCompanyUsers(users as User[])
+    } else {
+      setCompanyUsers([])
     }
   }
 
@@ -255,7 +259,7 @@ export function CompaniesSection() {
 
       {selectedCompany && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">{selectedCompany} - Users</h2>
               <button onClick={() => setSelectedCompany(null)} className="text-gray-500 hover:text-gray-700">
