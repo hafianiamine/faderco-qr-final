@@ -145,12 +145,12 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-6 items-start">
           {/* Form Section */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Picture Upload */}
@@ -159,7 +159,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
               <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
                 {profileImage ? (
                   <div className="space-y-2">
-                    <img src={profileImage} alt="Profile" className="w-32 h-32 rounded-full object-cover mx-auto" />
+                    <img src={profileImage} alt="Profile" className="w-32 h-32 rounded-full object-cover mx-auto" crossOrigin="anonymous" />
                     <button
                       type="button"
                       onClick={() => setProfileImage(null)}
@@ -315,7 +315,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
               <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
                 {coverImage ? (
                   <div className="space-y-2">
-                    <img src={coverImage} alt="Cover" className="w-full h-32 rounded object-cover" />
+                    <img src={coverImage} alt="Cover" className="w-full h-32 rounded object-cover" crossOrigin="anonymous" />
                     <button
                       type="button"
                       onClick={() => setCoverImage(null)}
@@ -352,20 +352,24 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
           </form>
 
           {/* Live Preview Section */}
-          <div className="sticky top-0">
+          <div className="sticky top-0 pt-6">
             <Label className="text-base font-semibold mb-4 block">Live Preview</Label>
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden shadow-xl" style={{ borderColor: themeColor, borderWidth: '4px' }}>
               {/* Cover Image */}
               {coverImage && (
-                <img src={coverImage} alt="Cover" className="w-full h-32 object-cover" />
+                <img src={coverImage} alt="Cover" className="w-full h-32 object-cover" crossOrigin="anonymous" />
               )}
 
               <div className="p-6 space-y-4">
                 {/* Profile Avatar */}
                 <div className="flex justify-center -mt-16 mb-4">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold" style={{ borderColor: themeColor }}>
-                    {fullName?.charAt(0).toUpperCase() || 'A'}
-                  </div>
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover" style={{ borderColor: themeColor }} crossOrigin="anonymous" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold" style={{ borderColor: themeColor }}>
+                      {fullName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                  )}
                 </div>
 
                 {/* Name and Title */}
