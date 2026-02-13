@@ -113,22 +113,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
           </button>
 
           <button
-            onClick={() => onSectionChange("settings")}
-            className={cn(
-              "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
-              currentSection === "settings"
-                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
-                : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-blue-500",
-            )}
-            title="Settings"
-          >
-            <Settings className="h-5 w-5" />
-            <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
-              Settings
-            </span>
-          </button>
-
-          <button
             onClick={handleLogout}
             className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-red-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700"
             title="Logout"
