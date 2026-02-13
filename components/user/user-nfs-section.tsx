@@ -21,7 +21,7 @@ interface VirtualCard {
   job_title: string | null
   website: string | null
   cover_image_url: string | null
-  accent_color: string
+  theme_color: string
   short_code: string
   created_at: string
 }
@@ -161,18 +161,9 @@ export function UserNFSSection() {
                 <img src={card.cover_image_url} alt={card.full_name} className="w-full h-32 object-cover rounded-lg mb-4" />
               )}
 
-              <div className="flex items-center gap-4 mb-4">
-                {card.photo_url ? (
-                  <img src={card.photo_url} alt={card.full_name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-gray-600">{card.full_name?.charAt(0)}</span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{card.full_name}</h3>
-                  <p className="text-sm text-gray-600">{card.job_title || "NFC Card"}</p>
-                </div>
+              <div className="flex-1 mb-4">
+                <h3 className="font-semibold text-gray-900">{card.full_name}</h3>
+                <p className="text-sm text-gray-600">{card.job_title || "NFC Card"}</p>
               </div>
 
               <div className="text-sm text-gray-600 space-y-1 mb-4">

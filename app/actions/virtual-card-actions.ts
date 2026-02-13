@@ -11,12 +11,11 @@ export interface VirtualCardData {
   company?: string
   jobTitle?: string
   website?: string
-  photoBase64?: string
   coverImageBase64?: string
   themeColor?: string
 }
 
-function generateVCard(card: VirtualCardData, photoBase64?: string): string {
+function generateVCard(card: VirtualCardData): string {
   let vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:${card.fullName}
@@ -27,13 +26,12 @@ EMAIL:${card.email}`
   if (card.company) vcard += `\nORG:${card.company}`
   if (card.jobTitle) vcard += `\nTITLE:${card.jobTitle}`
   if (card.website) vcard += `\nURL:${card.website}`
-  if (photoBase64) vcard += `\nPHOTO;ENCODING=BASE64;TYPE=JPEG:${photoBase64}`
   
   vcard += "\nEND:VCARD"
   return vcard
 }
 
-export async function createVirtualCard(cardData: VirtualCardData, photoBase64?: string) {
+export async function createVirtualCard(cardData: VirtualCardData) {
   try {
     const supabase = await createClient()
 
@@ -70,7 +68,7 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
     }
 
     // Generate vCard
-    const vcard = generateVCard(cardData, photoBase64)
+    const vcard = generateVCard(cardData)
 
     // Generate proper short URL (server-side)
     const shortUrl = createShortUrl(shortCode)
@@ -86,7 +84,6 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
       website: cardData.website,
       vcard_data: vcard,
       short_code: shortCode,
-      photo_url: cardData.photoBase64 ? `data:image/jpeg;base64,${cardData.photoBase64}` : null,
       cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : null,
       theme_color: cardData.themeColor || "#6366f1",
     }).select()
@@ -110,7 +107,7 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
   }
 }
 
-export async function updateVirtualCard(cardId: string, cardData: VirtualCardData, photoBase64?: string) {
+export async function updateVirtualCard(cardId: string, cardData: VirtualCardData) {
   try {
     const supabase = await createClient()
 
@@ -134,7 +131,7 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
     }
 
     // Generate vCard
-    const vcard = generateVCard(cardData, photoBase64)
+    const vcard = generateVCard(cardData)
 
     // Update database
     const { data, error } = await supabase
@@ -147,7 +144,6 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
         job_title: cardData.jobTitle,
         website: cardData.website,
         vcard_data: vcard,
-        photo_url: cardData.photoBase64 ? `data:image/jpeg;base64,${cardData.photoBase64}` : undefined,
         cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : undefined,
         theme_color: cardData.themeColor || "#6366f1",
       })

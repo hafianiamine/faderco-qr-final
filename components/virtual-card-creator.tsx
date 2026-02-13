@@ -19,7 +19,6 @@ interface VirtualCard {
   website?: string | null
   cover_image_url?: string | null
   theme_color?: string
-  photo_url?: string | null
 }
 
 interface VirtualCardCreatorProps {
@@ -37,19 +36,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
   const [website, setWebsite] = useState(existingCard?.website || '')
   const [themeColor, setThemeColor] = useState(existingCard?.theme_color || '#6366f1')
-  const [profileImage, setProfileImage] = useState<string | null>(existingCard?.photo_url || null)
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
-
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setProfileImage(event.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -203,37 +190,6 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                   />
                   <span className="text-sm text-gray-600">{themeColor}</span>
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="profileImage">Profile Photo</Label>
-              <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
-                {profileImage ? (
-                  <div className="space-y-2">
-                    <img src={profileImage} alt="Profile" className="w-24 h-24 rounded-full mx-auto object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setProfileImage(null)}
-                      className="text-red-600 hover:text-red-700 text-sm flex items-center justify-center gap-1 mx-auto"
-                    >
-                      <X className="w-4 h-4" />
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <label className="cursor-pointer">
-                    <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">Click to upload profile photo</p>
-                    <input
-                      type="file"
-                      id="profileImage"
-                      onChange={handleProfileImageChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </label>
-                )}
               </div>
             </div>
 
