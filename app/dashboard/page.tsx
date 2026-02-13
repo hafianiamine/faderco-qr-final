@@ -21,6 +21,7 @@ export default function UserDashboardPage() {
   const [userEmail, setUserEmail] = useState<string>()
   const [showFeatureTour, setShowFeatureTour] = useState(false)
   const [showPasswordReset, setShowPasswordReset] = useState(false)
+  const [tourShownOnce, setTourShownOnce] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -30,14 +31,21 @@ export default function UserDashboardPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email)
-        setShowFeatureTour(true)
+        
+        // Only show tour once per browser session
+        const hasSeenTour = sessionStorage.getItem(`tour-seen-${user.id}`)
+        if (!hasSeenTour && !tourShownOnce) {
+          setShowFeatureTour(true)
+          setTourShownOnce(true)
+          sessionStorage.setItem(`tour-seen-${user.id}`, 'true')
+        }
 
         const { required } = await checkPasswordResetRequired()
         setShowPasswordReset(required)
       }
     }
     loadUser()
-  }, [])
+  }, [tourShownOnce])
 
   useEffect(() => {
     async function checkReset() {

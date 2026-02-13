@@ -69,9 +69,43 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fullName || !email) {
-      toast({ title: 'Error', description: 'Name and email are required' })
+      toast({ title: "Error", description: "Full name and email are required" })
       return
     }
+    setLoading(true)
+    try {
+      const cardData = {
+        fullName,
+        email,
+        phone,
+        company,
+        jobTitle,
+        website,
+        themeColor,
+        coverImageBase64: coverImage,
+        profileImageBase64: profileImage,
+      }
+
+      let result
+      if (existingCard?.id) {
+        result = await updateVirtualCard(existingCard.id, cardData)
+      } else {
+        result = await createVirtualCard(cardData)
+      }
+
+      if (result.error) {
+        toast({ title: "Error", description: result.error })
+      } else {
+        toast({ title: "Success", description: `Virtual card ${existingCard?.id ? 'updated' : 'created'} successfully!` })
+        onClose?.()
+      }
+    } catch (error) {
+      console.error("[v0] Virtual card error:", error)
+      toast({ title: "Error", description: "Failed to save virtual card" })
+    } finally {
+      setLoading(false)
+    }
+  }
 
     setLoading(true)
     try {
@@ -311,7 +345,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              <Button type="button" variant="outline" onClick={() => onClose?.()} className="flex-1">
                 Cancel
               </Button>
               <Button type="submit" disabled={loading} className="flex-1">
