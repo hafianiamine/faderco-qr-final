@@ -12,6 +12,7 @@ import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import { UserNFSSection } from "@/components/user/user-nfs-section"
 import { UserNFCRequestsTracker } from "@/components/user/nfc-requests-tracker"
+import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
@@ -78,7 +79,6 @@ export default function UserDashboardPage() {
           {currentSection === "qr-codes" && <UserQRCodesSection />}
           {currentSection === "analytics" && <UserAnalyticsSection />}
           {currentSection === "profile" && <UserProfileSection />}
-          {currentSection === "settings" && <UserSettingsSection />}
           {currentSection === "create" && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
