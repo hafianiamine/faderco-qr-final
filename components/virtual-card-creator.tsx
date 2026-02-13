@@ -1,25 +1,42 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { createVirtualCard } from '@/app/actions/virtual-card-actions'
+import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
 import { useToast } from '@/hooks/use-toast'
 import { Upload, X } from 'lucide-react'
 
-export function VirtualCardCreator() {
+interface VirtualCard {
+  id: string
+  full_name: string
+  email: string
+  phone: string | null
+  company_name: string | null
+  job_title: string | null
+  website: string | null
+  cover_image_url: string | null
+  accent_color: string
+}
+
+interface VirtualCardCreatorProps {
+  existingCard?: VirtualCard | null
+  onClose?: () => void
+}
+
+export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreatorProps) {
   const { toast } = useToast()
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [company, setCompany] = useState('')
-  const [jobTitle, setJobTitle] = useState('')
-  const [website, setWebsite] = useState('')
-  const [accentColor, setAccentColor] = useState('#6366f1')
+  const [fullName, setFullName] = useState(existingCard?.full_name || '')
+  const [email, setEmail] = useState(existingCard?.email || '')
+  const [phone, setPhone] = useState(existingCard?.phone || '')
+  const [company, setCompany] = useState(existingCard?.company_name || '')
+  const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
+  const [website, setWebsite] = useState(existingCard?.website || '')
+  const [accentColor, setAccentColor] = useState(existingCard?.accent_color || '#6366f1')
   const [profileImage, setProfileImage] = useState<string | null>(null)
-  const [coverImage, setCoverImage] = useState<string | null>(null)
+  const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
   const [loading, setLoading] = useState(false)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
@@ -48,6 +65,49 @@ export function VirtualCardCreator() {
     setLoading(true)
     try {
       // Extract base64 from data URL
+      const getBase64 = (data: string) => {
+        if (!data) return ''
+        const matches = data.match(/base64,(.+)/)
+        return matches ? matches[1] : data
+      }
+
+      const cardData = {
+        fullName,
+        email,
+        phone,
+        company,
+        jobTitle,
+        website,
+        accentColor,
+        coverImageBase64: coverImage ? getBase64(coverImage) : undefined,
+      }
+
+      if (existingCard) {
+        // Update existing card
+        const result = await updateVirtualCard(existingCard.id, cardData)
+        if (result.error) {
+          toast({ title: 'Error', description: result.error })
+        } else {
+          toast({ title: 'Success', description: 'Virtual card updated successfully!' })
+          onClose?.()
+        }
+      } else {
+        // Create new card
+        const result = await createVirtualCard(cardData)
+        if (result.error) {
+          toast({ title: 'Error', description: result.error })
+        } else {
+          toast({ title: 'Success', description: 'Virtual card created successfully!' })
+          onClose?.()
+        }
+      }
+    } catch (error) {
+      console.error('Error saving card:', error)
+      toast({ title: 'Error', description: 'Failed to save virtual card' })
+    } finally {
+      setLoading(false)
+    }
+  }
       const profileBase64 = profileImage?.split(',')[1]
       const coverBase64 = coverImage?.split(',')[1]
 

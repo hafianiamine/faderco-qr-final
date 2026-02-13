@@ -6,7 +6,7 @@ import { VirtualCardCreator } from "@/components/virtual-card-creator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Trash2, Copy, Download, Plus, Loader2, X } from "lucide-react"
+import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2 } from "lucide-react"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
 import { deleteVirtualCard } from "@/app/actions/virtual-card-actions"
@@ -31,6 +31,7 @@ export function UserNFSSection() {
   const [cards, setCards] = useState<VirtualCard[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreator, setShowCreator] = useState(false)
+  const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
   const [qrUrl, setQrUrl] = useState<string>("")
 
@@ -130,11 +131,15 @@ export function UserNFSSection() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Virtual Cards (NFC)</h1>
-            <p className="text-sm text-gray-600">Create and manage your NFC virtual cards with QR codes</p>
+            <p className="text-sm text-gray-600">Create and manage your NFC virtual card with QR codes</p>
           </div>
-          <Button onClick={() => setShowCreator(true)} className="flex items-center gap-2">
+          <Button onClick={() => {
+            if (cards.length === 0) {
+              setShowCreator(true)
+            }
+          }} disabled={cards.length > 0} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Create Card
+            {cards.length > 0 ? "Card Created" : "Create Card"}
           </Button>
         </div>
       </div>
@@ -147,7 +152,7 @@ export function UserNFSSection() {
           <Button onClick={() => setShowCreator(true)}>Create Your First Card</Button>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 max-w-2xl">
           {cards.map((card) => (
             <Card key={card.id} className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl overflow-hidden">
               <div className="flex items-start justify-between mb-4">
@@ -168,6 +173,13 @@ export function UserNFSSection() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => {
+                  setEditingCard(card)
+                  setShowCreator(true)
+                }} className="flex-1">
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => handleShowQR(card)} className="flex-1">
                   <QrCode className="h-4 w-4 mr-1" />
                   QR
@@ -188,8 +200,10 @@ export function UserNFSSection() {
 
       {showCreator && (
         <VirtualCardCreator
+          existingCard={editingCard}
           onClose={() => {
             setShowCreator(false)
+            setEditingCard(null)
             loadCards()
           }}
         />
