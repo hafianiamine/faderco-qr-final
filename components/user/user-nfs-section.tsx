@@ -203,12 +203,6 @@ export function UserNFSSection() {
           ))}
         </div>
       )}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
 
       {showCreator && (
         <VirtualCardCreator
