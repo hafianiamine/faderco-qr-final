@@ -1,16 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { VirtualCardCreator } from "@/components/virtual-card-creator"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { QrCode, Edit2, Trash2, Plus, Copy, Download, ExternalLink, Upload, X, Loader2 } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { QrCode, Edit2, Trash2, Copy, Download, ExternalLink, Plus, Loader2 } from "lucide-react"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
-import { createVirtualCard, updateVirtualCard, deleteVirtualCard } from "@/app/actions/virtual-card-actions"
+import { updateVirtualCard, deleteVirtualCard } from "@/app/actions/virtual-card-actions"
 
 interface VirtualCard { 
   id: string
@@ -20,12 +19,8 @@ interface VirtualCard {
   company_name: string | null
   job_title: string | null
   website: string | null
-  linkedin: string | null
-  twitter: string | null
-  facebook: string | null
-  instagram: string | null
-  photo_url: string | null
-  vcard_data: string
+  cover_image_url: string | null
+  accent_color: string
   short_code: string
   created_at: string
 }
@@ -35,19 +30,9 @@ export function UserNFSSection() {
   const { toast } = useToast()
   const [cards, setCards] = useState<VirtualCard[]>([])
   const [loading, setLoading] = useState(true)
-  const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
+  const [showCreator, setShowCreator] = useState(false)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
   const [qrUrl, setQrUrl] = useState<string>("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Form state
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [company, setCompany] = useState("")
-  const [jobTitle, setJobTitle] = useState("")
-  const [website, setWebsite] = useState("")
   const [linkedin, setLinkedin] = useState("")
   const [twitter, setTwitter] = useState("")
   const [facebook, setFacebook] = useState("")

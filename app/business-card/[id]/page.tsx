@@ -28,7 +28,7 @@ export default async function BusinessCardPage({ params }: { params: { id: strin
 
   const { data: businessCard, error } = await supabase
     .from('virtual_business_cards')
-    .select('full_name, vcard_data')
+    .select('*')
     .eq('id', params.id)
     .single()
 
@@ -36,10 +36,5 @@ export default async function BusinessCardPage({ params }: { params: { id: strin
     redirect('/404')
   }
 
-  // Check if business card has vCard data
-  if (!businessCard.vcard_data) {
-    redirect('/404')
-  }
-
-  return <BusinessCardDisplay vCardData={businessCard.vcard_data} />
+  return <BusinessCardDisplay card={businessCard} />
 }

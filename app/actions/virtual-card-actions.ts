@@ -16,6 +16,8 @@ export interface VirtualCardData {
   facebook?: string
   instagram?: string
   photoBase64?: string
+  coverImageBase64?: string
+  accentColor?: string
 }
 
 function generateVCard(card: VirtualCardData, photoBase64?: string): string {
@@ -92,6 +94,8 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
       website: cardData.website,
       vcard_data: vcard,
       short_code: shortCode,
+      cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : null,
+      accent_color: cardData.accentColor || "#6366f1",
     }).select()
 
     if (error) {
@@ -150,6 +154,8 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
         job_title: cardData.jobTitle,
         website: cardData.website,
         vcard_data: vcard,
+        cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : undefined,
+        accent_color: cardData.accentColor || "#6366f1",
       })
       .eq("id", cardId)
       .select()

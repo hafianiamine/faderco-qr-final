@@ -78,6 +78,7 @@ export function UserQRCodesSection() {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
+        .limit(50) // Limit to 50 QR codes initially
 
       if (error) {
         console.error("Error loading QR codes:", error)
