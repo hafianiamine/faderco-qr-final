@@ -1,5 +1,5 @@
 "use client"
-import { QrCode, LogOut, LayoutDashboard, Settings, Plus, Lightbulb, Video } from "lucide-react"
+import { QrCode, LogOut, LayoutDashboard, Settings, Plus, Lightbulb, Video, Wifi, Search } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -50,9 +50,9 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
 
   const menuItems = [
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },
-    { id: "qr-codes", label: "My QR Codes", icon: QrCode },
-    { id: "nfs", label: "Virtual Cards (NFC)", icon: Plus },
-    { id: "create", label: "Create QR Code", icon: Plus },
+    { id: "qr-codes", label: "My QR Codes", icon: Search },
+    { id: "nfs", label: "Virtual Cards (NFC)", icon: Wifi },
+    { id: "create", label: "Create QR Code", icon: QrCode },
   ]
 
   const handleLogout = async () => {
