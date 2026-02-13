@@ -20,6 +20,7 @@ interface VirtualCard {
   website?: string | null
   cover_image_url?: string | null
   theme_color?: string
+  profile_image_url?: string | null
 }
 
 interface VirtualCardCreatorProps {
@@ -37,18 +38,23 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
   const [website, setWebsite] = useState(existingCard?.website || '')
   const [linkedin, setLinkedin] = useState('')
-  const [twitter, setTwitter] = useState('')
+  const [x, setX] = useState('')
   const [facebook, setFacebook] = useState('')
   const [instagram, setInstagram] = useState('')
   const [themeColor, setThemeColor] = useState(existingCard?.theme_color || '#6366f1')
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
+  const [profileImage, setProfileImage] = useState<string | null>(existingCard?.profile_image_url || null)
 
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isProfile: boolean = false) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (event) => {
-        setCoverImage(event.target?.result as string)
+        if (isProfile) {
+          setProfileImage(event.target?.result as string)
+        } else {
+          setCoverImage(event.target?.result as string)
+        }
       }
       reader.readAsDataURL(file)
     }
@@ -77,7 +83,8 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         jobTitle,
         website,
         themeColor,
-        coverImageBase64: coverImage ? getBase64(coverImage) : undefined,
+        coverImageBase64: coverImage,
+        profileImageBase64: profileImage,
       }
 
       if (existingCard?.id) {
@@ -115,6 +122,38 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         <div className="grid grid-cols-2 gap-8">
           {/* Form Section */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Picture Upload */}
+            <div>
+              <Label htmlFor="profileImage">Profile Picture</Label>
+              <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                {profileImage ? (
+                  <div className="space-y-2">
+                    <img src={profileImage} alt="Profile" className="w-32 h-32 rounded-full object-cover mx-auto" />
+                    <button
+                      type="button"
+                      onClick={() => setProfileImage(null)}
+                      className="text-red-600 hover:text-red-700 text-sm flex items-center justify-center gap-1 mx-auto"
+                    >
+                      <X className="w-4 h-4" />
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">Click to upload profile picture</p>
+                    <input
+                      type="file"
+                      id="profileImage"
+                      onChange={(e) => handleImageChange(e, true)}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="fullName">Full Name *</Label>
@@ -213,9 +252,9 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                 <div className="flex items-center gap-2">
                   <Twitter className="w-4 h-4 text-sky-500" />
                   <Input
-                    value={twitter}
-                    onChange={(e) => setTwitter(e.target.value)}
-                    placeholder="Twitter URL"
+                    value={x}
+                    onChange={(e) => setX(e.target.value)}
+                    placeholder="X (formerly Twitter) URL"
                     className="text-sm"
                   />
                 </div>
@@ -262,7 +301,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                     <input
                       type="file"
                       id="coverImage"
-                      onChange={handleCoverImageChange}
+                      onChange={(e) => handleImageChange(e, false)}
                       accept="image/*"
                       className="hidden"
                     />

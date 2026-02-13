@@ -67,7 +67,7 @@ export function UserNFSSection() {
       if (error) throw error
       setCards(data || [])
 
-      // Load requests for each card
+      // Load requests for each card - store by card ID for easy lookup
       const { data: requests, error: requestsError } = await supabase
         .from("nfc_requests")
         .select("*")
@@ -76,11 +76,13 @@ export function UserNFSSection() {
 
       if (!requestsError && requests) {
         const requestMap: Record<string, any> = {}
-        requests.forEach(req => {
-          if (!requestMap[req.id]) {
-            requestMap[req.id] = req
-          }
-        })
+        // Store the most recent request for each user (since they can have multiple)
+        if (requests.length > 0) {
+          requests.forEach(req => {
+            // Store latest request by user ID for now
+            requestMap["latest"] = req
+          })
+        }
         setCardRequests(requestMap)
       }
     } catch (error) {
@@ -223,15 +225,15 @@ export function UserNFSSection() {
                   className="flex-1"
                 >
                   <Send className="h-4 w-4 mr-1" />
-                  {cardRequests[card.id]?.status === 'delivered' 
+                  {cardRequests["latest"]?.status === 'delivered' 
                     ? 'New Request'
-                    : cardRequests[card.id]?.status === 'cancelled' 
+                    : cardRequests["latest"]?.status === 'cancelled' 
                     ? 'Request New'
-                    : cardRequests[card.id]?.status === 'in_progress'
+                    : cardRequests["latest"]?.status === 'in_progress'
                     ? 'In Progress'
-                    : cardRequests[card.id]?.status === 'approved'
+                    : cardRequests["latest"]?.status === 'approved'
                     ? 'Request Sent'
-                    : cardRequests[card.id]?.status === 'pending'
+                    : cardRequests["latest"]?.status === 'pending'
                     ? 'Pending'
                     : 'Request New'}
                 </Button>
@@ -263,46 +265,45 @@ export function UserNFSSection() {
         </Dialog>
       )}
 
-      {/* Request New Card Modal */}
       <Dialog open={!!showRequestModal} onOpenChange={(open) => !open && setShowRequestModal(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {cardRequests[showRequestModal as string]?.status 
-                ? `NFC Card Request - ${cardRequests[showRequestModal as string]?.status.toUpperCase()}`
+              {cardRequests["latest"]?.status 
+                ? `NFC Card Request - ${cardRequests["latest"]?.status.toUpperCase()}`
                 : 'Request New NFC Card'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {/* Show existing request details if it exists */}
-            {cardRequests[showRequestModal as string]?.status && (
+            {cardRequests["latest"]?.status && (
               <div className="p-3 bg-blue-50 rounded-lg space-y-2 border border-blue-200">
                 <p className="text-sm font-semibold text-gray-900">Request Status</p>
                 <p className="text-sm text-gray-700 capitalize">
-                  <strong>Type:</strong> {cardRequests[showRequestModal as string]?.request_type}
+                  <strong>Type:</strong> {cardRequests["latest"]?.request_type}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <strong>Status:</strong> <span className="capitalize font-semibold text-blue-600">{cardRequests[showRequestModal as string]?.status}</span>
+                  <strong>Status:</strong> <span className="capitalize font-semibold text-blue-600">{cardRequests["latest"]?.status}</span>
                 </p>
                 <p className="text-sm text-gray-700">
-                  <strong>Requested:</strong> {new Date(cardRequests[showRequestModal as string]?.created_at).toLocaleDateString()}
+                  <strong>Requested:</strong> {new Date(cardRequests["latest"]?.created_at).toLocaleDateString()}
                 </p>
-                {cardRequests[showRequestModal as string]?.timeline_delivery && (
+                {cardRequests["latest"]?.timeline_delivery && (
                   <p className="text-sm text-gray-700">
-                    <strong>Expected Delivery:</strong> {new Date(cardRequests[showRequestModal as string]?.timeline_delivery).toLocaleDateString()}
+                    <strong>Expected Delivery:</strong> {new Date(cardRequests["latest"]?.timeline_delivery).toLocaleDateString()}
                   </p>
                 )}
-                {cardRequests[showRequestModal as string]?.admin_notes && (
+                {cardRequests["latest"]?.admin_notes && (
                   <p className="text-sm text-gray-700">
-                    <strong>Admin Notes:</strong> {cardRequests[showRequestModal as string]?.admin_notes}
+                    <strong>Admin Notes:</strong> {cardRequests["latest"]?.admin_notes}
                   </p>
                 )}
               </div>
             )}
 
             {/* Show form only if no pending request or if approved/completed */}
-            {!cardRequests[showRequestModal as string]?.status || 
-             ['delivered', 'cancelled'].includes(cardRequests[showRequestModal as string]?.status) && (
+            {(!cardRequests["latest"]?.status || 
+             ['delivered', 'cancelled'].includes(cardRequests["latest"]?.status)) && (
               <>
                 <div>
                   <Label htmlFor="requestType">Request Type</Label>
