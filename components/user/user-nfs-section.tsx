@@ -33,12 +33,13 @@ export function UserNFSSection() {
   const supabase = createClient()
   const { toast } = useToast()
   const [cards, setCards] = useState<VirtualCard[]>([])
+  const [cardRequests, setCardRequests] = useState<Record<string, any>>({}) // Map of card IDs to their request status
   const [loading, setLoading] = useState(true)
   const [showCreator, setShowCreator] = useState(false)
   const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
   const [showAnalytics, setShowAnalytics] = useState(false)
-  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [showRequestModal, setShowRequestModal] = useState<string | null>(null) // Card ID with open modal
   const [requestReason, setRequestReason] = useState("")
   const [requestType, setRequestType] = useState<'new_card' | 'replacement' | 'additional'>('replacement')
   const [qrUrl, setQrUrl] = useState<string>("")
@@ -51,7 +52,6 @@ export function UserNFSSection() {
     try {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
-      console.log("[v0] NFS: User loaded:", user?.id)
 
       if (!user) {
         toast({ title: "Error", description: "User not authenticated" })
@@ -64,9 +64,25 @@ export function UserNFSSection() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
-      console.log("[v0] NFS: Cards loaded:", data?.length || 0, "Error:", error?.message)
       if (error) throw error
       setCards(data || [])
+
+      // Load requests for each card
+      const { data: requests, error: requestsError } = await supabase
+        .from("nfc_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (!requestsError && requests) {
+        const requestMap: Record<string, any> = {}
+        requests.forEach(req => {
+          if (!requestMap[req.id]) {
+            requestMap[req.id] = req
+          }
+        })
+        setCardRequests(requestMap)
+      }
     } catch (error) {
       console.error("[v0] NFS: Error loading cards:", error)
       toast({ title: "Error", description: "Failed to load virtual cards" })
@@ -200,9 +216,24 @@ export function UserNFSSection() {
                   <Copy className="h-4 w-4 mr-1" />
                   Copy
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowRequestModal(true)} className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowRequestModal(card.id)} 
+                  className="flex-1"
+                >
                   <Send className="h-4 w-4 mr-1" />
-                  Request New
+                  {cardRequests[card.id]?.status === 'delivered' 
+                    ? 'New Request'
+                    : cardRequests[card.id]?.status === 'cancelled' 
+                    ? 'Request New'
+                    : cardRequests[card.id]?.status === 'in_progress'
+                    ? 'In Progress'
+                    : cardRequests[card.id]?.status === 'approved'
+                    ? 'Request Sent'
+                    : cardRequests[card.id]?.status === 'pending'
+                    ? 'Pending'
+                    : 'Request New'}
                 </Button>
               </div>
             </Card>
@@ -233,58 +264,94 @@ export function UserNFSSection() {
       )}
 
       {/* Request New Card Modal */}
-      <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
+      <Dialog open={!!showRequestModal} onOpenChange={(open) => !open && setShowRequestModal(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Request New NFC Card</DialogTitle>
+            <DialogTitle>
+              {cardRequests[showRequestModal as string]?.status 
+                ? `NFC Card Request - ${cardRequests[showRequestModal as string]?.status.toUpperCase()}`
+                : 'Request New NFC Card'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="requestType">Request Type</Label>
-              <select
-                id="requestType"
-                value={requestType}
-                onChange={(e) => setRequestType(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              >
-                <option value="new_card">New Card</option>
-                <option value="replacement">Replacement Card</option>
-                <option value="additional">Additional Card</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="reason">Reason (Optional)</Label>
-              <textarea
-                id="reason"
-                value={requestReason}
-                onChange={(e) => setRequestReason(e.target.value)}
-                placeholder="Tell us why you need a new card..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button 
-                onClick={async () => {
-                  const result = await createNFCRequest({ requestType, reason: requestReason })
-                  if (result.error) {
-                    toast({ title: "Error", description: result.error })
-                  } else {
-                    toast({ title: "Success", description: "Your request has been submitted!" })
-                    setShowRequestModal(false)
-                    setRequestReason("")
-                    setRequestType("replacement")
-                    loadCards() // Refresh to show updated request status
-                  }
-                }} 
-                className="flex-1"
-              >
-                <Send className="h-4 w-4 mr-1" />
-                Submit Request
-              </Button>
-            </div>
+            {/* Show existing request details if it exists */}
+            {cardRequests[showRequestModal as string]?.status && (
+              <div className="p-3 bg-blue-50 rounded-lg space-y-2 border border-blue-200">
+                <p className="text-sm font-semibold text-gray-900">Request Status</p>
+                <p className="text-sm text-gray-700 capitalize">
+                  <strong>Type:</strong> {cardRequests[showRequestModal as string]?.request_type}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>Status:</strong> <span className="capitalize font-semibold text-blue-600">{cardRequests[showRequestModal as string]?.status}</span>
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>Requested:</strong> {new Date(cardRequests[showRequestModal as string]?.created_at).toLocaleDateString()}
+                </p>
+                {cardRequests[showRequestModal as string]?.timeline_delivery && (
+                  <p className="text-sm text-gray-700">
+                    <strong>Expected Delivery:</strong> {new Date(cardRequests[showRequestModal as string]?.timeline_delivery).toLocaleDateString()}
+                  </p>
+                )}
+                {cardRequests[showRequestModal as string]?.admin_notes && (
+                  <p className="text-sm text-gray-700">
+                    <strong>Admin Notes:</strong> {cardRequests[showRequestModal as string]?.admin_notes}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Show form only if no pending request or if approved/completed */}
+            {!cardRequests[showRequestModal as string]?.status || 
+             ['delivered', 'cancelled'].includes(cardRequests[showRequestModal as string]?.status) && (
+              <>
+                <div>
+                  <Label htmlFor="requestType">Request Type</Label>
+                  <select
+                    id="requestType"
+                    value={requestType}
+                    onChange={(e) => setRequestType(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="new_card">New Card</option>
+                    <option value="replacement">Replacement Card</option>
+                    <option value="additional">Additional Card</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="reason">Reason (Optional)</Label>
+                  <textarea
+                    id="reason"
+                    value={requestReason}
+                    onChange={(e) => setRequestReason(e.target.value)}
+                    placeholder="Tell us why you need a new card..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowRequestModal(null)} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      const result = await createNFCRequest({ requestType, reason: requestReason })
+                      if (result.error) {
+                        toast({ title: "Error", description: result.error })
+                      } else {
+                        toast({ title: "Success", description: "Your request has been submitted!" })
+                        setShowRequestModal(null)
+                        setRequestReason("")
+                        setRequestType("replacement")
+                        loadCards()
+                      }
+                    }} 
+                    className="flex-1"
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    Submit Request
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

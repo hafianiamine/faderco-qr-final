@@ -52,7 +52,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },
     { id: "qr-codes", label: "My QR Codes", icon: Search },
     { id: "nfs", label: "Virtual Cards (NFC)", icon: Wifi },
-    { id: "nfc-requests", label: "NFC Requests", icon: Package },
     { id: "create", label: "Create QR Code", icon: QrCode },
   ]
 
