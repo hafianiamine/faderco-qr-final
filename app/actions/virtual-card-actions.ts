@@ -90,11 +90,6 @@ export async function createVirtualCard(cardData: VirtualCardData, photoBase64?:
       company_name: cardData.company,
       job_title: cardData.jobTitle,
       website: cardData.website,
-      linkedin: cardData.linkedin,
-      twitter: cardData.twitter,
-      facebook: cardData.facebook,
-      instagram: cardData.instagram,
-      photo_url: photoBase64 ? `data:image/jpeg;base64,${photoBase64}` : null,
       vcard_data: vcard,
       short_code: shortCode,
     }).select()
@@ -154,11 +149,6 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
         company_name: cardData.company,
         job_title: cardData.jobTitle,
         website: cardData.website,
-        linkedin: cardData.linkedin,
-        twitter: cardData.twitter,
-        facebook: cardData.facebook,
-        instagram: cardData.instagram,
-        photo_url: photoBase64 ? `data:image/jpeg;base64,${photoBase64}` : undefined,
         vcard_data: vcard,
       })
       .eq("id", cardId)

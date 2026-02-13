@@ -12,7 +12,7 @@ import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
 import { createVirtualCard, updateVirtualCard, deleteVirtualCard } from "@/app/actions/virtual-card-actions"
 
-interface VirtualCard {
+interface VirtualCard { 
   id: string
   full_name: string
   email: string
