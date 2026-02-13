@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, X, Mail, Phone, Briefcase, Globe } from 'lucide-react'
+import { Upload, X, Mail, Phone, Briefcase, Globe, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react'
 import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
+import { createNFCRequest } from '@/app/actions/nfc-request-actions'
 import { useToast } from '@/hooks/use-toast'
 
 interface VirtualCard {
@@ -35,6 +36,10 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   const [company, setCompany] = useState(existingCard?.company_name || '')
   const [jobTitle, setJobTitle] = useState(existingCard?.job_title || '')
   const [website, setWebsite] = useState(existingCard?.website || '')
+  const [linkedin, setLinkedin] = useState('')
+  const [twitter, setTwitter] = useState('')
+  const [facebook, setFacebook] = useState('')
+  const [instagram, setInstagram] = useState('')
   const [themeColor, setThemeColor] = useState(existingCard?.theme_color || '#6366f1')
   const [coverImage, setCoverImage] = useState<string | null>(existingCard?.cover_image_url || null)
 
@@ -73,7 +78,6 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         website,
         themeColor,
         coverImageBase64: coverImage ? getBase64(coverImage) : undefined,
-        photoBase64: profileImage ? getBase64(profileImage) : undefined,
       }
 
       if (existingCard?.id) {
@@ -102,10 +106,10 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
   }
 
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{existingCard?.id ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
+          <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-8">
@@ -193,6 +197,49 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
               </div>
             </div>
 
+            {/* Social Media Links */}
+            <div>
+              <Label className="text-sm font-semibold">Social Media</Label>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="flex items-center gap-2">
+                  <Linkedin className="w-4 h-4 text-blue-600" />
+                  <Input
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
+                    placeholder="LinkedIn URL"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Twitter className="w-4 h-4 text-sky-500" />
+                  <Input
+                    value={twitter}
+                    onChange={(e) => setTwitter(e.target.value)}
+                    placeholder="Twitter URL"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Facebook className="w-4 h-4 text-indigo-600" />
+                  <Input
+                    value={facebook}
+                    onChange={(e) => setFacebook(e.target.value)}
+                    placeholder="Facebook URL"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Instagram className="w-4 h-4 text-pink-600" />
+                  <Input
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    placeholder="Instagram URL"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="coverImage">Cover Image</Label>
               <div className="relative border-2 border-dashed rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
@@ -244,17 +291,12 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
               )}
 
               <div className="p-6 space-y-4">
-                {/* Profile Image */}
-                {profileImage && (
-                  <div className="flex justify-center -mt-16 mb-4">
-                    <img
-                      src={profileImage}
-                      alt={fullName}
-                      className="w-24 h-24 rounded-full border-4 border-white object-cover"
-                      style={{ borderColor: themeColor }}
-                    />
+                {/* Profile Avatar */}
+                <div className="flex justify-center -mt-16 mb-4">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-4 border-white shadow-lg flex items-center justify-center text-white text-2xl font-bold" style={{ borderColor: themeColor }}>
+                    {fullName?.charAt(0).toUpperCase() || 'A'}
                   </div>
-                )}
+                </div>
 
                 {/* Name and Title */}
                 <div className="text-center">
@@ -296,6 +338,34 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                     </div>
                   )}
                 </div>
+
+                {/* Social Media Links */}
+                {(linkedin || twitter || facebook || instagram) && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-4 gap-2">
+                      {linkedin && (
+                        <a href={linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors" title="LinkedIn">
+                          <Linkedin className="w-4 h-4 text-blue-600" />
+                        </a>
+                      )}
+                      {twitter && (
+                        <a href={twitter} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-sky-100 hover:bg-sky-200 rounded-lg transition-colors" title="Twitter">
+                          <Twitter className="w-4 h-4 text-sky-500" />
+                        </a>
+                      )}
+                      {facebook && (
+                        <a href={facebook} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition-colors" title="Facebook">
+                          <Facebook className="w-4 h-4 text-indigo-600" />
+                        </a>
+                      )}
+                      {instagram && (
+                        <a href={instagram} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2 bg-pink-100 hover:bg-pink-200 rounded-lg transition-colors" title="Instagram">
+                          <Instagram className="w-4 h-4 text-pink-600" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { UserProfileSection } from "@/components/user/user-profile-section"
 import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
 import { UserNFSSection } from "@/components/user/user-nfs-section"
+import { UserNFCRequestsTracker } from "@/components/user/nfc-requests-tracker"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
@@ -90,6 +91,7 @@ export default function UserDashboardPage() {
             </div>
           )}
           {currentSection === "nfs" && <UserNFSSection />}
+          {currentSection === "nfc-requests" && <UserNFCRequestsTracker />}
         </div>
       </div>
     </div>

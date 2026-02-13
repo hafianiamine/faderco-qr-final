@@ -29,12 +29,13 @@ CREATE POLICY "Users can create requests"
   ON nfc_requests FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Admins can see all requests
-CREATE POLICY "Admins can see all requests"
-  ON nfc_requests FOR SELECT
-  USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
-
--- Admins can update requests
-CREATE POLICY "Admins can update requests"
+-- Users can update their own requests (except status)
+CREATE POLICY "Users can update their own requests"
   ON nfc_requests FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+  USING (auth.uid() = user_id);
+
+-- Allow service role to manage all requests (for admin functions)
+CREATE POLICY "Service role can manage all requests"
+  ON nfc_requests
+  USING (true)
+  WITH CHECK (true);

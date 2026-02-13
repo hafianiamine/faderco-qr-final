@@ -7,10 +7,13 @@ import { CardAnalyticsDashboard } from "@/components/card-analytics-dashboard"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { QrCode, Trash2, Copy, Download, Plus, Loader2, X, Edit2, BarChart2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { QrCode, Copy, Download, Plus, Loader2, X, Edit2, BarChart2, Send } from "lucide-react"
 import { generateQRCode } from "@/lib/utils/qr-generator"
 import { useToast } from "@/hooks/use-toast"
 import { deleteVirtualCard } from "@/app/actions/virtual-card-actions"
+import { createNFCRequest } from "@/app/actions/nfc-request-actions"
 
 interface VirtualCard { 
   id: string
@@ -35,6 +38,9 @@ export function UserNFSSection() {
   const [editingCard, setEditingCard] = useState<VirtualCard | null>(null)
   const [showQRModal, setShowQRModal] = useState<string | null>(null)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [requestReason, setRequestReason] = useState("")
+  const [requestType, setRequestType] = useState<'new_card' | 'replacement' | 'additional'>('replacement')
   const [qrUrl, setQrUrl] = useState<string>("")
 
   useEffect(() => {
@@ -192,9 +198,9 @@ export function UserNFSSection() {
                   <Copy className="h-4 w-4 mr-1" />
                   Copy
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleDeleteCard(card.id)} className="flex-1 text-red-600">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
+                <Button size="sm" variant="outline" onClick={() => setShowRequestModal(true)} className="flex-1">
+                  <Send className="h-4 w-4 mr-1" />
+                  Request New
                 </Button>
               </div>
             </Card>
@@ -223,6 +229,63 @@ export function UserNFSSection() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Request New Card Modal */}
+      <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request New NFC Card</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="requestType">Request Type</Label>
+              <select
+                id="requestType"
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="new_card">New Card</option>
+                <option value="replacement">Replacement Card</option>
+                <option value="additional">Additional Card</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="reason">Reason (Optional)</Label>
+              <textarea
+                id="reason"
+                value={requestReason}
+                onChange={(e) => setRequestReason(e.target.value)}
+                placeholder="Tell us why you need a new card..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={async () => {
+                  const result = await createNFCRequest({ requestType, reason: requestReason })
+                  if (result.error) {
+                    toast({ title: "Error", description: result.error })
+                  } else {
+                    toast({ title: "Success", description: "Your request has been submitted!" })
+                    setShowRequestModal(false)
+                    setRequestReason("")
+                    setRequestType("replacement")
+                    loadCards() // Refresh to show updated request status
+                  }
+                }} 
+                className="flex-1"
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Submit Request
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showQRModal !== null} onOpenChange={() => setShowQRModal(null)}>
         <DialogContent className="max-w-sm">
