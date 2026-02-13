@@ -51,6 +51,7 @@ export function UserNFSSection() {
     try {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
+      console.log("[v0] NFS: User loaded:", user?.id)
 
       if (!user) {
         toast({ title: "Error", description: "User not authenticated" })
@@ -63,10 +64,11 @@ export function UserNFSSection() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
+      console.log("[v0] NFS: Cards loaded:", data?.length || 0, "Error:", error?.message)
       if (error) throw error
       setCards(data || [])
     } catch (error) {
-      console.error("Error loading cards:", error)
+      console.error("[v0] NFS: Error loading cards:", error)
       toast({ title: "Error", description: "Failed to load virtual cards" })
     } finally {
       setLoading(false)
