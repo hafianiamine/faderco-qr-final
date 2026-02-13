@@ -8,16 +8,12 @@ export function generateShortCode(): string {
 }
 
 export function createShortUrl(shortCode: string): string {
-  // Use NEXT_PUBLIC_APP_URL (available in both client and server)
-  // Fallback to VERCEL_URL for deployed environments, then localhost
-  let baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  // Priority: VERCEL_URL (for deployed Vercel apps), then fallback to localhost
+  let baseUrl = "http://localhost:3000"
   
-  if (!baseUrl && process.env.VERCEL_URL) {
+  if (process.env.VERCEL_URL) {
+    // Use the Vercel URL with https
     baseUrl = `https://${process.env.VERCEL_URL}`
-  }
-  
-  if (!baseUrl) {
-    baseUrl = "http://localhost:3000"
   }
   
   // Ensure no trailing slash to avoid double slashes
