@@ -157,13 +157,11 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
           }
           
           toast.success("QR Code Created!")
-        setSuccessQRData(null)
-        onSuccess?.()
+          onSuccess?.()
         } catch (err) {
           console.error("Error generating actual QR code:", err)
-        toast.success("QR Code Created!")
-        setSuccessQRData(null)
-        onSuccess?.()
+          toast.success("QR Code Created!")
+          onSuccess?.()
         }
         
         setTitle("")
