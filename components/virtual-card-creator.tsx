@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Upload, X, Mail, Phone, Briefcase, Globe, Linkedin, Facebook, Instagram } from 'lucide-react'
 import { createVirtualCard, updateVirtualCard } from '@/app/actions/virtual-card-actions'
-import { createNFCRequest } from '@/app/actions/nfc-request-actions'
 import { useToast } from '@/hooks/use-toast'
 import { XLogo } from '@/components/x-logo'
 
@@ -37,6 +36,7 @@ interface VirtualCardCreatorProps {
 export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreatorProps) {
   const supabase = createClient()
   const { toast } = useToast()
+
   const [loading, setLoading] = useState(false)
   const [fullName, setFullName] = useState(existingCard?.full_name || '')
   const [email, setEmail] = useState(existingCard?.email || '')
@@ -54,59 +54,53 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
   useEffect(() => {
     async function loadUserProfilePicture() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (user && !profileImage) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', user.id)
-          .single()
-        
-        if (data?.avatar_url) {
-          setProfileImage(data.avatar_url)
-        }
+        const { data } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).single()
+        if (data?.avatar_url) setProfileImage(data.avatar_url)
       }
     }
     loadUserProfilePicture()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, isProfile: boolean = false) => {
     const file = e.target.files?.[0]
-    if (file) {
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('type', isProfile ? 'profile' : 'cover')
+    if (!file) return
 
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: formData,
-        })
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', isProfile ? 'profile' : 'cover')
 
-        const data = await response.json()
-        if (data.url) {
-          if (isProfile) {
-            setProfileImage(data.url)
-          } else {
-            setCoverImage(data.url)
-          }
-        } else {
-          toast({ title: "Error", description: "Failed to upload image" })
-        }
-      } catch (error) {
-        console.error("[v0] Image upload error:", error)
-        toast({ title: "Error", description: "Failed to upload image" })
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+      if (data.url) {
+        if (isProfile) setProfileImage(data.url)
+        else setCoverImage(data.url)
+      } else {
+        toast({ title: 'Error', description: 'Failed to upload image' })
       }
+    } catch (error) {
+      console.error('[VirtualCardCreator] Image upload error:', error)
+      toast({ title: 'Error', description: 'Failed to upload image' })
     }
   }
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fullName || !email) {
-      toast({ title: "Error", description: "Full name and email are required" })
+      toast({ title: 'Error', description: 'Full name and email are required' })
       return
     }
+
     setLoading(true)
     try {
       const cardData = {
@@ -125,38 +119,34 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         profileImageUrl: profileImage,
       }
 
-      console.log("[v0] Saving virtual card with profileImage:", profileImage ? "yes" : "no")
-      console.log("[v0] Saving virtual card with coverImage:", coverImage ? "yes" : "no")
-
       let result
-      if (existingCard?.id) {
-        result = await updateVirtualCard(existingCard.id, cardData)
-      } else {
-        result = await createVirtualCard(cardData)
+      if (existingCard?.id) result = await updateVirtualCard(existingCard.id, cardData)
+      else result = await createVirtualCard(cardData)
+
+      if (result?.error) {
+        toast({ title: 'Error', description: result.error })
+        return
       }
 
-      if (result.error) {
-        toast({ title: "Error", description: result.error })
-      } else {
-        toast({ title: "Success", description: `Virtual card ${existingCard?.id ? 'updated' : 'created'} successfully!` })
-        
-        // Sync profile image to user account
-        if (profileImage && profileImage !== existingCard?.profile_image_url) {
-          console.log("[v0] Syncing profile picture to user account")
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            await supabase
-              .from('profiles')
-              .update({ avatar_url: profileImage })
-              .eq('id', user.id)
-          }
+      toast({
+        title: 'Success',
+        description: `Virtual card ${existingCard?.id ? 'updated' : 'created'} successfully!`,
+      })
+
+      // Sync profile image to user account
+      if (profileImage && profileImage !== existingCard?.profile_image_url) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+          await supabase.from('profiles').update({ avatar_url: profileImage }).eq('id', user.id)
         }
-        
-        onClose?.()
       }
+
+      onClose?.()
     } catch (error) {
-      console.error("[v0] Virtual card error:", error)
-      toast({ title: "Error", description: "Failed to save virtual card" })
+      console.error('[VirtualCardCreator] Save error:', error)
+      toast({ title: 'Error', description: 'Failed to save virtual card' })
     } finally {
       setLoading(false)
     }
@@ -164,28 +154,37 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
-      <DialogContent className="w-[90vw] max-w-5xl h-[90vh] p-0 flex flex-col overflow-hidden">
+      {/* WIDE (left+right) + NOT TOO TALL */}
+      <DialogContent className="w-[96vw] max-w-[1400px] h-[82vh] p-0 flex flex-col overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-3 border-b flex-shrink-0">
           <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
           <DialogDescription>
-            {existingCard 
+            {existingCard
               ? 'Update your NFC virtual business card details. Your card URL and QR code will remain the same.'
               : 'Create your NFC virtual business card with a permanent URL and QR code. You can update the details anytime.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-3 gap-4 h-full overflow-hidden px-6 pb-6 pt-3">
-            {/* Form Section - Left/Middle (2 cols) */}
-            <div className="col-span-2 overflow-y-auto pr-4">
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Profile Picture Upload - Compact */}
+          {/* FORM 3/5 + PREVIEW 2/5 */}
+          <div className="grid grid-cols-5 gap-6 h-full overflow-hidden px-6 pb-6 pt-3">
+            {/* Form */}
+            <div className="col-span-3 overflow-y-auto pr-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Profile Picture */}
                 <div>
-                  <Label htmlFor="profileImage" className="text-sm">Profile Picture</Label>
+                  <Label htmlFor="profileImage" className="text-sm">
+                    Profile Picture
+                  </Label>
                   <div className="relative border-2 border-dashed rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
                     {profileImage ? (
                       <div className="space-y-2">
-                        <img src={profileImage} alt="Profile" className="w-20 h-20 rounded-full object-cover mx-auto" crossOrigin="anonymous" />
+                        <img
+                          src={profileImage}
+                          alt="Profile"
+                          className="w-20 h-20 rounded-full object-cover mx-auto"
+                          crossOrigin="anonymous"
+                        />
                         <button
                           type="button"
                           onClick={() => setProfileImage(null)}
@@ -211,21 +210,25 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                   </div>
                 </div>
 
-                {/* Name and Email Row */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Name + Email */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="fullName" className="text-xs">Full Name *</Label>
+                    <Label htmlFor="fullName" className="text-xs">
+                      Full Name *
+                    </Label>
                     <Input
                       id="fullName"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Name"
                       required
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email" className="text-xs">Email *</Label>
+                    <Label htmlFor="email" className="text-xs">
+                      Email *
+                    </Label>
                     <Input
                       id="email"
                       type="email"
@@ -233,124 +236,131 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@example.com"
                       required
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Phone and Company Row */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Phone + Company */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="phone" className="text-xs">Phone</Label>
+                    <Label htmlFor="phone" className="text-xs">
+                      Phone
+                    </Label>
                     <Input
                       id="phone"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+1 555-0000"
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="company" className="text-xs">Company</Label>
+                    <Label htmlFor="company" className="text-xs">
+                      Company
+                    </Label>
                     <Input
                       id="company"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                       placeholder="Company"
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Job Title and Website Row */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Job Title + Website */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="jobTitle" className="text-xs">Job Title</Label>
+                    <Label htmlFor="jobTitle" className="text-xs">
+                      Job Title
+                    </Label>
                     <Input
                       id="jobTitle"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
                       placeholder="Position"
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="website" className="text-xs">Website</Label>
+                    <Label htmlFor="website" className="text-xs">
+                      Website
+                    </Label>
                     <Input
                       id="website"
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
                       placeholder="https://..."
-                      className="h-8 text-sm"
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Theme Color */}
                 <div>
-                  <Label htmlFor="themeColor" className="text-xs">Theme Color</Label>
+                  <Label htmlFor="themeColor" className="text-xs">
+                    Theme Color
+                  </Label>
                   <div className="flex gap-2 items-center">
                     <input
                       id="themeColor"
                       type="color"
                       value={themeColor}
                       onChange={(e) => setThemeColor(e.target.value)}
-                      className="w-10 h-8 rounded cursor-pointer"
+                      className="w-10 h-9 rounded cursor-pointer"
                     />
                     <span className="text-xs text-gray-600">{themeColor}</span>
                   </div>
                 </div>
 
-                {/* Social Media - Compact */}
+                {/* Social Media */}
                 <div>
                   <Label className="text-xs block mb-2">Social Media</Label>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Linkedin className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                      <Linkedin className="w-4 h-4 text-blue-600 flex-shrink-0" />
                       <Input
                         value={linkedin}
                         onChange={(e) => setLinkedin(e.target.value)}
                         placeholder="LinkedIn URL"
-                        className="h-7 text-xs"
+                        className="h-9 text-sm"
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <XLogo className="w-3 h-3 text-sky-500 flex-shrink-0" />
-                      <Input
-                        value={x}
-                        onChange={(e) => setX(e.target.value)}
-                        placeholder="X URL"
-                        className="h-7 text-xs"
-                      />
+                      <XLogo className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                      <Input value={x} onChange={(e) => setX(e.target.value)} placeholder="X URL" className="h-9 text-sm" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Facebook className="w-3 h-3 text-indigo-600 flex-shrink-0" />
+                      <Facebook className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                       <Input
                         value={facebook}
                         onChange={(e) => setFacebook(e.target.value)}
                         placeholder="Facebook URL"
-                        className="h-7 text-xs"
+                        className="h-9 text-sm"
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Instagram className="w-3 h-3 text-pink-600 flex-shrink-0" />
+                      <Instagram className="w-4 h-4 text-pink-600 flex-shrink-0" />
                       <Input
                         value={instagram}
                         onChange={(e) => setInstagram(e.target.value)}
                         placeholder="Instagram URL"
-                        className="h-7 text-xs"
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Cover Image - Compact */}
+                {/* Cover Image */}
                 <div>
-                  <Label htmlFor="coverImage" className="text-xs">Cover Image</Label>
-                  <div className="relative border-2 border-dashed rounded-lg p-2 text-center hover:border-gray-400 transition-colors">
+                  <Label htmlFor="coverImage" className="text-xs">
+                    Cover Image
+                  </Label>
+                  <div className="relative border-2 border-dashed rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
                     {coverImage ? (
-                      <div className="space-y-1">
-                        <img src={coverImage} alt="Cover" className="w-full h-16 rounded object-cover" crossOrigin="anonymous" />
+                      <div className="space-y-2">
+                        <img src={coverImage} alt="Cover" className="w-full h-24 rounded object-cover" crossOrigin="anonymous" />
                         <button
                           type="button"
                           onClick={() => setCoverImage(null)}
@@ -362,7 +372,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                       </div>
                     ) : (
                       <label className="cursor-pointer">
-                        <Upload className="w-4 h-4 mx-auto mb-1 text-gray-400" />
+                        <Upload className="w-5 h-5 mx-auto mb-1 text-gray-400" />
                         <p className="text-xs text-gray-600">Click to upload</p>
                         <input
                           type="file"
@@ -377,109 +387,157 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => onClose?.()} className="flex-1 h-8 text-sm">
+                <div className="flex gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={() => onClose?.()} className="flex-1 h-10 text-sm">
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={loading} className="flex-1 h-8 text-sm">
+                  <Button type="submit" disabled={loading} className="flex-1 h-10 text-sm">
                     {loading ? 'Saving...' : existingCard?.id ? 'Update' : 'Create'}
                   </Button>
                 </div>
               </form>
             </div>
 
-            {/* Live Preview Section - Right Side (1 col) */}
-            <div className="col-span-1 overflow-y-auto">
+            {/* Preview */}
+            <div className="col-span-2 flex flex-col">
               <Label className="text-sm font-semibold mb-2 block">Live Preview</Label>
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl overflow-hidden shadow-lg" style={{ borderColor: themeColor, borderWidth: '3px' }}>
-                {/* Cover Image */}
-                {coverImage && (
-                  <img src={coverImage} alt="Cover" className="w-full h-20 object-cover" crossOrigin="anonymous" />
-                )}
 
-                <div className={`p-3 space-y-2 ${coverImage ? '' : 'pt-3'}`}>
-                  {/* Profile Avatar */}
-                  <div className="flex justify-center -mt-10 mb-2">
-                    {profileImage ? (
-                      <img src={profileImage} alt="Profile" className="w-16 h-16 rounded-full border-3 border-white shadow-md object-cover" style={{ borderColor: themeColor }} crossOrigin="anonymous" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-3 border-white shadow-md flex items-center justify-center text-white text-lg font-bold" style={{ borderColor: themeColor }}>
-                        {fullName?.charAt(0).toUpperCase() || 'A'}
-                      </div>
-                    )}
-                  </div>
+              <div className="flex-1 overflow-y-auto">
+                <div className="sticky top-2 flex justify-center">
+                  <div className="w-full max-w-md" style={{ transform: 'scale(1.12)', transformOrigin: 'top center' }}>
+                    <div
+                      className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl overflow-hidden shadow-lg"
+                      style={{ borderColor: themeColor, borderWidth: '3px' }}
+                    >
+                      {/* Cover Image */}
+                      {coverImage && <img src={coverImage} alt="Cover" className="w-full h-28 object-cover" crossOrigin="anonymous" />}
 
-                  {/* Name and Title */}
-                  <div className="text-center">
-                    <h2 className="text-sm font-bold text-gray-900 truncate">{fullName || 'Your Name'}</h2>
-                    {jobTitle && <p className="text-xs text-gray-600 truncate">{jobTitle}</p>}
-                    {company && <p className="text-xs text-gray-500 truncate">{company}</p>}
-                  </div>
+                      <div className={`p-4 space-y-3 ${coverImage ? '' : 'pt-4'}`}>
+                        {/* Profile Avatar */}
+                        <div className="flex justify-center -mt-12 mb-2">
+                          {profileImage ? (
+                            <img
+                              src={profileImage}
+                              alt="Profile"
+                              className="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover"
+                              style={{ borderColor: themeColor }}
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div
+                              className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 border-4 border-white shadow-md flex items-center justify-center text-white text-2xl font-bold"
+                              style={{ borderColor: themeColor }}
+                            >
+                              {fullName?.charAt(0).toUpperCase() || 'A'}
+                            </div>
+                          )}
+                        </div>
 
-                  {/* Contact Info */}
-                  <div className="space-y-1 pt-2 border-t border-gray-200 text-xs">
-                    {email && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Mail className="w-3 h-3 flex-shrink-0" style={{ color: themeColor }} />
-                        <a href={`mailto:${email}`} className="text-gray-700 hover:text-gray-900 truncate">
-                          {email}
-                        </a>
-                      </div>
-                    )}
-                    {phone && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Phone className="w-3 h-3 flex-shrink-0" style={{ color: themeColor }} />
-                        <a href={`tel:${phone}`} className="text-gray-700 hover:text-gray-900 truncate">
-                          {phone}
-                        </a>
-                      </div>
-                    )}
-                    {company && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Briefcase className="w-3 h-3 flex-shrink-0" style={{ color: themeColor }} />
-                        <span className="text-gray-700 truncate">{company}</span>
-                      </div>
-                    )}
-                    {website && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Globe className="w-3 h-3 flex-shrink-0" style={{ color: themeColor }} />
-                        <a href={website} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 truncate text-xs">
-                          {website}
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                        {/* Name and Title */}
+                        <div className="text-center">
+                          <h2 className="text-base font-bold text-gray-900 truncate">{fullName || 'Your Name'}</h2>
+                          {jobTitle && <p className="text-sm text-gray-600 truncate">{jobTitle}</p>}
+                          {company && <p className="text-sm text-gray-500 truncate">{company}</p>}
+                        </div>
 
-                  {/* Social Media Links */}
-                  {(linkedin || x || facebook || instagram) && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <div className="grid grid-cols-4 gap-1">
-                        {linkedin && (
-                          <a href={linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-1.5 bg-blue-100 hover:bg-blue-200 rounded transition-colors" title="LinkedIn">
-                            <Linkedin className="w-3 h-3 text-blue-600" />
-                          </a>
-                        )}
-                        {x && (
-                          <a href={x} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-1.5 bg-sky-100 hover:bg-sky-200 rounded transition-colors" title="X">
-                            <XLogo className="w-3 h-3 text-sky-500" />
-                          </a>
-                        )}
-                        {facebook && (
-                          <a href={facebook} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-1.5 bg-indigo-100 hover:bg-indigo-200 rounded transition-colors" title="Facebook">
-                            <Facebook className="w-3 h-3 text-indigo-600" />
-                          </a>
-                        )}
-                        {instagram && (
-                          <a href={instagram} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-1.5 bg-pink-100 hover:bg-pink-200 rounded transition-colors" title="Instagram">
-                            <Instagram className="w-3 h-3 text-pink-600" />
-                          </a>
+                        {/* Contact Info */}
+                        <div className="space-y-2 pt-3 border-t border-gray-200 text-sm">
+                          {email && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Mail className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} />
+                              <a href={`mailto:${email}`} className="text-gray-700 hover:text-gray-900 truncate">
+                                {email}
+                              </a>
+                            </div>
+                          )}
+                          {phone && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Phone className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} />
+                              <a href={`tel:${phone}`} className="text-gray-700 hover:text-gray-900 truncate">
+                                {phone}
+                              </a>
+                            </div>
+                          )}
+                          {company && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Briefcase className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} />
+                              <span className="text-gray-700 truncate">{company}</span>
+                            </div>
+                          )}
+                          {website && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Globe className="w-4 h-4 flex-shrink-0" style={{ color: themeColor }} />
+                              <a
+                                href={website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gray-700 hover:text-gray-900 truncate"
+                              >
+                                {website}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Social Media Links */}
+                        {(linkedin || x || facebook || instagram) && (
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="grid grid-cols-4 gap-2">
+                              {linkedin && (
+                                <a
+                                  href={linkedin}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center p-2 bg-blue-100 hover:bg-blue-200 rounded transition-colors"
+                                  title="LinkedIn"
+                                >
+                                  <Linkedin className="w-4 h-4 text-blue-600" />
+                                </a>
+                              )}
+                              {x && (
+                                <a
+                                  href={x}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center p-2 bg-sky-100 hover:bg-sky-200 rounded transition-colors"
+                                  title="X"
+                                >
+                                  <XLogo className="w-4 h-4 text-sky-500" />
+                                </a>
+                              )}
+                              {facebook && (
+                                <a
+                                  href={facebook}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center p-2 bg-indigo-100 hover:bg-indigo-200 rounded transition-colors"
+                                  title="Facebook"
+                                >
+                                  <Facebook className="w-4 h-4 text-indigo-600" />
+                                </a>
+                              )}
+                              {instagram && (
+                                <a
+                                  href={instagram}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center p-2 bg-pink-100 hover:bg-pink-200 rounded transition-colors"
+                                  title="Instagram"
+                                >
+                                  <Instagram className="w-4 h-4 text-pink-600" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* end grid */}
           </div>
         </div>
       </DialogContent>
