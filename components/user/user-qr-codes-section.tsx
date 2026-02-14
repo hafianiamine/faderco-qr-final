@@ -389,11 +389,11 @@ export function UserQRCodesSection() {
                   </div>
                 </div>
 
-                <div className="mb-4 rounded-lg bg-white/50 p-4">
+                <div className="mb-3 rounded-lg bg-white/50 p-3">
                   {qr.qr_logo_url ? (
                     <QRWithLogo qr={qr} />
                   ) : (
-                    <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
+                    <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-28 w-28" />
                   )}
                 </div>
 
@@ -410,49 +410,45 @@ export function UserQRCodesSection() {
                     </Button>
                   ) : (
                     <>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="flex-1 border-gray-200 bg-white/30 hover:bg-white/50"
+                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
                           onClick={() => handleView(qr)}
                         >
-                          <Eye className="mr-1 h-4 w-4" />
+                          <Eye className="mr-1 h-3.5 w-3.5" />
                           View
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="border-gray-200 bg-white/30 hover:bg-white/50"
+                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
                           asChild
                         >
                           <a href={qr.qr_image_url} download={`${qr.title}.png`}>
-                            <Download className="h-4 w-4" />
+                            <Download className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="flex-1 border-gray-200 bg-white/30 hover:bg-white/50"
+                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
                           onClick={() => handleEdit(qr)}
                         >
-                          <Edit className="mr-1 h-4 w-4" />
-                          Edit URL
+                          <Edit className="mr-1 h-3.5 w-3.5" />
+                          Edit
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="border-gray-200 bg-white/30 hover:bg-white/50"
+                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
                           onClick={() => handleToggleStatus(qr)}
+                          title={qr.status === "active" ? "Deactivate" : "Activate"}
                         >
-                          {qr.status === "active" ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                          {qr.status === "active" ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="border-red-200 bg-red-50/30 text-red-600 hover:bg-red-100/50"
+                          className="h-8 text-xs border-red-200 bg-red-50/30 text-red-600 hover:bg-red-100/50"
                           onClick={() => handleRequestDeletion(qr)}
                         >
                           <Trash2 className="h-4 w-4" />
