@@ -116,6 +116,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
       }
 
       console.log("[v0] Saving virtual card with profileImage:", profileImage ? "yes" : "no")
+      console.log("[v0] Saving virtual card with coverImage:", coverImage ? "yes" : "no")
 
       let result
       if (existingCard?.id) {
