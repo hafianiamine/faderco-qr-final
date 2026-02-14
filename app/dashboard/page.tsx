@@ -79,7 +79,7 @@ export default function UserDashboardPage() {
 
       <ForcePasswordResetModal isOpen={showPasswordReset} />
 
-      <div className="relative z-10 ml-24 min-h-screen p-8">
+      <div className="relative z-10 ml-0 md:ml-24 min-h-screen p-4 md:p-8">
         <div className="mx-auto max-w-7xl">
           {currentSection === "dashboard" && <UserDashboardSection />}
           {currentSection === "qr-codes" && <UserQRCodesSection />}

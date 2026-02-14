@@ -158,8 +158,8 @@ export function UserNFSSection() {
       <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Virtual Cards (NFC)</h1>
-            <p className="text-sm text-gray-600">Create and manage your NFC virtual card with QR codes</p>
+              <h1 className="text-3xl font-bold text-gray-900">Virtual Business Card</h1>
+              <p className="text-sm text-gray-600">Create and manage your virtual business card with unique QR code</p>
           </div>
           <Button onClick={() => {
             if (cards.length === 0) {

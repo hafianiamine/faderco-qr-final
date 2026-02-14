@@ -129,6 +129,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
       } else {
         toast({ title: "Success", description: `Virtual card ${existingCard?.id ? 'updated' : 'created'} successfully!` })
         
+        // Sync profile image to user account
         if (profileImage && profileImage !== existingCard?.profile_image_url) {
           console.log("[v0] Syncing profile picture to user account")
           const { data: { user } } = await supabase.auth.getUser()
@@ -136,6 +137,18 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
             await supabase
               .from('profiles')
               .update({ avatar_url: profileImage })
+              .eq('id', user.id)
+          }
+        }
+        
+        // Sync cover image to user account as well
+        if (coverImage && coverImage !== existingCard?.cover_image_url) {
+          console.log("[v0] Syncing cover image to user account")
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase
+              .from('profiles')
+              .update({ cover_image_url: coverImage })
               .eq('id', user.id)
           }
         }
