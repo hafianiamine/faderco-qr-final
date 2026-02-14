@@ -70,26 +70,36 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
     loadUserProfilePicture()
   }, [])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isProfile: boolean = false) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, isProfile: boolean = false) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        if (isProfile) {
-          setProfileImage(event.target?.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', isProfile ? 'profile' : 'cover')
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+        if (data.url) {
+          if (isProfile) {
+            setProfileImage(data.url)
+          } else {
+            setCoverImage(data.url)
+          }
         } else {
-          setCoverImage(event.target?.result as string)
+          toast({ title: "Error", description: "Failed to upload image" })
         }
+      } catch (error) {
+        console.error("[v0] Image upload error:", error)
+        toast({ title: "Error", description: "Failed to upload image" })
       }
-      reader.readAsDataURL(file)
     }
   }
 
-  const getBase64 = (data: string) => {
-    if (!data) return ''
-    const matches = data.match(/base64,(.+)/)
-    return matches ? matches[1] : data
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,8 +121,8 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
         facebook,
         instagram,
         themeColor,
-        coverImageBase64: coverImage,
-        profileImageBase64: profileImage,
+        coverImageUrl: coverImage,
+        profileImageUrl: profileImage,
       }
 
       console.log("[v0] Saving virtual card with profileImage:", profileImage ? "yes" : "no")

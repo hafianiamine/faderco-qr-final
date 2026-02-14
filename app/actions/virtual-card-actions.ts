@@ -11,7 +11,8 @@ export interface VirtualCardData {
   company?: string
   jobTitle?: string
   website?: string
-  coverImageBase64?: string
+  coverImageUrl?: string
+  profileImageUrl?: string
   themeColor?: string
 }
 
@@ -84,9 +85,10 @@ export async function createVirtualCard(cardData: VirtualCardData) {
       company_name: cardData.company,
       job_title: cardData.jobTitle,
       website: cardData.website,
+      profile_image_url: cardData.profileImageUrl || null,
+      cover_image_url: cardData.coverImageUrl || null,
       vcard_data: vcard,
       short_code: shortCode,
-      cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : null,
       theme_color: cardData.themeColor || "#6366f1",
     }).select()
 
@@ -147,8 +149,9 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
         company_name: cardData.company,
         job_title: cardData.jobTitle,
         website: cardData.website,
+        profile_image_url: cardData.profileImageUrl || undefined,
+        cover_image_url: cardData.coverImageUrl || undefined,
         vcard_data: vcard,
-        cover_image_url: cardData.coverImageBase64 ? `data:image/jpeg;base64,${cardData.coverImageBase64}` : undefined,
         theme_color: cardData.themeColor || "#6366f1",
       })
       .eq("id", cardId)
