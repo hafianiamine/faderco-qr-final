@@ -165,7 +165,7 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
-      <DialogContent className="w-screen max-w-[96vw] h-screen max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="w-[99vw] max-w-[99vw] h-screen max-h-[95vh] p-0 flex flex-col overflow-hidden left-0 right-0 top-0">
         <DialogHeader className="px-6 pt-6 pb-3 border-b flex-shrink-0">
           <DialogTitle>{existingCard ? 'Edit Virtual Card' : 'Create Virtual Card'}</DialogTitle>
           <DialogDescription>
