@@ -141,18 +141,6 @@ export function VirtualCardCreator({ existingCard, onClose }: VirtualCardCreator
           }
         }
         
-        // Sync cover image to user account as well
-        if (coverImage && coverImage !== existingCard?.cover_image_url) {
-          console.log("[v0] Syncing cover image to user account")
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            await supabase
-              .from('profiles')
-              .update({ cover_image_url: coverImage })
-              .eq('id', user.id)
-          }
-        }
-        
         onClose?.()
       }
     } catch (error) {
