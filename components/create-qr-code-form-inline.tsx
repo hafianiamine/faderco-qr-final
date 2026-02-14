@@ -79,7 +79,7 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
     return () => clearTimeout(debounce)
   }, [destinationUrl, colorDark, colorLight, logoPreview, logoSize, logoOutlineColor])
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
@@ -87,11 +87,27 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
         return
       }
       setLogoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
+      
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'qr-logo')
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+        if (data.url) {
+          setLogoPreview(data.url)
+        } else {
+          toast.error("Failed to upload logo")
+        }
+      } catch (error) {
+        console.error("[v0] Logo upload error:", error)
+        toast.error("Failed to upload logo")
       }
-      reader.readAsDataURL(file)
     }
   }
 
