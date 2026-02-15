@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
+import { LandingCarousel } from '@/components/landing-carousel'
 import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX, Menu, X } from 'lucide-react'
+import { getCarouselSlides } from '@/app/actions/carousel-actions'
 
 interface HeroSection {
   id: number
@@ -23,13 +25,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [isMuted, setIsMuted] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showCarousel, setShowCarousel] = useState(false)
+  const [carouselSlides, setCarouselSlides] = useState<any[]>([])
   const [textVisible, setTextVisible] = useState(false)
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
 
   useEffect(() => {
-    // Show popup after 3 minutes (180 seconds)
-    const timer = setTimeout(() => {
-      setOpenModal('solution')
+    // Fetch carousel slides and show popup after 3 minutes (180 seconds)
+    const timer = setTimeout(async () => {
+      const slides = await getCarouselSlides()
+      setCarouselSlides(slides)
+      setShowCarousel(true)
     }, 180000)
     return () => clearTimeout(timer)
   }, [])
@@ -172,6 +177,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         onRegisterOpenChange={setRegisterOpen}
       />
 
+      {/* Carousel Modal - Shows after 3 minutes */}
+      {showCarousel && carouselSlides.length > 0 && (
+        <LandingCarousel 
+          slides={carouselSlides} 
+          notificationText="Check out our latest tools & features!"
+        />
+      )}
+
       {/* Info Modals */}
       <InfoModal
         open={openModal === 'solution'}
@@ -241,14 +254,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className="relative w-full h-screen overflow-hidden bg-black">
-        {/* Video Background - YouTube iframe with autoplay - zoomed on mobile */}
-        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
+        {/* Video Background - Full width and height, no padding */}
+        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden m-0 p-0">
           {section?.youtube_url ? (
             <iframe
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-              className="absolute inset-0 w-full h-full sm:object-contain md:object-contain lg:object-contain object-cover"
-              style={{ border: 'none', pointerEvents: 'none', transform: 'scale(1.2)' }}
+              className="absolute inset-0 w-full h-full"
+              style={{ border: 'none', pointerEvents: 'none', transform: 'scale(1.1)' }}
               allow="autoplay; encrypted-media"
               title="Hero background video"
             />
@@ -333,7 +346,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
         {/* Mobile Menu Fullscreen */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg md:hidden flex flex-col">
+          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg md:hidden flex flex-col animate-in fade-in duration-300">
             {/* Close Button */}
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -347,9 +360,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             <div className="flex flex-col items-center justify-center flex-1 gap-8">
               {[
                 { icon: Home, label: 'Home', action: () => setCurrentSection(0) },
-                { icon: Zap, label: 'solution', action: () => null },
-                { icon: FileText, label: 'zero paper', action: () => null },
-                { icon: Users, label: 'about us', action: () => null }
+                { icon: Zap, label: 'solution', action: () => setOpenModal('solution') },
+                { icon: FileText, label: 'zero paper', action: () => setOpenModal('zero-paper') },
+                { icon: Users, label: 'about us', action: () => setOpenModal('about-us') }
               ].map((item, idx) => (
                 <button 
                   key={idx}
@@ -360,9 +373,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                   className={`text-white text-2xl font-semibold hover:text-gray-300 transition-colors flex items-center gap-3 ${
                     activeMenuItems.includes(idx) ? 'animate-stagger-in' : 'opacity-0'
                   }`}
-                  style={{
-                    animationDelay: activeMenuItems.includes(idx) ? `${idx * 150}ms` : '0ms'
-                  }}
                 >
                   <item.icon className="h-7 w-7" />
                   {item.label}
@@ -408,8 +418,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             </div>
           </div>
 
-          {/* Right Side - Dot Indicators - Desktop: right side middle, Mobile: centered below */}
-          <div className="fixed md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:left-auto bottom-20 left-1/2 -translate-x-1/2 md:translate-x-0 md:-translate-y-1/2 z-20 flex gap-2 sm:gap-3 md:gap-4 md:flex-col flex-row">
+          {/* Right Side - Dot Indicators - Fixed on right side, stacked vertically on all devices */}
+          <div className="fixed right-6 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 md:gap-4">
             {sections.map((_, idx) => (
               <button
                 key={idx}
