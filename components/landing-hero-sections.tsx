@@ -30,6 +30,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [textVisible, setTextVisible] = useState(false)
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Fetch carousel slides and show popup after 3 minutes (180 seconds)
@@ -39,6 +40,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       setShowCarousel(true)
     }, 180000)
     return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    // Detect mobile on mount and window resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   useEffect(() => {
@@ -266,11 +277,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               style={{ 
                 border: 'none', 
                 pointerEvents: 'none',
-                top: window.innerWidth < 768 ? '-15%' : '50%',
+                top: isMobile ? '-15%' : '50%',
                 left: '50%',
-                transform: window.innerWidth < 768 ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
-                width: window.innerWidth < 768 ? '200%' : '130%',
-                height: window.innerWidth < 768 ? '200%' : '130%',
+                transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
+                width: isMobile ? '200%' : '130%',
+                height: isMobile ? '200%' : '130%',
                 opacity: isDarkMode ? 1 : 0.6
               }}
               allow="autoplay; encrypted-media"
