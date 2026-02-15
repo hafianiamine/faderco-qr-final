@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
-import { Home, Zap, Leaf, FileText, Users, Loader2 } from 'lucide-react'
+import { LandingCarousel } from '@/components/landing-carousel'
+import { Home, Zap, FileText, Users, Loader2 } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -20,11 +21,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [registerOpen, setRegisterOpen] = useState(false)
   const [openModal, setOpenModal] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showCarousel, setShowCarousel] = useState(false)
 
   useEffect(() => {
-    // Set loading to false after component mounts
-    setIsLoading(false)
-  }, [])
+    // Show carousel only after user reaches section 3 (index 2)
+    if (currentSection >= 2) {
+      setShowCarousel(true)
+    }
+  }, [currentSection])
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -258,16 +262,18 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display transition-opacity duration-1000">
-          {/* Left Content - Positioned at bottom left with smooth fade */}
-          <div className={`w-full md:flex-1 md:max-w-2xl transition-all duration-1000 ${isScrolling ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
-              {section?.title || 'Loading...'}
-            </h1>
-            <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
-              {section?.description || 'Loading...'}
-            </p>
-          </div>
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
+          {/* Left Content - Proper hide/show animation */}
+          {!isScrolling && (
+            <div className={`w-full md:flex-1 md:max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700`}>
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
+                {section?.title || 'Loading...'}
+              </h1>
+              <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
+                {section?.description || 'Loading...'}
+              </p>
+            </div>
+          )}
 
           {/* Right Side - Dot Indicators */}
           <div className="fixed right-4 sm:right-6 md:right-8 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-20 flex sm:flex-col gap-2 sm:gap-3 md:gap-4">
@@ -288,6 +294,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         <div className="fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-white text-xs md:text-sm z-20 px-4">
           Built in a corner © 2026 FADERCO QR.
         </div>
+
+        {/* Carousel - shown only after section 3 */}
+        {showCarousel && (
+          <LandingCarousel slides={[]} notificationText="Check out our latest tools & features!" />
+        )}
       </div>
     </>
   )
