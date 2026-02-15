@@ -68,12 +68,12 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
-  // Convert YouTube URL to embed format
+  // Convert YouTube URL to embed format - without controls
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return ''
     if (url.includes('youtube.com/embed')) return url
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&vq=hd1080`
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3`
   }
 
   return (
@@ -97,8 +97,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               title="Hero background video"
             />
           )}
-          {/* Black Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent" />
+          {/* Black Gradient Overlay - Super dark left, fading to transparent top */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
         </div>
 
         {/* Fixed Header - Fully Transparent */}
@@ -106,12 +107,12 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           <div className="flex items-center justify-between w-full">
             <div className="text-white font-bold text-lg md:text-xl tracking-tight">FADERCO CONNECT</div>
             
-            <nav className="hidden md:flex items-center gap-8 lg:gap-12 text-white text-sm font-medium">
-              <a href="#" className="hover:text-gray-300 transition-colors">Home</a>
-              <a href="#" className="hover:text-gray-300 transition-colors">solution</a>
-              <a href="#" className="hover:text-gray-300 transition-colors">green hosting</a>
-              <a href="#" className="hover:text-gray-300 transition-colors">zero paper</a>
-              <a href="#" className="hover:text-gray-300 transition-colors">about us</a>
+            <nav className="hidden md:flex items-center gap-2 lg:gap-4 text-white text-sm font-medium">
+              <a href="#" className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center">Home</a>
+              <a href="#" className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center">solution</a>
+              <a href="#" className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center">green hosting</a>
+              <a href="#" className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center">zero paper</a>
+              <a href="#" className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center">about us</a>
             </nav>
             
             <div className="flex items-center gap-4 md:gap-6">
@@ -132,13 +133,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-center justify-center px-4 sm:px-6 md:px-12 py-24 sm:py-20 md:py-0">
-          {/* Left Content - Full width on mobile, flex on desktop */}
-          <div className="w-full md:w-auto md:flex-1 md:max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight text-balance">
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16">
+          {/* Left Content - Positioned at bottom left */}
+          <div className="w-full md:flex-1 md:max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight text-left">
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-100 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-gray-100 leading-relaxed text-left max-w-xl">
               {section?.description || 'Loading...'}
             </p>
           </div>
