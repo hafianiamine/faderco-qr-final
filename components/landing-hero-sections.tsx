@@ -248,7 +248,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh' }}>
+      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh', border: '5px solid red' }}>
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
