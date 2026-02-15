@@ -27,14 +27,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
 
   useEffect(() => {
-    // Set loading to false after 1.5 seconds
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
     // Show popup after 3 minutes (180 seconds)
     const timer = setTimeout(() => {
       setOpenModal('solution')
@@ -173,16 +165,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   return (
     <>
-      {/* Preloader */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-            <p className="text-white text-xs sm:text-sm font-medium">Loading experience...</p>
-          </div>
-        </div>
-      )}
-      
       <AuthModals
         loginOpen={loginOpen}
         registerOpen={registerOpen}
@@ -259,13 +241,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className="relative w-full h-screen overflow-hidden bg-black">
-        {/* Loading State */}
-        {isLoading && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
-            <Loader2 className="h-12 w-12 text-white animate-spin" />
-          </div>
-        )}
-
         {/* Video Background - YouTube iframe with autoplay - zoomed on mobile */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
