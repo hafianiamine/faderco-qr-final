@@ -41,6 +41,8 @@ export function UserQRCodesSection() {
   const [copied, setCopied] = useState(false)
   const [pendingDeletions, setPendingDeletions] = useState<any[]>([])
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
+  const [pageSize] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadQRCodes()
@@ -60,6 +62,12 @@ export function UserQRCodesSection() {
     }
     return true
   })
+
+  const paginatedQRCodes = filteredQRCodes.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
+  const totalPages = Math.ceil(filteredQRCodes.length / pageSize)
 
   async function loadQRCodes() {
     try {
@@ -338,7 +346,7 @@ export function UserQRCodesSection() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredQRCodes.map((qr) => {
+          {paginatedQRCodes.map((qr) => {
             const pendingDeletion = isPendingDeletion(qr)
             return (
               <div
@@ -461,6 +469,40 @@ export function UserQRCodesSection() {
             )
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="h-8 px-3 text-xs"
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  className="h-8 w-8 p-0 text-xs"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="h-8 px-3 text-xs"
+            >
+              Next
+            </Button>
+          </div>
+        )}
       )}
 
       <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>

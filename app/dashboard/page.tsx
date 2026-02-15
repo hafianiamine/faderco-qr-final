@@ -65,21 +65,21 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <AnimatedBackground />
 
-      <UserGlassMenu
-        userEmail={userEmail}
-        onSectionChange={setCurrentSection}
-        currentSection={currentSection}
-        onShowFeatureTour={handleShowTour}
-      />
+      {/* Sidebar - Hidden on mobile, fixed on desktop */}
+      <div className="fixed md:static left-0 top-0 bottom-0 z-40 w-24">
+        <UserGlassMenu
+          userEmail={userEmail}
+          onSectionChange={setCurrentSection}
+          currentSection={currentSection}
+          onShowFeatureTour={handleShowTour}
+        />
+      </div>
 
-      <FeatureTourModal isOpen={showFeatureTour && !showPasswordReset} onClose={handleCloseTour} userName={userEmail} />
-
-      <ForcePasswordResetModal isOpen={showPasswordReset} />
-
-      <div className="relative z-10 ml-0 md:ml-24 min-h-screen p-4 md:p-8">
+      {/* Main Content */}
+      <div className="relative z-10 flex-1 w-full min-h-screen p-4 md:p-8">
         <div className="mx-auto max-w-7xl">
           {currentSection === "dashboard" && <UserDashboardSection />}
           {currentSection === "qr-codes" && <UserQRCodesSection />}
@@ -99,6 +99,9 @@ export default function UserDashboardPage() {
           {currentSection === "nfs" && <UserNFSSection />}
         </div>
       </div>
+
+      <FeatureTourModal isOpen={showFeatureTour && !showPasswordReset} onClose={handleCloseTour} userName={userEmail} />
+      <ForcePasswordResetModal isOpen={showPasswordReset} />
     </div>
   )
 }
