@@ -27,30 +27,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
 
   useEffect(() => {
-    // Set loading to false after 1.5 seconds
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      // Trigger staggered animation for menu items
-      setActiveMenuItems([])
-      const timers = [
-        setTimeout(() => setActiveMenuItems([0]), 100),
-        setTimeout(() => setActiveMenuItems(prev => [...prev, 1]), 250),
-        setTimeout(() => setActiveMenuItems(prev => [...prev, 2]), 400),
-        setTimeout(() => setActiveMenuItems(prev => [...prev, 3]), 550)
-      ]
-      return () => timers.forEach(t => clearTimeout(t))
-    } else {
-      setActiveMenuItems([])
-    }
-  }, [mobileMenuOpen])
-
-  useEffect(() => {
     // Show text after component loads with delay
     if (!isLoading) {
       const timer = setTimeout(() => {
@@ -68,6 +44,22 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
     }, 600) // Delay before showing next section text
     return () => clearTimeout(timer)
   }, [currentSection])
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      // Trigger staggered animation for menu items
+      setActiveMenuItems([])
+      const timers = [
+        setTimeout(() => setActiveMenuItems([0]), 100),
+        setTimeout(() => setActiveMenuItems(prev => [...prev, 1]), 250),
+        setTimeout(() => setActiveMenuItems(prev => [...prev, 2]), 400),
+        setTimeout(() => setActiveMenuItems(prev => [...prev, 3]), 550)
+      ]
+      return () => timers.forEach(t => clearTimeout(t))
+    } else {
+      setActiveMenuItems([])
+    }
+  }, [mobileMenuOpen])
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -143,6 +135,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   }, [isScrolling, sections.length, currentSection])
 
   const section = sections[currentSection] || sections[0]
+  const displaySection = nextSection !== null ? sections[nextSection] : section
 
   // Extract YouTube video ID and convert to embed URL
   const getYouTubeEmbedUrl = (url: string, muted: boolean = true) => {
@@ -413,9 +406,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
         {/* Hero Content */}
         <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
-          {/* Left Content - Bigger Hero Text in 2 Lines */}
+          {/* Left Content - Bigger Hero Text in 2 Lines with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
-            {/* Title - Split into 2 lines with fade in/out */}
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl">
                 {section?.title || 'Loading...'}
@@ -426,8 +418,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             </div>
           </div>
 
-          {/* Right Side - Dot Indicators - Desktop: right side middle, Mobile: centered bottom */}
-          <div className="fixed md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:left-auto bottom-20 md:bottom-auto left-1/2 -translate-x-1/2 md:translate-x-0 md:-translate-y-1/2 z-20 flex gap-2 sm:gap-3 md:gap-4 md:flex-col flex-row">
+          {/* Right Side - Dot Indicators - Desktop: right side middle, Mobile: centered below */}
+          <div className="fixed md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:left-auto bottom-20 left-1/2 -translate-x-1/2 md:translate-x-0 md:-translate-y-1/2 z-20 flex gap-2 sm:gap-3 md:gap-4 md:flex-col flex-row">
             {sections.map((_, idx) => (
               <button
                 key={idx}
