@@ -267,11 +267,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 style={{ 
                   border: 'none', 
                   pointerEvents: 'none',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '150%',
+                  height: '150%',
                   opacity: isDarkMode ? 1 : 0.6
                 }}
                 allow="autoplay; encrypted-media"
