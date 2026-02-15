@@ -135,7 +135,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   }, [isScrolling, sections.length, currentSection])
 
   const section = sections[currentSection] || sections[0]
-  const displaySection = nextSection !== null ? sections[nextSection] : section
 
   // Extract YouTube video ID and convert to embed URL
   const getYouTubeEmbedUrl = (url: string, muted: boolean = true) => {
