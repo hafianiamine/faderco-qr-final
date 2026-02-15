@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
-import { LandingCarousel } from '@/components/landing-carousel'
-import { Home, Zap, FileText, Users, Volume2, VolumeX } from 'lucide-react'
+import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -20,20 +19,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [openModal, setOpenModal] = useState<string | null>(null)
-  const [showCarousel, setShowCarousel] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isMuted, setIsMuted] = useState(true)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  const toggleAudio = () => {
-    setIsMuted(!isMuted)
-    if (iframeRef.current) {
-      // YouTube iframe supports mute parameter, but we need to change the src
-      const newUrl = iframeRef.current.src.includes('mute=1') 
-        ? iframeRef.current.src.replace('mute=1', 'mute=0')
-        : iframeRef.current.src.replace('mute=0', 'mute=1')
-      iframeRef.current.src = newUrl
-    }
-  }
+  useEffect(() => {
+    // Set loading to false after component mounts
+    setIsLoading(false)
+  }, [])
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -182,11 +174,17 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
+            <Loader2 className="h-12 w-12 text-white animate-spin" />
+          </div>
+        )}
+
         {/* Video Background - YouTube iframe with autoplay */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
             <iframe
-              ref={iframeRef}
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url)}
               className="absolute inset-0 w-full h-full"
@@ -261,18 +259,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
-          {/* Left Content - Proper hide/show animation */}
-          {!isScrolling && (
-            <div className={`w-full md:flex-1 md:max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700`}>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
-                {section?.title || 'Loading...'}
-              </h1>
-              <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
-                {section?.description || 'Loading...'}
-              </p>
-            </div>
-          )}
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display transition-opacity duration-1000">
+          {/* Left Content - Positioned at bottom left with smooth fade */}
+          <div className={`w-full md:flex-1 md:max-w-2xl transition-all duration-1000 ${isScrolling ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
+              {section?.title || 'Loading...'}
+            </h1>
+            <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
+              {section?.description || 'Loading...'}
+            </p>
+          </div>
 
           {/* Right Side - Dot Indicators */}
           <div className="fixed right-4 sm:right-6 md:right-8 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-20 flex sm:flex-col gap-2 sm:gap-3 md:gap-4">
@@ -294,28 +290,19 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           Built in a corner © 2026 FADERCO QR.
         </div>
 
-        {/* Audio Toggle - Bottom Left */}
+        {/* Audio Toggle - Bottom Right - Small & Transparent */}
         <button
-          onClick={toggleAudio}
-          className="fixed bottom-6 left-6 z-30 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-2 sm:p-3 transition-all duration-300 border border-white/20"
-          aria-label={isMuted ? 'Unmute background audio' : 'Mute background audio'}
+          onClick={() => setIsMuted(!isMuted)}
+          className="fixed bottom-6 right-6 z-30 bg-white/5 hover:bg-white/15 backdrop-blur-sm rounded-full p-2 transition-all duration-300 border border-white/10"
+          aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
           title={isMuted ? 'Unmute' : 'Mute'}
         >
           {isMuted ? (
-            <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <VolumeX className="h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
           ) : (
-            <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <Volume2 className="h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
           )}
         </button>
-
-        {/* Carousel Modal - Proper small popup shown only after section 3 */}
-        {showCarousel && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-auto">
-            <div className="w-full max-w-sm bg-black border border-white/20 rounded-lg p-4 pointer-events-auto">
-              <LandingCarousel slides={[]} notificationText="Check out our latest tools!" />
-            </div>
-          </div>
-        )}
       </div>
     </>
   )
