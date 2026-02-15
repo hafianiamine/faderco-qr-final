@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { AuthModals } from '@/components/auth-modals'
 
 interface HeroSection {
   id: number
@@ -25,6 +25,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [backgroundImage, setBackgroundImage] = useState(() => 
     RANDOM_IMAGES[Math.floor(Math.random() * RANDOM_IMAGES.length)]
   )
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [registerOpen, setRegisterOpen] = useState(false)
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -47,43 +49,54 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const section = sections[currentSection] || sections[0]
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={backgroundImage}
-          alt="Hero background"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50" />
-      </div>
-
-      {/* Fixed Header - Fully Transparent */}
-      <header className="fixed top-0 left-0 right-0 z-50">
-        <div className="flex items-center justify-between px-12 py-6">
-          <div className="text-white font-bold text-lg tracking-tight">FADERCO CONNECT</div>
-          
-          <nav className="flex items-center gap-12 text-white text-sm font-medium">
-            <a href="#" className="hover:text-gray-300 transition-colors">Home</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">solution</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">green hosting</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">zero paper</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">about us</a>
-          </nav>
-          
-          <div className="flex items-center gap-6">
-            <Link href="/auth/login" className="text-white hover:text-gray-300 transition-colors text-sm font-medium">
-              Login
-            </Link>
-            <Link 
-              href="/auth/signup" 
-              className="bg-white text-black px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              Get Started
-            </Link>
-          </div>
+    <>
+      <AuthModals
+        loginOpen={loginOpen}
+        registerOpen={registerOpen}
+        onLoginOpenChange={setLoginOpen}
+        onRegisterOpenChange={setRegisterOpen}
+      />
+      
+      <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={backgroundImage}
+            alt="Hero background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
-      </header>
+
+        {/* Fixed Header - Fully Transparent */}
+        <header className="fixed top-0 left-0 right-0 z-50">
+          <div className="flex items-center justify-between px-12 py-6">
+            <div className="text-white font-bold text-lg tracking-tight">FADERCO CONNECT</div>
+            
+            <nav className="flex items-center gap-12 text-white text-sm font-medium">
+              <a href="#" className="hover:text-gray-300 transition-colors">Home</a>
+              <a href="#" className="hover:text-gray-300 transition-colors">solution</a>
+              <a href="#" className="hover:text-gray-300 transition-colors">green hosting</a>
+              <a href="#" className="hover:text-gray-300 transition-colors">zero paper</a>
+              <a href="#" className="hover:text-gray-300 transition-colors">about us</a>
+            </nav>
+            
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => setLoginOpen(true)}
+                className="text-white hover:text-gray-300 transition-colors text-sm font-medium"
+              >
+                Login
+              </button>
+              <button 
+                onClick={() => setRegisterOpen(true)}
+                className="bg-white text-black px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                Get Started
+              </button>
+            </div>
+          </div>
+        </header>
 
       {/* Hero Content */}
       <div className="relative z-10 w-full h-screen flex items-center justify-between px-12">
@@ -112,10 +125,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 text-center py-6 text-gray-500 text-sm z-20">
-        Built in a corner © 2026 FADERCO QR.
+        {/* Footer */}
+        <div className="fixed bottom-0 left-0 right-0 text-center py-6 text-gray-500 text-sm z-20">
+          Built in a corner © 2026 FADERCO QR.
+        </div>
       </div>
-    </div>
+    </>
   )
 }
