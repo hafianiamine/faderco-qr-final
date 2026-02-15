@@ -164,16 +164,20 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
         {/* Video Background - HTML5 with autoplay */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
-          {section?.youtube_url && (
+          {section?.youtube_url ? (
             <video
               key={section.id}
               autoPlay
               muted
               loop
               playsInline
+              crossOrigin="anonymous"
               className="absolute inset-0 w-full h-full object-cover"
               src={section.youtube_url}
+              onError={(e) => console.log("[v0] Video error:", e)}
             />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
           )}
           {/* Black Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black" />
@@ -204,13 +208,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               >
                 <Zap className="h-4 w-4" />
                 solution
-              </button>
-              <button 
-                onClick={() => setOpenModal('green-hosting')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
-              >
-                <Leaf className="h-4 w-4" />
-                green hosting
               </button>
               <button 
                 onClick={() => setOpenModal('zero-paper')}
@@ -246,9 +243,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
-          {/* Left Content - Positioned at bottom left */}
-          <div className="w-full md:flex-1 md:max-w-2xl">
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display transition-opacity duration-1000">
+          {/* Left Content - Positioned at bottom left with smooth fade */}
+          <div className={`w-full md:flex-1 md:max-w-2xl transition-all duration-1000 ${isScrolling ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
               {section?.title || 'Loading...'}
             </h1>
