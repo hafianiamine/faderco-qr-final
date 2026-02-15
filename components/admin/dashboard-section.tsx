@@ -56,10 +56,10 @@ export function DashboardSection() {
         supabase.from("companies").select("id, name", { count: "exact", head: true }),
         supabase
           .from("scans")
-          .select("created_at")
-          .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .order("created_at", { ascending: true }),
-        supabase.from("scans").select("qr_code_id").order("created_at", { ascending: false }),
+          .select("scanned_at")
+          .gte("scanned_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order("scanned_at", { ascending: true }),
+        supabase.from("scans").select("qr_code_id").order("scanned_at", { ascending: false }),
       ])
 
     const companiesCount = companies?.length || 0
@@ -74,7 +74,7 @@ export function DashboardSection() {
     }
 
     scansData?.forEach((scan: any) => {
-      const date = new Date(scan.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      const date = new Date(scan.scanned_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       if (scansByDate[date] !== undefined) {
         scansByDate[date]++
       }
