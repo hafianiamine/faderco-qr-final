@@ -258,7 +258,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       <div className={`fixed inset-0 w-screen overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-black' : 'bg-white'}`} style={{ height: '100dvh' }}>
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
-          {section?.youtube_url && isDarkMode ? (
+          {section?.youtube_url ? (
             <div className="absolute inset-0 w-full h-full flex items-center justify-center">
               <iframe
                 key={section.id}
@@ -273,7 +273,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                   minWidth: '100%',
                   minHeight: '100%',
                   width: '100%',
-                  height: '100%'
+                  height: '100%',
+                  opacity: isDarkMode ? 1 : 0.6
                 }}
                 allow="autoplay; encrypted-media"
                 title="Hero background video"
@@ -283,8 +284,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
           {/* Gradient Overlay - Adaptive to theme */}
-          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-transparent via-black/30 to-black' : 'bg-gradient-to-b from-transparent via-white/20 to-white'}`} />
-          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-r from-black via-black/60 to-transparent' : 'bg-gradient-to-r from-white via-white/40 to-transparent'}`} />
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-transparent via-black/30 to-black' : 'bg-gradient-to-b from-transparent via-black/10 to-black/20'}`} />
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-r from-black via-black/60 to-transparent' : 'bg-gradient-to-r from-black/30 via-black/10 to-transparent'}`} />
         </div>
 
         {/* Fixed Header - Fully Transparent */}
