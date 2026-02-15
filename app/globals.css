@@ -1,7 +1,4 @@
 @import "tailwindcss";
-/* Removed tw-animate-css import - was causing empty @utility blocks in Tailwind v4 */
-/* Removed global Leaflet CSS import - it's now loaded only in the map component to avoid MIME type errors */
-/* @import "leaflet/dist/leaflet.css"; */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -19,9 +16,52 @@
   }
 }
 
+@keyframes fadeInBlue {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOutDown {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+@keyframes staggerIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @layer utilities {
   .animate-fade-up-out {
     animation: fadeUpOut 500ms ease-in-out forwards;
+  }
+  
+  .animate-fade-in-blue {
+    animation: fadeInBlue 800ms ease-in forwards;
+  }
+  
+  .animate-fade-out-down {
+    animation: fadeOutDown 500ms ease-out forwards;
+  }
+  
+  .animate-stagger-in {
+    animation: staggerIn 600ms ease-out forwards;
   }
 }
 
