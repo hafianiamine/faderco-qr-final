@@ -277,11 +277,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 style={{ 
                   border: 'none', 
                   pointerEvents: 'none',
-                  top: isMobile ? '-5%' : '50%',
-                  left: '50%',
-                  transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
-                  width: isMobile ? '200%' : '130%',
-                  height: isMobile ? '200%' : '130%',
+                  top: isMobile ? '0' : '50%',
+                  left: isMobile ? '0' : '50%',
+                  transform: isMobile ? 'none' : 'translate(-50%, -50%)',
+                  width: isMobile ? '100%' : '130%',
+                  height: isMobile ? '100%' : '130%',
                   opacity: isDarkMode ? 1 : 0.6
                 }}
                 allow="autoplay; encrypted-media"
@@ -452,7 +452,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         )}
 
         {/* Hero Content */}
-        <div className={`relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 font-display ${isMobile ? 'pb-40 sm:pb-20 md:pb-16' : 'pb-24 sm:pb-20 md:pb-16'}`}>
+        <div className={`absolute inset-0 z-10 w-full flex items-end px-4 sm:px-6 md:px-12 font-display ${isMobile ? 'pt-80 pb-20' : 'pt-0 pb-24 sm:pb-20 md:pb-16'}`}>
           {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
