@@ -77,15 +77,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
-  // Convert YouTube URL to embed format - using standard embed with proper autoplay
-  const getYouTubeEmbedUrl = (url: string) => {
-    if (!url) return ''
-    if (url.includes('youtube.com/embed')) return url
-    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
-    // Standard YouTube embed with muted autoplay
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&iv_load_policy=3`
-  }
-
   return (
     <>
       <AuthModals
@@ -171,20 +162,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         )}
 
-        {/* YouTube Video Background */}
-        <div className="absolute inset-0 z-0 w-full h-full">
-          {section?.youtube_url && (
-            <iframe
-              key={section.id}
-              src={getYouTubeEmbedUrl(section.youtube_url)}
-              className="absolute inset-0 w-full h-full"
-              style={{ border: 'none', pointerEvents: 'none' }}
-              allow="autoplay *; encrypted-media"
-              title="Hero background video"
-              onLoad={() => setIsLoading(false)}
-            />
-          )}
-          {/* Black Gradient Overlay - Super dark left, fading to transparent top */}
+        {/* Background - Solid black with gradient overlay */}
+        <div className="absolute inset-0 z-0 w-full h-full bg-black">
+          {/* Black Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black" />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
         </div>
@@ -258,10 +238,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
           {/* Left Content - Positioned at bottom left */}
           <div className="w-full md:flex-1 md:max-w-2xl">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl">
+            <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
               {section?.description || 'Loading...'}
             </p>
           </div>
