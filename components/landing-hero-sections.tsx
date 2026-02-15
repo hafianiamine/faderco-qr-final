@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
 import { LandingCarousel } from '@/components/landing-carousel'
+import { LoadingScreen } from '@/components/loading-screen'
 import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX, Menu, X } from 'lucide-react'
 import { getCarouselSlides } from '@/app/actions/carousel-actions'
 
@@ -21,7 +22,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [openModal, setOpenModal] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [showPreloader, setShowPreloader] = useState(true)
   const [isMuted, setIsMuted] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showCarousel, setShowCarousel] = useState(false)
@@ -40,9 +41,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   }, [])
 
   useEffect(() => {
-    // Show text on initial load without fade animation
-    setTextVisible(true)
-  }, [])
+    // Show text when preloader is done
+    if (!showPreloader) {
+      setTextVisible(true)
+    }
+  }, [showPreloader])
 
   useEffect(() => {
     // Fade out current text on section change
@@ -165,6 +168,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   return (
     <>
+      {/* Loading Screen - Shows on initial page load */}
+      <LoadingScreen onLoadComplete={() => setShowPreloader(false)} />
+
       <AuthModals
         loginOpen={loginOpen}
         registerOpen={registerOpen}
@@ -248,7 +254,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh', border: '5px solid red' }}>
+      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh' }}>
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
