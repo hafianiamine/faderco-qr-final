@@ -133,6 +133,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         </div>
       )}
+      
+      <AuthModals
         loginOpen={loginOpen}
         registerOpen={registerOpen}
         onLoginOpenChange={setLoginOpen}
