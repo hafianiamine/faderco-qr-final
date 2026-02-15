@@ -267,9 +267,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 style={{ 
                   border: 'none', 
                   pointerEvents: 'none',
-                  top: '50%',
+                  top: '-20%',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)',
+                  transform: 'translate(-50%, 0)',
                   width: '200%',
                   height: '200%',
                   opacity: isDarkMode ? 1 : 0.6
@@ -281,9 +281,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           ) : (
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
-          {/* Gradient Overlay - Adaptive to theme */}
-          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-transparent via-black/30 to-black' : 'bg-gradient-to-b from-transparent via-black/10 to-black/20'}`} />
-          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-r from-black via-black/60 to-transparent' : 'bg-gradient-to-r from-black/30 via-black/10 to-transparent'}`} />
+          {/* Gradient Overlay - Black at top fading to transparent */}
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-black via-black/50 to-transparent' : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'}`} />
         </div>
 
         {/* Fixed Header - Fully Transparent */}
