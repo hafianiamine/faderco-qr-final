@@ -270,23 +270,23 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
-            <iframe
-              key={section.id}
-              src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-              className="absolute"
-              style={{ 
-                border: 'none', 
-                pointerEvents: 'none',
-                top: isMobile ? '-15%' : '50%',
-                left: '50%',
-                transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
-                width: isMobile ? '200%' : '130%',
-                height: isMobile ? '200%' : '130%',
-                opacity: isDarkMode ? 1 : 0.6
-              }}
-              allow="autoplay; encrypted-media"
-              title="Hero background video"
-            />
+              <iframe
+                key={section.id}
+                src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
+                className="absolute"
+                style={{ 
+                  border: 'none', 
+                  pointerEvents: 'none',
+                  top: isMobile ? '-5%' : '50%',
+                  left: '50%',
+                  transform: isMobile ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
+                  width: isMobile ? '200%' : '130%',
+                  height: isMobile ? '200%' : '130%',
+                  opacity: isDarkMode ? 1 : 0.6
+                }}
+                allow="autoplay; encrypted-media"
+                title="Hero background video"
+              />
           ) : (
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
@@ -337,11 +337,24 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             </nav>
             
             {/* Desktop Auth & Mobile Hamburger */}
-            <div className="flex items-center gap-4 md:gap-6 shrink-0">
-              {/* Theme Toggle */}
+            <div className="flex items-center gap-2 md:gap-6 shrink-0">
+              {/* Theme Toggle - Mobile only next to hamburger */}
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`p-2 rounded-full transition-all duration-300 ${
+                className={`md:hidden p-2 rounded-full transition-all duration-300 ${
+                  isDarkMode 
+                    ? 'text-white hover:bg-white/10' 
+                    : 'text-gray-700 hover:bg-gray-200'
+                }`}
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+
+              {/* Theme Toggle - Desktop only */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`hidden md:block p-2 rounded-full transition-all duration-300 ${
                   isDarkMode 
                     ? 'text-white hover:bg-white/10' 
                     : 'text-gray-700 hover:bg-gray-200'
@@ -439,7 +452,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         )}
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
+        <div className={`relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 font-display ${isMobile ? 'pb-40 sm:pb-20 md:pb-16' : 'pb-24 sm:pb-20 md:pb-16'}`}>
           {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
