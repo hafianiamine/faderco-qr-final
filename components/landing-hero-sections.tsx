@@ -22,13 +22,9 @@ const RANDOM_IMAGES = [
 export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [currentSection, setCurrentSection] = useState(0)
   const [isScrolling, setIsScrolling] = useState(false)
-  const [backgroundImage, setBackgroundImage] = useState('')
-
-  useEffect(() => {
-    // Set random background image
-    const randomImage = RANDOM_IMAGES[Math.floor(Math.random() * RANDOM_IMAGES.length)]
-    setBackgroundImage(randomImage)
-  }, [])
+  const [backgroundImage, setBackgroundImage] = useState(() => 
+    RANDOM_IMAGES[Math.floor(Math.random() * RANDOM_IMAGES.length)]
+  )
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
