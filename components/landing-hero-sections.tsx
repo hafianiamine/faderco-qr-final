@@ -259,25 +259,23 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
-            <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-              <iframe
-                key={section.id}
-                src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-                className="absolute"
-                style={{ 
-                  border: 'none', 
-                  pointerEvents: 'none',
-                  top: window.innerWidth < 768 ? '-15%' : '50%',
-                  left: '50%',
-                  transform: window.innerWidth < 768 ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
-                  width: window.innerWidth < 768 ? '200%' : '130%',
-                  height: window.innerWidth < 768 ? '200%' : '130%',
-                  opacity: isDarkMode ? 1 : 0.6
-                }}
-                allow="autoplay; encrypted-media"
-                title="Hero background video"
-              />
-            </div>
+            <iframe
+              key={section.id}
+              src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
+              className="absolute"
+              style={{ 
+                border: 'none', 
+                pointerEvents: 'none',
+                top: window.innerWidth < 768 ? '-15%' : '50%',
+                left: '50%',
+                transform: window.innerWidth < 768 ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
+                width: window.innerWidth < 768 ? '200%' : '130%',
+                height: window.innerWidth < 768 ? '200%' : '130%',
+                opacity: isDarkMode ? 1 : 0.6
+              }}
+              allow="autoplay; encrypted-media"
+              title="Hero background video"
+            />
           ) : (
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
