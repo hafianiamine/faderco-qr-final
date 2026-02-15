@@ -14,11 +14,15 @@ import { SettingsSection } from "@/components/admin/settings-section"
 import { PendingAccountsSection } from "@/components/admin/pending-accounts-section"
 import { AllQRCodesSection } from "@/components/admin/all-qr-codes-section"
 import { SecurityDashboard } from "@/components/admin/security-dashboard"
+import { LandingSectionsEditor } from "@/components/admin/landing-sections-editor"
+import { getLandingSections } from "@/app/actions/landing-sections-actions"
 
 export default function AdminPage() {
   const [currentSection, setCurrentSection] = useState("dashboard")
   const [userEmail, setUserEmail] = useState<string>()
   const [userRole, setUserRole] = useState<string>()
+  const [heroSections, setHeroSections] = useState<any[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     async function loadUser() {
@@ -34,6 +38,14 @@ export default function AdminPage() {
     }
     loadUser()
   }, [])
+
+  useEffect(() => {
+    async function loadHeroSections() {
+      const { data } = await getLandingSections()
+      setHeroSections(data)
+    }
+    loadHeroSections()
+  }, [refreshKey])
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -57,6 +69,9 @@ export default function AdminPage() {
           {currentSection === "nfc-requests" && <AdminNFCRequestsSection />}
           {currentSection === "profile" && <ProfileSection />}
           {currentSection === "settings" && <SettingsSection />}
+          {currentSection === "landing" && (
+            <LandingSectionsEditor sections={heroSections} onUpdate={() => setRefreshKey(k => k + 1)} />
+          )}
           {currentSection === "security" && <SecurityDashboard />}
         </div>
       </div>

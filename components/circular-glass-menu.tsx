@@ -37,6 +37,7 @@ export function CircularGlassMenu({ userEmail, userRole, onSectionChange, curren
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "landing", label: "Landing Page", icon: QrCode },
     { id: "pending", label: "Pending Accounts", icon: Clock },
     { id: "users", label: "Users", icon: Users },
     { id: "all-qr-codes", label: "All QR Codes", icon: QrCode },
