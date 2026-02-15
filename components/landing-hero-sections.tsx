@@ -5,7 +5,7 @@ import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
 import { LandingCarousel } from '@/components/landing-carousel'
 import { LoadingScreen } from '@/components/loading-screen'
-import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX, Menu, X } from 'lucide-react'
+import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX, Menu, X, Moon, Sun } from 'lucide-react'
 import { getCarouselSlides } from '@/app/actions/carousel-actions'
 
 interface HeroSection {
@@ -29,6 +29,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [carouselSlides, setCarouselSlides] = useState<any[]>([])
   const [textVisible, setTextVisible] = useState(false)
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
+  const [isDarkMode, setIsDarkMode] = useState(true)
 
   useEffect(() => {
     // Fetch carousel slides and show popup after 3 minutes (180 seconds)
@@ -254,10 +255,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh' }}>
+      <div className={`fixed inset-0 w-screen overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-black' : 'bg-white'}`} style={{ height: '100dvh' }}>
         {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
-          {section?.youtube_url ? (
+          {section?.youtube_url && isDarkMode ? (
             <div className="absolute inset-0 w-full h-full flex items-center justify-center">
               <iframe
                 key={section.id}
@@ -279,11 +280,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               />
             </div>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
+            <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
-          {/* Black Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+          {/* Gradient Overlay - Adaptive to theme */}
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-transparent via-black/30 to-black' : 'bg-gradient-to-b from-transparent via-white/20 to-white'}`} />
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-r from-black via-black/60 to-transparent' : 'bg-gradient-to-r from-white via-white/40 to-transparent'}`} />
         </div>
 
         {/* Fixed Header - Fully Transparent */}
@@ -291,37 +292,37 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           <div className="flex items-center justify-between w-full">
             <button 
               onClick={() => setCurrentSection(0)}
-              className="text-white font-bold text-lg md:text-xl tracking-tight hover:opacity-80 transition-opacity shrink-0"
+              className={`font-bold text-lg md:text-xl tracking-tight hover:opacity-80 transition-opacity shrink-0 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
             >
               FADERCO CONNECT
             </button>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-1 text-white text-sm font-medium flex-1 justify-center">
+            <nav className={`hidden md:flex items-center gap-1 text-sm font-medium flex-1 justify-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <button 
                 onClick={() => setCurrentSection(0)}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
+                className={`px-3 py-2 rounded-full transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'}`}
               >
                 <Home className="h-4 w-4" />
                 Home
               </button>
               <button 
                 onClick={() => setOpenModal('solution')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
+                className={`px-3 py-2 rounded-full transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'}`}
               >
                 <Zap className="h-4 w-4" />
                 solution
               </button>
               <button 
                 onClick={() => setOpenModal('zero-paper')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
+                className={`px-3 py-2 rounded-full transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'}`}
               >
                 <FileText className="h-4 w-4" />
                 zero paper
               </button>
               <button 
                 onClick={() => setOpenModal('about-us')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
+                className={`px-3 py-2 rounded-full transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'}`}
               >
                 <Users className="h-4 w-4" />
                 about us
@@ -330,6 +331,19 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             
             {/* Desktop Auth & Mobile Hamburger */}
             <div className="flex items-center gap-4 md:gap-6 shrink-0">
+              {/* Theme Toggle */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-full transition-all duration-300 ${
+                  isDarkMode 
+                    ? 'text-white hover:bg-white/10' 
+                    : 'text-gray-700 hover:bg-gray-200'
+                }`}
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+
               <div className="hidden md:flex items-center gap-4 md:gap-6">
                 <button 
                   onClick={() => setLoginOpen(true)}
@@ -422,10 +436,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl">
+              <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {section?.title || 'Loading...'}
               </h1>
-              <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-2xl">
+              <p className={`text-xs sm:text-sm md:text-base leading-relaxed text-left max-w-2xl ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {section?.description || 'Loading...'}
               </p>
             </div>
@@ -438,7 +452,9 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 key={idx}
                 onClick={() => setCurrentSection(idx)}
                 className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-500 ${
-                  idx === currentSection ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
+                  idx === currentSection 
+                    ? isDarkMode ? 'bg-white scale-125' : 'bg-gray-900 scale-125'
+                    : isDarkMode ? 'bg-white/50 hover:bg-white/80' : 'bg-gray-900/30 hover:bg-gray-900/60'
                 }`}
                 aria-label={`Go to section ${idx + 1}`}
               />
@@ -447,7 +463,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </div>
 
         {/* Footer */}
-        <div className="fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-white text-xs md:text-sm z-20 px-4">
+        <div className={`fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-xs md:text-sm z-20 px-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           Built in a corner © 2026 FADERCO QR.
         </div>
       </div>
