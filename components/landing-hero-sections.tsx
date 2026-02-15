@@ -25,6 +25,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
     // Set loading to false after component mounts
     setIsLoading(false)
   }, [])
+
+  useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (isScrolling || sections.length === 0) return
 
