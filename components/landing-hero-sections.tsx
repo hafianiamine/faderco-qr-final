@@ -24,13 +24,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       if (isScrolling || sections.length === 0) return
 
       setIsScrolling(true)
-      setTimeout(() => setIsScrolling(false), 800)
+      setTimeout(() => setIsScrolling(false), 600)
 
       if (e.deltaY > 0) {
-        // Scroll down - loop back to first section if at the end
         setCurrentSection((prev) => (prev + 1) % sections.length)
       } else {
-        // Scroll up - loop to last section if at the beginning
         setCurrentSection((prev) => (prev - 1 + sections.length) % sections.length)
       }
     }
@@ -49,13 +47,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       const diff = touchStart - touchEnd
       if (Math.abs(diff) > 50) {
         setIsScrolling(true)
-        setTimeout(() => setIsScrolling(false), 800)
+        setTimeout(() => setIsScrolling(false), 600)
 
         if (diff > 0) {
-          // Swipe up - loop back to first section if at the end
           setCurrentSection((prev) => (prev + 1) % sections.length)
         } else {
-          // Swipe down - loop to last section if at the beginning
           setCurrentSection((prev) => (prev - 1 + sections.length) % sections.length)
         }
       }
@@ -74,13 +70,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
-  // Convert YouTube URL to embed format - without controls, with better autoplay
+  // Convert YouTube URL to embed format with aggressive autoplay forcing
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return ''
     if (url.includes('youtube.com/embed')) return url
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
-    // Using allow="autoplay" in iframe tag + parameters to ensure autoplay works
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&start=0`
+    // Using nocookie domain and enablejsapi for maximum compatibility
+    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&start=0&enablejsapi=1`
   }
 
   return (
@@ -180,16 +176,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </div>
 
         {/* Fixed Header - Fully Transparent */}
-        <header className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-4 md:py-6">
-          <div className="flex items-center justify-between w-full">
+        <header className="fixed top-0 left-0 right-0 z-50 px-6 md:px-8 py-4 md:py-6">
+          <div className="flex items-center justify-center w-full max-w-7xl mx-auto gap-8">
             <button 
               onClick={() => setCurrentSection(0)}
-              className="text-white font-bold text-lg md:text-xl tracking-tight hover:opacity-80 transition-opacity"
+              className="text-white font-bold text-lg md:text-xl tracking-tight hover:opacity-80 transition-opacity shrink-0"
             >
               FADERCO CONNECT
             </button>
             
-            <nav className="hidden md:flex items-center gap-2 lg:gap-4 text-white text-sm font-medium">
+            <nav className="hidden md:flex items-center gap-1 text-white text-sm font-medium flex-1 justify-center">
               <button 
                 onClick={() => setCurrentSection(0)}
                 className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
@@ -222,7 +218,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               </button>
             </nav>
             
-            <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex items-center gap-4 md:gap-6 shrink-0">
               <button 
                 onClick={() => setLoginOpen(true)}
                 className="text-white hover:text-gray-300 transition-colors text-xs md:text-sm font-medium"
@@ -240,13 +236,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 transition-opacity duration-500 font-display">
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
           {/* Left Content - Positioned at bottom left */}
           <div className="w-full md:flex-1 md:max-w-2xl">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left opacity-0 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-forwards" style={{animationDelay: '100ms'}}>
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl opacity-0 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-forwards" style={{animationDelay: '300ms'}}>
               {section?.description || 'Loading...'}
             </p>
           </div>
@@ -267,7 +263,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </div>
 
         {/* Footer */}
-        <div className="fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-gray-500 text-xs md:text-sm z-20 px-4">
+        <div className="fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-white text-xs md:text-sm z-20 px-4">
           Built in a corner © 2026 FADERCO QR.
         </div>
       </div>
