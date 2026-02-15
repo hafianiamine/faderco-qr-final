@@ -22,7 +22,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       if (isScrolling || sections.length === 0) return
 
       setIsScrolling(true)
-      setTimeout(() => setIsScrolling(false), 1000)
+      setTimeout(() => setIsScrolling(false), 800)
 
       if (e.deltaY > 0) {
         setCurrentSection((prev) => Math.min(prev + 1, sections.length - 1))
@@ -31,8 +31,39 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       }
     }
 
+    let touchStart = 0
+    let touchEnd = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStart = e.changedTouches[0].screenY
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEnd = e.changedTouches[0].screenY
+      if (isScrolling || sections.length === 0) return
+
+      const diff = touchStart - touchEnd
+      if (Math.abs(diff) > 50) {
+        setIsScrolling(true)
+        setTimeout(() => setIsScrolling(false), 800)
+
+        if (diff > 0) {
+          setCurrentSection((prev) => Math.min(prev + 1, sections.length - 1))
+        } else {
+          setCurrentSection((prev) => Math.max(prev - 1, 0))
+        }
+      }
+    }
+
     window.addEventListener('wheel', handleWheel, { passive: true })
-    return () => window.removeEventListener('wheel', handleWheel)
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
   }, [isScrolling, sections.length])
 
   const section = sections[currentSection] || sections[0]
@@ -101,24 +132,24 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex flex-col md:flex-row items-center justify-between px-6 md:px-12 pt-20 md:pt-0">
-          {/* Left Content */}
-          <div className="max-w-2xl flex-1">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight text-balance">
+        <div className="relative z-10 w-full h-screen flex items-center justify-center px-4 sm:px-6 md:px-12 py-24 sm:py-20 md:py-0">
+          {/* Left Content - Full width on mobile, flex on desktop */}
+          <div className="w-full md:w-auto md:flex-1 md:max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight text-balance">
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-base md:text-lg text-gray-100 leading-relaxed max-w-xl">
+            <p className="text-sm sm:text-base md:text-lg text-gray-100 leading-relaxed">
               {section?.description || 'Loading...'}
             </p>
           </div>
 
-          {/* Right Side - Dot Indicators */}
-          <div className="fixed right-6 md:right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 md:gap-4">
+          {/* Right Side - Dot Indicators - Only show on larger screens, or move to bottom on mobile */}
+          <div className="fixed right-4 sm:right-6 md:right-8 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-20 flex sm:flex-col gap-2 sm:gap-3 md:gap-4">
             {sections.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentSection(idx)}
-                className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
                   idx === currentSection ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
                 }`}
                 aria-label={`Go to section ${idx + 1}`}
