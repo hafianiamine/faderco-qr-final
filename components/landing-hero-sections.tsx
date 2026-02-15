@@ -21,10 +21,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [openModal, setOpenModal] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMuted, setIsMuted] = useState(true)
+  const [nextSection, setNextSection] = useState<number | null>(null)
 
   useEffect(() => {
-    // Set loading to false after component mounts
-    setIsLoading(false)
+    // Simulate loading delay
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -32,13 +36,23 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       if (isScrolling || sections.length === 0) return
 
       setIsScrolling(true)
-      setTimeout(() => setIsScrolling(false), 600)
-
+      let newSection = currentSection
+      
       if (e.deltaY > 0) {
-        setCurrentSection((prev) => (prev + 1) % sections.length)
+        newSection = (currentSection + 1) % sections.length
       } else {
-        setCurrentSection((prev) => (prev - 1 + sections.length) % sections.length)
+        newSection = (currentSection - 1 + sections.length) % sections.length
       }
+
+      // Show next section title first
+      setNextSection(newSection)
+      
+      // Then fade it and switch after animation
+      setTimeout(() => {
+        setCurrentSection(newSection)
+        setNextSection(null)
+        setIsScrolling(false)
+      }, 300)
     }
 
     let touchStart = 0
@@ -55,13 +69,23 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       const diff = touchStart - touchEnd
       if (Math.abs(diff) > 50) {
         setIsScrolling(true)
-        setTimeout(() => setIsScrolling(false), 600)
-
+        let newSection = currentSection
+        
         if (diff > 0) {
-          setCurrentSection((prev) => (prev + 1) % sections.length)
+          newSection = (currentSection + 1) % sections.length
         } else {
-          setCurrentSection((prev) => (prev - 1 + sections.length) % sections.length)
+          newSection = (currentSection - 1 + sections.length) % sections.length
         }
+
+        // Show next section title first
+        setNextSection(newSection)
+        
+        // Then fade it and switch after animation
+        setTimeout(() => {
+          setCurrentSection(newSection)
+          setNextSection(null)
+          setIsScrolling(false)
+        }, 300)
       }
     }
 
@@ -74,12 +98,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       window.removeEventListener('touchstart', handleTouchStart)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [isScrolling, sections.length])
+  }, [isScrolling, sections.length, currentSection])
 
   const section = sections[currentSection] || sections[0]
+  const displaySection = nextSection !== null ? sections[nextSection] : section
 
   // Extract YouTube video ID and convert to embed URL
-  const getYouTubeEmbedUrl = (url: string) => {
+  const getYouTubeEmbedUrl = (url: string, muted: boolean = true) => {
     if (!url) return ''
     // Handle different YouTube URL formats
     let videoId = ''
@@ -93,12 +118,21 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       videoId = url // assume it's already a video ID
     }
     
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&fs=0&iv_load_policy=3`
+    const muteParam = muted ? '1' : '0'
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${muteParam}&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&fs=0&iv_load_policy=3`
   }
 
   return (
     <>
-      <AuthModals
+      {/* Preloader */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+            <p className="text-white text-xs sm:text-sm font-medium">Loading experience...</p>
+          </div>
+        </div>
+      )}
         loginOpen={loginOpen}
         registerOpen={registerOpen}
         onLoginOpenChange={setLoginOpen}
@@ -186,7 +220,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           {section?.youtube_url ? (
             <iframe
               key={section.id}
-              src={getYouTubeEmbedUrl(section.youtube_url)}
+              src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
               className="absolute inset-0 w-full h-full"
               style={{ border: 'none', pointerEvents: 'none' }}
               allow="autoplay; encrypted-media"
@@ -259,15 +293,30 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display transition-opacity duration-1000">
-          {/* Left Content - Positioned at bottom left with smooth fade */}
-          <div className={`w-full md:flex-1 md:max-w-2xl transition-all duration-1000 ${isScrolling ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
-              {section?.title || 'Loading...'}
-            </h1>
-            <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
-              {section?.description || 'Loading...'}
-            </p>
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
+          {/* Left Content - Show next section title with fade animation */}
+          <div className="w-full md:flex-1 md:max-w-2xl">
+            {/* Next Section Preview - Fades in then out */}
+            {nextSection !== null && (
+              <div className="animate-fade-up-out mb-4">
+                <h2 className="text-xs sm:text-sm md:text-sm text-gray-400 font-semibold uppercase tracking-wide mb-2">
+                  Next
+                </h2>
+                <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white leading-tight text-left">
+                  {sections[nextSection]?.title}
+                </h1>
+              </div>
+            )}
+            
+            {/* Current Section - Visible by default */}
+            <div className={`transition-all duration-500 ${nextSection !== null ? 'opacity-30' : 'opacity-100'}`}>
+              <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
+                {section?.title || 'Loading...'}
+              </h1>
+              <p className="text-xs sm:text-sm md:text-sm text-gray-100 leading-relaxed text-left max-w-xl">
+                {section?.description || 'Loading...'}
+              </p>
+            </div>
           </div>
 
           {/* Right Side - Dot Indicators */}
