@@ -74,12 +74,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
-  // Convert YouTube URL to embed format - without controls
+  // Convert YouTube URL to embed format - without controls, with better autoplay
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return ''
     if (url.includes('youtube.com/embed')) return url
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3`
+    // Using allow="autoplay" in iframe tag + parameters to ensure autoplay works
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&start=0`
   }
 
   return (
@@ -169,7 +170,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               src={getYouTubeEmbedUrl(section.youtube_url)}
               className="absolute inset-0 w-full h-full"
               style={{ border: 'none', pointerEvents: 'none' }}
-              allow="autoplay; encrypted-media"
+              allow="autoplay *; encrypted-media"
               title="Hero background video"
             />
           )}
@@ -239,13 +240,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 transition-opacity duration-500">
+        <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 transition-opacity duration-500 font-display">
           {/* Left Content - Positioned at bottom left */}
           <div className="w-full md:flex-1 md:max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-100 leading-relaxed text-left max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
               {section?.description || 'Loading...'}
             </p>
           </div>
