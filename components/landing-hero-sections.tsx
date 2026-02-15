@@ -253,15 +253,20 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      <div className="relative w-full h-screen overflow-hidden bg-black">
-        {/* Video Background - Full width and height, no padding */}
-        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden m-0 p-0">
+      <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
+        {/* Video Background - Full viewport coverage */}
+        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
             <iframe
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
               className="absolute inset-0 w-full h-full"
-              style={{ border: 'none', pointerEvents: 'none', transform: 'scale(1.1)' }}
+              style={{ 
+                border: 'none', 
+                pointerEvents: 'none',
+                objectFit: 'cover',
+                aspectRatio: '16 / 9'
+              }}
               allow="autoplay; encrypted-media"
               title="Hero background video"
             />
