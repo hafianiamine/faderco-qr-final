@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
+import { Home, Zap, Leaf, FileText, Users, Loader2 } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -18,8 +19,12 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [openModal, setOpenModal] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // Set loading to false after component mounts
+    setIsLoading(false)
+  }, [])
     const handleWheel = (e: WheelEvent) => {
       if (isScrolling || sections.length === 0) return
 
@@ -70,13 +75,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
-  // Convert YouTube URL to embed format with aggressive autoplay forcing
+  // Convert YouTube URL to embed format - using standard embed with proper autoplay
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return ''
     if (url.includes('youtube.com/embed')) return url
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
-    // Using nocookie domain and enablejsapi for maximum compatibility
-    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&start=0&enablejsapi=1`
+    // Standard YouTube embed with muted autoplay
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&fs=0&modestbranding=1&rel=0&iv_load_policy=3`
   }
 
   return (
@@ -156,8 +161,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      
       <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
+            <Loader2 className="h-12 w-12 text-white animate-spin" />
+          </div>
+        )}
+
         {/* YouTube Video Background */}
         <div className="absolute inset-0 z-0 w-full h-full">
           {section?.youtube_url && (
@@ -168,6 +179,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               style={{ border: 'none', pointerEvents: 'none' }}
               allow="autoplay *; encrypted-media"
               title="Hero background video"
+              onLoad={() => setIsLoading(false)}
             />
           )}
           {/* Black Gradient Overlay - Super dark left, fading to transparent top */}
@@ -188,32 +200,37 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             <nav className="hidden md:flex items-center gap-1 text-white text-sm font-medium flex-1 justify-center">
               <button 
                 onClick={() => setCurrentSection(0)}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
+                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
               >
+                <Home className="h-4 w-4" />
                 Home
               </button>
               <button 
                 onClick={() => setOpenModal('solution')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
+                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
               >
+                <Zap className="h-4 w-4" />
                 solution
               </button>
               <button 
                 onClick={() => setOpenModal('green-hosting')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
+                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
               >
+                <Leaf className="h-4 w-4" />
                 green hosting
               </button>
               <button 
                 onClick={() => setOpenModal('zero-paper')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
+                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
               >
+                <FileText className="h-4 w-4" />
                 zero paper
               </button>
               <button 
                 onClick={() => setOpenModal('about-us')}
-                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center"
+                className="px-3 py-2 rounded-full hover:bg-white/10 transition-all duration-300 hover:scale-110 transform origin-center flex items-center gap-2"
               >
+                <Users className="h-4 w-4" />
                 about us
               </button>
             </nav>
@@ -239,10 +256,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
           {/* Left Content - Positioned at bottom left */}
           <div className="w-full md:flex-1 md:max-w-2xl">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left opacity-0 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-forwards" style={{animationDelay: '100ms'}}>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight text-left">
               {section?.title || 'Loading...'}
             </h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl opacity-0 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-forwards" style={{animationDelay: '300ms'}}>
+            <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-xl">
               {section?.description || 'Loading...'}
             </p>
           </div>
