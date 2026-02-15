@@ -27,6 +27,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [activeMenuItems, setActiveMenuItems] = useState<number[]>([])
 
   useEffect(() => {
+    // Set loading to false after 1.5 seconds
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
     if (mobileMenuOpen) {
       // Trigger staggered animation for menu items
       setActiveMenuItems([])
