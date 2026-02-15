@@ -270,8 +270,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                   top: '50%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
-                  width: '150%',
-                  height: '150%',
+                  width: '200%',
+                  height: '200%',
                   opacity: isDarkMode ? 1 : 0.6
                 }}
                 allow="autoplay; encrypted-media"
