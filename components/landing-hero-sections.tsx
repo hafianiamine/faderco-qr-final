@@ -35,6 +35,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   }, [])
 
   useEffect(() => {
+    // Show popup after 3 minutes (180 seconds)
+    const timer = setTimeout(() => {
+      setOpenModal('solution')
+    }, 180000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
     // Show text after component loads with delay
     if (!isLoading) {
       const timer = setTimeout(() => {
@@ -413,13 +421,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
         {/* Hero Content */}
         <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
-          {/* Left Content - Bigger Hero Text in 2 Lines with Fade In/Out */}
+          {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl">
                 {section?.title || 'Loading...'}
               </h1>
-              <p className="text-sm sm:text-base md:text-lg text-gray-100 leading-relaxed text-left max-w-2xl">
+              <p className="text-xs sm:text-sm md:text-base text-gray-100 leading-relaxed text-left max-w-2xl">
                 {section?.description || 'Loading...'}
               </p>
             </div>
@@ -444,20 +452,6 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         <div className="fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-white text-xs md:text-sm z-20 px-4">
           Built in a corner © 2026 FADERCO QR.
         </div>
-
-        {/* Audio Toggle - Desktop: bottom right, Mobile: centered above footer */}
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="fixed md:bottom-6 md:right-6 md:left-auto md:translate-x-0 bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-30 bg-white/5 hover:bg-white/15 backdrop-blur-sm rounded-full p-2 transition-all duration-300 border border-white/10"
-          aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
-          title={isMuted ? 'Unmute' : 'Mute'}
-        >
-          {isMuted ? (
-            <VolumeX className="h-4 w-4 text-white/60" />
-          ) : (
-            <Volume2 className="h-4 w-4 text-white/60" />
-          )}
-        </button>
       </div>
     </>
   )
