@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
-import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX } from 'lucide-react'
+import { Home, Zap, FileText, Users, Loader2, Volume2, VolumeX, Menu, X } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -22,6 +22,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isMuted, setIsMuted] = useState(true)
   const [nextSection, setNextSection] = useState<number | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showCarousel, setShowCarousel] = useState(false)
 
   useEffect(() => {
     // Simulate loading delay
@@ -29,6 +31,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
       setIsLoading(false)
     }, 1500)
     return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    // Show carousel after 3 minutes (180 seconds)
+    const carouselTimer = setTimeout(() => {
+      setShowCarousel(true)
+    }, 180000)
+    return () => clearTimeout(carouselTimer)
   }, [])
 
   useEffect(() => {
@@ -217,14 +227,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         )}
 
-        {/* Video Background - YouTube iframe with autoplay */}
+        {/* Video Background - YouTube iframe with autoplay - zoomed on mobile */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
             <iframe
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-              className="absolute inset-0 w-full h-full"
-              style={{ border: 'none', pointerEvents: 'none' }}
+              className="absolute inset-0 w-full h-full sm:object-contain md:object-contain lg:object-contain object-cover"
+              style={{ border: 'none', pointerEvents: 'none', transform: 'scale(1.2)' }}
               allow="autoplay; encrypted-media"
               title="Hero background video"
             />
@@ -238,7 +248,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
         {/* Fixed Header - Fully Transparent */}
         <header className="fixed top-0 left-0 right-0 z-50 px-6 md:px-8 py-4 md:py-6">
-          <div className="flex items-center justify-center w-full max-w-7xl mx-auto gap-8">
+          <div className="flex items-center justify-between w-full">
             <button 
               onClick={() => setCurrentSection(0)}
               className="text-white font-bold text-lg md:text-xl tracking-tight hover:opacity-80 transition-opacity shrink-0"
@@ -246,6 +256,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               FADERCO CONNECT
             </button>
             
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1 text-white text-sm font-medium flex-1 justify-center">
               <button 
                 onClick={() => setCurrentSection(0)}
@@ -277,22 +288,105 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               </button>
             </nav>
             
+            {/* Desktop Auth & Mobile Hamburger */}
             <div className="flex items-center gap-4 md:gap-6 shrink-0">
+              <div className="hidden md:flex items-center gap-4 md:gap-6">
+                <button 
+                  onClick={() => setLoginOpen(true)}
+                  className="text-white hover:text-gray-300 transition-colors text-xs md:text-sm font-medium"
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={() => setRegisterOpen(true)}
+                  className="bg-white text-black px-4 md:px-6 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
+
+              {/* Mobile Hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile Menu Fullscreen */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg md:hidden flex flex-col">
+            {/* Close Button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-6 right-6 text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Menu Content */}
+            <div className="flex flex-col items-center justify-center flex-1 gap-8">
               <button 
-                onClick={() => setLoginOpen(true)}
-                className="text-white hover:text-gray-300 transition-colors text-xs md:text-sm font-medium"
+                onClick={() => {
+                  setCurrentSection(0)
+                  setMobileMenuOpen(false)
+                }}
+                className="text-white text-2xl font-semibold hover:text-gray-300 transition-colors flex items-center gap-3"
+              >
+                <Home className="h-7 w-7" />
+                Home
+              </button>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-white text-2xl font-semibold hover:text-gray-300 transition-colors flex items-center gap-3"
+              >
+                <Zap className="h-7 w-7" />
+                solution
+              </button>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-white text-2xl font-semibold hover:text-gray-300 transition-colors flex items-center gap-3"
+              >
+                <FileText className="h-7 w-7" />
+                zero paper
+              </button>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-white text-2xl font-semibold hover:text-gray-300 transition-colors flex items-center gap-3"
+              >
+                <Users className="h-7 w-7" />
+                about us
+              </button>
+            </div>
+
+            {/* Mobile Auth Buttons */}
+            <div className="flex flex-col gap-3 w-full px-4 pb-8">
+              <button 
+                onClick={() => {
+                  setLoginOpen(true)
+                  setMobileMenuOpen(false)
+                }}
+                className="text-white border border-white px-6 py-3 rounded-full font-semibold hover:bg-white/10 transition-colors"
               >
                 Login
               </button>
               <button 
-                onClick={() => setRegisterOpen(true)}
-                className="bg-white text-black px-4 md:px-6 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+                onClick={() => {
+                  setRegisterOpen(true)
+                  setMobileMenuOpen(false)
+                }}
+                className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
               >
                 Get Started
               </button>
             </div>
           </div>
-        </header>
+        )}
 
         {/* Hero Content */}
         <div className="relative z-10 w-full h-screen flex items-end px-4 sm:px-6 md:px-12 pb-24 sm:pb-20 md:pb-16 font-display">
@@ -321,8 +415,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
             </div>
           </div>
 
-          {/* Right Side - Dot Indicators */}
-          <div className="fixed right-4 sm:right-6 md:right-8 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-20 flex sm:flex-col gap-2 sm:gap-3 md:gap-4">
+          {/* Right Side - Dot Indicators - Centered on mobile */}
+          <div className="fixed bottom-20 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:right-8 z-20 flex gap-2 sm:gap-3 md:gap-4 sm:flex-col">
             {sections.map((_, idx) => (
               <button
                 key={idx}
@@ -341,17 +435,17 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           Built in a corner © 2026 FADERCO QR.
         </div>
 
-        {/* Audio Toggle - Bottom Right - Small & Transparent */}
+        {/* Audio Toggle - Centered above footer */}
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="fixed bottom-6 right-6 z-30 bg-white/5 hover:bg-white/15 backdrop-blur-sm rounded-full p-2 transition-all duration-300 border border-white/10"
+          className="fixed bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-30 bg-white/5 hover:bg-white/15 backdrop-blur-sm rounded-full p-2 transition-all duration-300 border border-white/10"
           aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
           title={isMuted ? 'Unmute' : 'Mute'}
         >
           {isMuted ? (
-            <VolumeX className="h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
+            <VolumeX className="h-4 w-4 text-white/60" />
           ) : (
-            <Volume2 className="h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
+            <Volume2 className="h-4 w-4 text-white/60" />
           )}
         </button>
       </div>
