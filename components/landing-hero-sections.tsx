@@ -77,6 +77,24 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   const section = sections[currentSection] || sections[0]
 
+  // Extract YouTube video ID and convert to embed URL
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return ''
+    // Handle different YouTube URL formats
+    let videoId = ''
+    if (url.includes('youtube.com/watch?v=')) {
+      videoId = url.split('v=')[1].split('&')[0]
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0]
+    } else if (url.includes('youtube.com/embed/')) {
+      videoId = url.split('embed/')[1].split('?')[0]
+    } else {
+      videoId = url // assume it's already a video ID
+    }
+    
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&fs=0&iv_load_policy=3`
+  }
+
   return (
     <>
       <AuthModals
@@ -162,19 +180,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         )}
 
-        {/* Video Background - HTML5 with autoplay */}
+        {/* Video Background - YouTube iframe with autoplay */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
-            <video
+            <iframe
               key={section.id}
-              autoPlay
-              muted
-              loop
-              playsInline
-              crossOrigin="anonymous"
-              className="absolute inset-0 w-full h-full object-cover"
-              src={section.youtube_url}
-              onError={(e) => console.log("[v0] Video error:", e)}
+              src={getYouTubeEmbedUrl(section.youtube_url)}
+              className="absolute inset-0 w-full h-full"
+              style={{ border: 'none', pointerEvents: 'none' }}
+              allow="autoplay; encrypted-media"
+              title="Hero background video"
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
