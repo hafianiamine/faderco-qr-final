@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { AuthModals } from '@/components/auth-modals'
 import { InfoModal } from '@/components/info-modal'
 import { LandingCarousel } from '@/components/landing-carousel'
-import { Home, Zap, FileText, Users, Loader2 } from 'lucide-react'
+import { Home, Zap, FileText, Users, Volume2, VolumeX } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -20,15 +20,20 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   const [loginOpen, setLoginOpen] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const [openModal, setOpenModal] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [showCarousel, setShowCarousel] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => {
-    // Show carousel only after user reaches section 3 (index 2)
-    if (currentSection >= 2) {
-      setShowCarousel(true)
+  const toggleAudio = () => {
+    setIsMuted(!isMuted)
+    if (iframeRef.current) {
+      // YouTube iframe supports mute parameter, but we need to change the src
+      const newUrl = iframeRef.current.src.includes('mute=1') 
+        ? iframeRef.current.src.replace('mute=1', 'mute=0')
+        : iframeRef.current.src.replace('mute=0', 'mute=1')
+      iframeRef.current.src = newUrl
     }
-  }, [currentSection])
+  }
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -177,17 +182,11 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className="relative w-full h-screen overflow-hidden bg-black">
-        {/* Loading State */}
-        {isLoading && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
-            <Loader2 className="h-12 w-12 text-white animate-spin" />
-          </div>
-        )}
-
         {/* Video Background - YouTube iframe with autoplay */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
             <iframe
+              ref={iframeRef}
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url)}
               className="absolute inset-0 w-full h-full"
@@ -295,9 +294,27 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           Built in a corner © 2026 FADERCO QR.
         </div>
 
-        {/* Carousel - shown only after section 3 */}
+        {/* Audio Toggle - Bottom Left */}
+        <button
+          onClick={toggleAudio}
+          className="fixed bottom-6 left-6 z-30 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-2 sm:p-3 transition-all duration-300 border border-white/20"
+          aria-label={isMuted ? 'Unmute background audio' : 'Mute background audio'}
+          title={isMuted ? 'Unmute' : 'Mute'}
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+          ) : (
+            <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+          )}
+        </button>
+
+        {/* Carousel Modal - Proper small popup shown only after section 3 */}
         {showCarousel && (
-          <LandingCarousel slides={[]} notificationText="Check out our latest tools & features!" />
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-auto">
+            <div className="w-full max-w-sm bg-black border border-white/20 rounded-lg p-4 pointer-events-auto">
+              <LandingCarousel slides={[]} notificationText="Check out our latest tools!" />
+            </div>
+          </div>
         )}
       </div>
     </>
