@@ -8,20 +8,20 @@ import { SecurityProvider } from "@/components/security-provider"
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
-  display: "swap",
+  display: "block",
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-  display: "swap",
+  display: "block",
 })
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
   variable: "--font-display",
-  display: "swap",
+  display: "block",
 })
 
 export const metadata: Metadata = {

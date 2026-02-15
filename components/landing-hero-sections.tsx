@@ -40,21 +40,16 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
   }, [])
 
   useEffect(() => {
-    // Show text after component loads with delay
-    if (!isLoading) {
-      const timer = setTimeout(() => {
-        setTextVisible(true)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [isLoading])
+    // Show text on initial load without fade animation
+    setTextVisible(true)
+  }, [])
 
   useEffect(() => {
-    // Reset text visibility when section changes and trigger fade animation
+    // Fade out current text on section change
     setTextVisible(false)
     const timer = setTimeout(() => {
       setTextVisible(true)
-    }, 600) // Delay before showing next section text
+    }, 600)
     return () => clearTimeout(timer)
   }, [currentSection])
 
@@ -253,23 +248,30 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         }
       />
-      <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-black">
-        {/* Video Background - Full viewport coverage */}
+      <div className="fixed inset-0 w-screen overflow-hidden bg-black" style={{ height: '100dvh' }}>
+        {/* Video Background - Full viewport coverage with iframe cover scaling */}
         <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
           {section?.youtube_url ? (
-            <iframe
-              key={section.id}
-              src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-              className="absolute inset-0 w-full h-full"
-              style={{ 
-                border: 'none', 
-                pointerEvents: 'none',
-                objectFit: 'cover',
-                aspectRatio: '16 / 9'
-              }}
-              allow="autoplay; encrypted-media"
-              title="Hero background video"
-            />
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+              <iframe
+                key={section.id}
+                src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
+                className="absolute"
+                style={{ 
+                  border: 'none', 
+                  pointerEvents: 'none',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%) scale(1.3)',
+                  minWidth: '100%',
+                  minHeight: '100%',
+                  width: '100%',
+                  height: '100%'
+                }}
+                allow="autoplay; encrypted-media"
+                title="Hero background video"
+              />
+            </div>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900" />
           )}
