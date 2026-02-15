@@ -162,8 +162,19 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           </div>
         )}
 
-        {/* Background - Solid black with gradient overlay */}
-        <div className="absolute inset-0 z-0 w-full h-full bg-black">
+        {/* Video Background - HTML5 with autoplay */}
+        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
+          {section?.youtube_url && (
+            <video
+              key={section.id}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              src={section.youtube_url}
+            />
+          )}
           {/* Black Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black" />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />

@@ -96,7 +96,7 @@ export function LandingPageEditor() {
             <h3 className="text-lg font-semibold text-blue-900">Landing Page Hero Sections</h3>
           </div>
           <p className="text-sm text-blue-800">
-            Edit the 3 main hero sections that appear when users scroll the landing page. Each section has its own YouTube video background.
+            Edit the 3 main hero sections that appear when users scroll the landing page. Each section has its own video background that autoplays.
           </p>
 
           {heroSections.map((section) => (
@@ -150,15 +150,15 @@ function HeroSectionForm({
       </div>
 
       <div>
-        <Label htmlFor={`youtube-${section.id}`}>YouTube URL</Label>
+        <Label htmlFor={`youtube-${section.id}`}>Video URL</Label>
         <Input
           id={`youtube-${section.id}`}
           type="url"
           value={formData.youtube_url}
           onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
-          placeholder="https://www.youtube.com/watch?v=..."
+          placeholder="https://example.com/video.mp4"
         />
-        <p className="text-xs text-gray-500 mt-1">Full YouTube URL or video ID. This video will autoplay as the background.</p>
+        <p className="text-xs text-gray-500 mt-1">Direct video URL (MP4, WebM, MOV, etc.). The video will automatically play, loop, and be muted on the background.</p>
       </div>
 
       <Button
