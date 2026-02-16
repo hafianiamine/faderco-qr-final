@@ -452,7 +452,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         )}
 
         {/* Hero Content */}
-        <div className={`absolute inset-0 z-10 w-full flex items-end px-4 sm:px-6 md:px-12 font-display ${isMobile ? 'pt-80 pb-20' : 'pt-0 pb-24 sm:pb-20 md:pb-16'}`}>
+        <div className={`absolute bottom-0 left-0 right-0 z-10 w-full px-4 sm:px-6 md:px-12 font-display ${isMobile ? 'pb-20' : 'pb-24 sm:pb-20 md:pb-16'}`}>
           {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
