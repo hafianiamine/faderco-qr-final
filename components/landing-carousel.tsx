@@ -56,7 +56,7 @@ export function LandingCarousel({ slides, notificationText }: LandingCarouselPro
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-none">
-      <div className="relative w-full max-w-2xl pointer-events-auto">
+      <div className="relative w-full md:max-w-2xl pointer-events-auto h-full md:h-auto flex flex-col md:flex-col">
         {notificationText && showNotification && (
           <div className="relative mb-4 flex items-center justify-center gap-2 text-center px-4 py-2 animate-fade-in">
             <Sparkles className="h-4 w-4 text-yellow-400 flex-shrink-0" />
@@ -71,8 +71,8 @@ export function LandingCarousel({ slides, notificationText }: LandingCarouselPro
           </div>
         )}
 
-        {/* Image */}
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-900 shadow-2xl">
+        {/* Image - Fullscreen on mobile */}
+        <div className="relative w-full h-full md:aspect-video md:rounded-xl overflow-hidden bg-gray-900 shadow-2xl flex-1">
           <img
             src={currentSlide?.image_url || "/placeholder.svg"}
             alt={`Slide ${currentIndex + 1}`}
@@ -111,8 +111,8 @@ export function LandingCarousel({ slides, notificationText }: LandingCarouselPro
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-4 flex gap-2 justify-center">
+        {/* Action Buttons - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:flex mt-4 gap-2 justify-center">
           {currentSlide?.link_url && (
             <a href={currentSlide.link_url} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-500 hover:bg-blue-600">
@@ -130,7 +130,7 @@ export function LandingCarousel({ slides, notificationText }: LandingCarouselPro
 
         {/* Dot Navigation */}
         {slides.length > 1 && (
-          <div className="mt-4 flex justify-center gap-2">
+          <div className="hidden md:flex mt-4 justify-center gap-2">
             {slides.map((_, idx) => (
               <button
                 key={idx}

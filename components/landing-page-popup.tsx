@@ -29,7 +29,7 @@ export function LandingPagePopup({ enabled, title, description, imageUrl }: Land
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative w-full md:max-w-lg bg-white md:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 h-full md:h-auto rounded-t-3xl">
         <Button
           variant="ghost"
           size="icon"
@@ -45,7 +45,7 @@ export function LandingPagePopup({ enabled, title, description, imageUrl }: Land
           </div>
         )}
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           <h2 className="text-2xl font-bold text-gray-900 text-center">{title}</h2>
           <p className="text-gray-600 text-center">{description}</p>
           <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setIsOpen(false)}>
