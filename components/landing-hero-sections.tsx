@@ -290,8 +290,8 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           ) : (
             <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
           )}
-          {/* Gradient Overlay - Black at top fading to transparent */}
-          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-b from-black via-black/50 to-transparent' : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'}`} />
+          {/* Gradient Overlay - Only on desktop, removed from mobile to show full video */}
+          <div className={`absolute inset-0 hidden md:block ${isDarkMode ? 'bg-gradient-to-b from-black via-black/50 to-transparent' : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'}`} />
         </div>
 
         {/* Fixed Header - Fully Transparent */}
