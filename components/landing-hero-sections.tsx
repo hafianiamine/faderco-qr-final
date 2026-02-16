@@ -161,8 +161,13 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
 
   // Extract YouTube video ID and convert to embed URL
   const getYouTubeEmbedUrl = (url: string, muted: boolean = true) => {
+    // This now returns the URL directly (can be Blob storage URL or video URL)
     if (!url) return ''
-    // Handle different YouTube URL formats
+    // If it's already a full URL (from Blob), return it as-is
+    if (url.startsWith('http')) {
+      return url
+    }
+    // Otherwise handle YouTube URLs (for backward compatibility)
     let videoId = ''
     if (url.includes('youtube.com/watch?v=')) {
       videoId = url.split('v=')[1].split('&')[0]
@@ -171,11 +176,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
     } else if (url.includes('youtube.com/embed/')) {
       videoId = url.split('embed/')[1].split('?')[0]
     } else {
-      videoId = url // assume it's already a video ID
+      videoId = url
     }
     
-    const muteParam = muted ? '1' : '0'
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${muteParam}&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&fs=0&iv_load_policy=3`
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&fs=0&iv_load_policy=3`
   }
 
   return (
@@ -267,8 +271,26 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className={`fixed inset-0 w-screen overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-black' : 'bg-white'}`} style={{ height: '100dvh' }}>
-        {/* Video Background - Full viewport coverage */}
+        {/* Video Background - Full viewport coverage with native video */}
         {section?.youtube_url ? (
+          section.youtube_url.startsWith('http') ? (
+            // Native video player for Blob/direct video URLs
+            <video
+              key={section.id}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 z-0 w-full h-full"
+              style={{
+                objectFit: 'cover',
+                opacity: isDarkMode ? 1 : 0.6,
+              }}
+            >
+              <source src={section.youtube_url} type="video/mp4" />
+            </video>
+          ) : (
+            // YouTube embed for YouTube URLs
             <iframe
               key={section.id}
               src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
@@ -276,15 +298,14 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
               style={{ 
                 border: 'none', 
                 pointerEvents: 'none',
-                width: '200%',
-                height: '200%',
-                top: '-50%',
-                left: '-50%',
+                width: '100%',
+                height: '100%',
                 opacity: isDarkMode ? 1 : 0.6,
               }}
               allow="autoplay; encrypted-media"
               title="Hero background video"
             />
+          )
         ) : (
           <div className={`absolute inset-0 z-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
         )}
