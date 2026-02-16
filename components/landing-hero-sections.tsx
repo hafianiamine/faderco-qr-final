@@ -267,32 +267,27 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         }
       />
       <div className={`fixed inset-0 w-screen overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-black' : 'bg-white'}`} style={{ height: '100dvh' }}>
-        {/* Video Background - Full viewport coverage with iframe cover scaling */}
-        <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
-          {section?.youtube_url ? (
-              <iframe
-                key={section.id}
-                src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
-                className="absolute"
-                style={{ 
-                  border: 'none', 
-                  pointerEvents: 'none',
-                  top: '0',
-                  left: '0',
-                  width: '100vw',
-                  height: '100vh',
-                  opacity: isDarkMode ? 1 : 0.6,
-                  objectFit: 'cover'
-                }}
-                allow="autoplay; encrypted-media"
-                title="Hero background video"
-              />
-          ) : (
-            <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
-          )}
-          {/* Gradient Overlay - Only on desktop, removed from mobile to show full video */}
-          <div className={`absolute inset-0 hidden md:block ${isDarkMode ? 'bg-gradient-to-b from-black via-black/50 to-transparent' : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'}`} />
-        </div>
+        {/* Video Background - Full viewport coverage */}
+        {section?.youtube_url ? (
+            <iframe
+              key={section.id}
+              src={getYouTubeEmbedUrl(section.youtube_url, isMuted)}
+              className="absolute inset-0 z-0"
+              style={{ 
+                border: 'none', 
+                pointerEvents: 'none',
+                width: '100%',
+                height: '100%',
+                opacity: isDarkMode ? 1 : 0.6,
+              }}
+              allow="autoplay; encrypted-media"
+              title="Hero background video"
+            />
+        ) : (
+          <div className={`absolute inset-0 z-0 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`} />
+        )}
+        {/* Gradient Overlay - Only on desktop, removed from mobile to show full video */}
+        <div className={`absolute inset-0 z-10 hidden md:block ${isDarkMode ? 'bg-gradient-to-b from-black via-black/50 to-transparent' : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'}`} />
 
         {/* Fixed Header - Fully Transparent */}
         <header className="fixed top-0 left-0 right-0 z-50 px-6 md:px-8 py-4 md:py-6">
