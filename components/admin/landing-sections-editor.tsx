@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { updateLandingSection } from '@/app/actions/landing-sections-actions'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Upload, X } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -15,6 +15,7 @@ interface HeroSection {
   title: string
   description: string
   youtube_url: string
+  video_url?: string
 }
 
 interface LandingSectionsEditorProps {
@@ -25,6 +26,7 @@ interface LandingSectionsEditorProps {
 export function LandingSectionsEditor({ sections, onUpdate }: LandingSectionsEditorProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [videoLoading, setVideoLoading] = useState<Record<number, boolean>>({})
   const [formData, setFormData] = useState(
     sections.reduce((acc, section) => ({
       ...acc,
@@ -32,8 +34,9 @@ export function LandingSectionsEditor({ sections, onUpdate }: LandingSectionsEdi
         title: section.title,
         description: section.description,
         youtube_url: section.youtube_url,
+        video_url: section.video_url || '',
       },
-    }), {} as Record<number, { title: string; description: string; youtube_url: string }>)
+    }), {} as Record<number, { title: string; description: string; youtube_url: string; video_url: string }>)
   )
 
   const handleChange = (sectionNumber: number, field: string, value: string) => {
@@ -44,6 +47,48 @@ export function LandingSectionsEditor({ sections, onUpdate }: LandingSectionsEdi
         [field]: value,
       },
     }))
+  }
+
+  const handleVideoUpload = async (sectionNumber: number, file: File) => {
+    setVideoLoading(prev => ({ ...prev, [sectionNumber]: true }))
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+      formDataUpload.append('sectionNumber', sectionNumber.toString())
+
+      const response = await fetch('/api/upload-section-video', {
+        method: 'POST',
+        body: formDataUpload,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const data = await response.json()
+      setFormData(prev => ({
+        ...prev,
+        [sectionNumber]: {
+          ...prev[sectionNumber],
+          video_url: data.url,
+        },
+      }))
+
+      toast({
+        title: 'Success',
+        description: 'Video uploaded successfully',
+      })
+      onUpdate?.()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setVideoLoading(prev => ({ ...prev, [sectionNumber]: false }))
+    }
   }
 
   const handleSave = async (sectionNumber: number) => {
@@ -123,9 +168,86 @@ export function LandingSectionsEditor({ sections, onUpdate }: LandingSectionsEdi
             </p>
           </div>
 
-          {/* YouTube URL */}
+          {/* Video Upload */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium">YouTube Video URL</label>
+            <label className="block text-sm font-medium">Upload Video (Blob Storage)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    if (file.size > 500 * 1024 * 1024) {
+                      toast({
+                        title: 'Error',
+                        description: 'Video file must be less than 500MB',
+                        variant: 'destructive',
+                      })
+                    } else {
+                      handleVideoUpload(section.section_number, file)
+                    }
+                  }
+                }}
+                disabled={videoLoading[section.section_number]}
+                className="hidden"
+                id={`video-upload-${section.section_number}`}
+              />
+              <Button
+                onClick={() => document.getElementById(`video-upload-${section.section_number}`)?.click()}
+                disabled={videoLoading[section.section_number]}
+                variant="outline"
+                className="gap-2"
+              >
+                {videoLoading[section.section_number] ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Choose Video
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Max 500MB. Supports MP4, WebM, and other video formats
+            </p>
+          </div>
+
+          {/* Video URL Preview */}
+          {formData[section.section_number]?.video_url && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Video Stored</label>
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs text-green-700 truncate">{formData[section.section_number].video_url}</p>
+                <Button
+                  onClick={() => setFormData(prev => ({
+                    ...prev,
+                    [section.section_number]: {
+                      ...prev[section.section_number],
+                      video_url: '',
+                    },
+                  }))}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <video
+                src={formData[section.section_number].video_url}
+                controls
+                className="w-full h-48 bg-black rounded-lg"
+              />
+            </div>
+          )}
+
+          {/* YouTube URL (Legacy) */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">YouTube Video URL (Legacy)</label>
             <Input
               value={formData[section.section_number]?.youtube_url || ''}
               onChange={(e) => handleChange(section.section_number, 'youtube_url', e.target.value)}
@@ -133,24 +255,9 @@ export function LandingSectionsEditor({ sections, onUpdate }: LandingSectionsEdi
               type="url"
             />
             <p className="text-xs text-gray-500">
-              Use YouTube embed format (e.g., https://www.youtube.com/embed/dQw4w9WgXcQ)
+              Legacy support. Prefer uploading videos via Blob above
             </p>
           </div>
-
-          {/* Preview */}
-          {formData[section.section_number]?.youtube_url && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Video Preview</label>
-              <div className="relative w-full h-48 bg-black rounded-lg overflow-hidden">
-                <iframe
-                  src={formData[section.section_number].youtube_url}
-                  className="w-full h-full"
-                  allow="autoplay"
-                  title="Video preview"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Save Button */}
           <Button
