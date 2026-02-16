@@ -344,7 +344,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 className={`md:hidden p-2 rounded-full transition-all duration-300 ${
                   isDarkMode 
                     ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-200'
+                    : 'text-yellow-500 hover:bg-yellow-500/10'
                 }`}
                 aria-label="Toggle theme"
               >
@@ -357,7 +357,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 className={`hidden md:block p-2 rounded-full transition-all duration-300 ${
                   isDarkMode 
                     ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-200'
+                    : 'text-yellow-500 hover:bg-yellow-500/10'
                 }`}
                 aria-label="Toggle theme"
               >
@@ -456,10 +456,10 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
           {/* Left Content - Hero Text with Fade In/Out */}
           <div className="w-full md:flex-1 md:max-w-2xl">
             <div className={`transition-all duration-500 ${textVisible ? 'animate-fade-in-blue opacity-100' : 'animate-fade-out-down opacity-0'}`}>
-              <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight text-left max-w-2xl ${isDarkMode ? 'text-white' : 'text-black'}`}>
                 {section?.title || 'Loading...'}
               </h1>
-              <p className={`text-xs sm:text-sm md:text-base leading-relaxed text-left max-w-2xl ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              <p className={`text-xs sm:text-sm md:text-base leading-relaxed text-left max-w-2xl ${isDarkMode ? 'text-gray-100' : 'text-black/85'}`}>
                 {section?.description || 'Loading...'}
               </p>
             </div>
@@ -483,7 +483,7 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
         </div>
 
         {/* Footer */}
-        <div className={`fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-xs md:text-sm z-20 px-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 text-center py-4 md:py-6 text-xs md:text-sm z-20 px-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
           Built in a corner © 2026 FADERCO QR.
         </div>
       </div>
