@@ -1,6 +1,8 @@
 import type React from "react"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { AdminNav } from "@/components/admin-nav"
+import { SiteFooter } from "@/components/site-footer"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,5 +21,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/dashboard")
   }
 
-  return <>{children}</>
+  return (
+    <div className="flex min-h-screen flex-col">
+      <AdminNav />
+      <main className="flex-1">{children}</main>
+      <SiteFooter />
+    </div>
+  )
 }
