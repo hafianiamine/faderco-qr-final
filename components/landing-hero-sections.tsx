@@ -277,12 +277,12 @@ export function LandingHeroSections({ sections }: { sections: HeroSection[] }) {
                 style={{ 
                   border: 'none', 
                   pointerEvents: 'none',
-                  top: isMobile ? '0' : '50%',
-                  left: isMobile ? '0' : '50%',
-                  transform: isMobile ? 'none' : 'translate(-50%, -50%)',
-                  width: isMobile ? '100%' : '130%',
-                  height: isMobile ? '100%' : '130%',
-                  opacity: isDarkMode ? 1 : 0.6
+                  top: '0',
+                  left: '0',
+                  width: '100vw',
+                  height: '100vh',
+                  opacity: isDarkMode ? 1 : 0.6,
+                  objectFit: 'cover'
                 }}
                 allow="autoplay; encrypted-media"
                 title="Hero background video"

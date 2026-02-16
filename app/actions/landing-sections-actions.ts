@@ -1,22 +1,29 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function getLandingSections() {
-  const supabase = await createClient()
-
   try {
+    // Use service role key for server-side queries to bypass RLS
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     const { data, error } = await supabase
       .from('landing_sections')
       .select('*')
       .order('section_number', { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error('[v0] Supabase error:', error)
+      throw error
+    }
 
     return { data: data || [], error: null }
   } catch (error: any) {
-    console.error('[v0] Error fetching landing sections:', error.message)
-    return { data: [], error: error.message }
+    console.error('[v0] Error fetching landing sections:', error.message || error)
+    return { data: [], error: error?.message || 'Failed to fetch landing sections' }
   }
 }
 
@@ -26,9 +33,13 @@ export async function updateLandingSection(
   description: string,
   youtubeUrl: string
 ) {
-  const supabase = await createClient()
-
   try {
+    // Use service role key for server-side updates to bypass RLS
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     const { data, error } = await supabase
       .from('landing_sections')
       .update({
@@ -40,11 +51,14 @@ export async function updateLandingSection(
       .eq('section_number', sectionNumber)
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('[v0] Supabase update error:', error)
+      throw error
+    }
 
     return { data: data?.[0] || null, error: null }
   } catch (error: any) {
-    console.error('[v0] Error updating landing section:', error.message)
-    return { data: null, error: error.message }
+    console.error('[v0] Error updating landing section:', error.message || error)
+    return { data: null, error: error?.message || 'Failed to update landing section' }
   }
 }
