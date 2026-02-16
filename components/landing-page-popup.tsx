@@ -28,8 +28,8 @@ export function LandingPagePopup({ enabled, title, description, imageUrl }: Land
   if (!enabled || !isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative w-full md:max-w-lg bg-white md:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 h-full md:h-auto rounded-t-3xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pointer-events-auto">
+      <div className="relative w-full h-full md:h-auto md:max-w-lg bg-white md:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col md:rounded-2xl rounded-none">
         <Button
           variant="ghost"
           size="icon"
@@ -40,12 +40,12 @@ export function LandingPagePopup({ enabled, title, description, imageUrl }: Land
         </Button>
 
         {imageUrl && (
-          <div className="relative w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600">
+          <div className="relative w-full h-64 md:h-64 bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0">
             <Image src={imageUrl || "/placeholder.svg"} alt={title} fill className="object-cover" />
           </div>
         )}
 
-        <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
           <h2 className="text-2xl font-bold text-gray-900 text-center">{title}</h2>
           <p className="text-gray-600 text-center">{description}</p>
           <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setIsOpen(false)}>
