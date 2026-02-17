@@ -503,7 +503,7 @@ export function UserQRCodesSection() {
             </Button>
           </div>
         )}
-      </div>
+      )}
 
       <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>
 
@@ -660,13 +660,11 @@ function QRWithLogo({ qr }: { qr: any }) {
           )
           setQrWithLogo(result)
         } catch (error) {
-          console.error("Failed to embed logo:", error)
           setQrWithLogo(qr.qr_image_url)
         }
       }
-    }
-    embedLogo()
-  }, [qr])
+      embedLogo()
+    }, [qr])
 
-  return <img src={qrWithLogo || qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
+    return <img src={qrWithLogo || qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
 }
