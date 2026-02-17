@@ -47,6 +47,9 @@ export function DashboardSection() {
 
     const { data: qrCodesData, error: qrError } = await supabase.from("qr_codes").select("id, type, title")
 
+    // Provide default empty array if qrCodesData is null/undefined
+    const safeQrCodesData = qrCodesData || []
+
     const [{ count: usersCount }, { count: scansCount }, { data: companies }, { data: scansData }, { data: topCodes }] =
       await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -81,7 +84,7 @@ export function DashboardSection() {
     const chartScansData = last7Days.map((date) => ({ date, count: scansByDate[date] }))
 
     const typeCount: Record<string, number> = { standard: 0, business_card: 0, wifi: 0 }
-    qrCodesData?.forEach((qr: any) => {
+    safeQrCodesData.forEach((qr: any) => {
       const type = qr.type || "standard"
       typeCount[type] = (typeCount[type] || 0) + 1
     })
@@ -102,7 +105,7 @@ export function DashboardSection() {
       .slice(0, 5)
 
     const topCodesWithScans = sortedQrIds.map(([qrId, count]) => {
-      const qr = qrCodesData?.find((q: any) => q.id === qrId)
+      const qr = safeQrCodesData.find((q: any) => q.id === qrId)
       return {
         title: qr?.title || "Untitled",
         scans: count as number,
@@ -111,7 +114,7 @@ export function DashboardSection() {
 
     setStats({
       totalUsers: usersCount || 0,
-      totalQRCodes: qrCodesData?.length || 0,
+      totalQRCodes: safeQrCodesData.length,
       totalCompanies: companiesCount,
       totalScans: scansCount || 0,
     })
