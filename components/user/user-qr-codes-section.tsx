@@ -564,7 +564,7 @@ export function UserQRCodesSection() {
                 value={newDestinationUrl}
                 onChange={(e) => setNewDestinationUrl(e.target.value)}
                 className="font-mono"
-              />/>
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -614,7 +614,7 @@ export function UserQRCodesSection() {
                 value={userInputCode}
                 onChange={(e) => setUserInputCode(e.target.value.toUpperCase())}
                 className="font-mono text-center"
-              />/>
+              />
               <p className="text-xs text-muted-foreground">
                 You can cancel the deletion anytime within the next 12 hours.
               </p>
