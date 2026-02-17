@@ -468,6 +468,64 @@ export async function updateQRCodeDestination(qrCodeId: string, newDestinationUr
   }
 }
 
+export async function toggleQRCodeStatus(qrCodeId: string, newStatus: "active" | "inactive") {
+  try {
+    const supabase = await createClient()
+    const headersList = await headers()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "Unauthorized" }
+    }
+
+    // Get current status for logging
+    const { data: oldQrCode } = await supabase
+      .from("qr_codes")
+      .select("status, is_active")
+      .eq("id", qrCodeId)
+      .eq("user_id", user.id)
+      .single()
+
+    // Update both status fields for compatibility
+    const { error: updateError } = await supabase
+      .from("qr_codes")
+      .update({
+        status: newStatus,
+        is_active: newStatus === "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", qrCodeId)
+      .eq("user_id", user.id)
+
+    if (updateError) {
+      return { error: `Failed to update status: ${updateError.message}` }
+    }
+
+    await logActivity({
+      userId: user.id,
+      action: "qr_status_toggled",
+      entityType: "qr_code",
+      entityId: qrCodeId,
+      oldValue: oldQrCode?.status,
+      newValue: newStatus,
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
+
+    // Revalidate cache to ensure fresh data is used
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/qr-codes")
+
+    return { success: true }
+  } catch (error) {
+    return { error: "An unexpected error occurred" }
+  }
+}
+
 export async function updateQRCodeSettings(
   qrCodeId: string,
   settings: {

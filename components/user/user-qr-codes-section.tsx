@@ -106,12 +106,6 @@ export function UserQRCodesSection() {
           return !pendingDeletion
         }) || []
         
-        console.log("[v0] QR Codes loaded:", {
-          total: allQRCodes?.length || 0,
-          active: activeQRCodes.length,
-          deleted: (allQRCodes?.length || 0) - activeQRCodes.length
-        })
-        
         setQrCodes(Array.isArray(activeQRCodes) ? activeQRCodes : [])
       }
 
@@ -160,8 +154,8 @@ export function UserQRCodesSection() {
       setEditingQR(null)
       setNewDestinationUrl("")
       
-      // Simple refresh - server action already did revalidatePath
-      loadQRCodes()
+      // Await the refresh to ensure data is loaded before closing
+      await loadQRCodes()
     } catch (error) {
       console.error("Error updating QR code:", error)
       toast.error("Failed to update QR code")
@@ -174,12 +168,15 @@ export function UserQRCodesSection() {
     if (!deletingQR || !userInputCode) return
 
     try {
-      await scheduleQRCodeDeletion(deletingQR.id)
+      await scheduleQRCodeDeletion(deletingQR.id, confirmationCode)
       toast.success("QR code scheduled for deletion")
       setDeletingQR(null)
       setUserInputCode("")
       setConfirmationCode("")
-      loadQRCodes()
+      
+      // Await both refreshes to ensure consistent state
+      await loadPendingDeletions()
+      await loadQRCodes()
     } catch (error) {
       console.error("Error scheduling deletion:", error)
       toast.error("Failed to schedule deletion")
@@ -202,8 +199,8 @@ export function UserQRCodesSection() {
       toast.success("QR code status updated")
       setEditingQR(null)
       
-      // Simple refresh - server action already did revalidatePath
-      loadQRCodes()
+      // Await the refresh to ensure data is loaded before closing
+      await loadQRCodes()
     } catch (error) {
       console.error("Error toggling status:", error)
       toast.error("Failed to update status")
@@ -282,10 +279,11 @@ export function UserQRCodesSection() {
       {showCreateForm && (
         <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
           <CreateQRCodeFormInline
-            onSuccess={() => {
+            onSuccess={async () => {
               setShowCreateForm(false)
-              // Simple refresh - server action already did revalidatePath
-              loadQRCodes()
+              toast.success("QR code created successfully!")
+              // Await the refresh to ensure list updates before clearing form
+              await loadQRCodes()
             }}
           />
         </div>
