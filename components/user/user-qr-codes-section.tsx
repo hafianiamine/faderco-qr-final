@@ -45,8 +45,9 @@ export function UserQRCodesSection() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    // Load pending deletions first, then load QR codes so filter has data
-    loadPendingDeletions().then(() => loadQRCodes())
+    // Load both in parallel, don't wait for one before the other
+    loadQRCodes()
+    loadPendingDeletions()
   }, [])
 
   const filteredQRCodes = qrCodes.filter((qr) => {
@@ -97,7 +98,11 @@ export function UserQRCodesSection() {
       } else {
         // Filter out QR codes that are scheduled for deletion
         const activeQRCodes = allQRCodes?.filter(qr => {
-          const pendingDeletion = pendingDeletions?.find(pd => pd.qr_code_id === qr.id)
+          // If pending deletions hasn't loaded yet, just show the QR (it will filter on next load)
+          if (!pendingDeletions || pendingDeletions.length === 0) {
+            return true
+          }
+          const pendingDeletion = pendingDeletions.find(pd => pd.qr_code_id === qr.id)
           return !pendingDeletion
         }) || []
         
@@ -151,14 +156,12 @@ export function UserQRCodesSection() {
         return
       }
       
-      console.log("[v0] Update successful, reloading QR codes...")
       toast.success("QR code updated successfully")
       setEditingQR(null)
       setNewDestinationUrl("")
       
-      // Reload pending deletions first, then QR codes to ensure fresh data
-      await loadPendingDeletions()
-      await loadQRCodes()
+      // Simple refresh - server action already did revalidatePath
+      loadQRCodes()
     } catch (error) {
       console.error("Error updating QR code:", error)
       toast.error("Failed to update QR code")
@@ -177,7 +180,6 @@ export function UserQRCodesSection() {
       setUserInputCode("")
       setConfirmationCode("")
       loadQRCodes()
-      loadPendingDeletions()
     } catch (error) {
       console.error("Error scheduling deletion:", error)
       toast.error("Failed to schedule deletion")
@@ -197,13 +199,11 @@ export function UserQRCodesSection() {
         return
       }
       
-      console.log("[v0] Status toggle successful, reloading QR codes...")
       toast.success("QR code status updated")
       setEditingQR(null)
       
-      // Reload pending deletions first, then QR codes to ensure fresh data
-      await loadPendingDeletions()
-      await loadQRCodes()
+      // Simple refresh - server action already did revalidatePath
+      loadQRCodes()
     } catch (error) {
       console.error("Error toggling status:", error)
       toast.error("Failed to update status")
@@ -284,8 +284,8 @@ export function UserQRCodesSection() {
           <CreateQRCodeFormInline
             onSuccess={() => {
               setShowCreateForm(false)
-              // Load pending deletions first, then QR codes
-              loadPendingDeletions().then(() => loadQRCodes())
+              // Simple refresh - server action already did revalidatePath
+              loadQRCodes()
             }}
           />
         </div>
