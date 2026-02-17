@@ -37,9 +37,23 @@ function MapBounds({ scans }: { scans: Scan[] }) {
   const map = useMap()
 
   useEffect(() => {
-    if (scans.length > 0) {
-      const bounds = L.latLngBounds(scans.map((scan) => [scan.latitude as number, scan.longitude as number]))
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 })
+    if (scans.length > 0 && map) {
+      // Use setTimeout to ensure the map is fully initialized
+      const timer = setTimeout(() => {
+        try {
+          const validScans = scans.filter((scan) => scan.latitude && scan.longitude)
+          if (validScans.length > 0) {
+            const bounds = L.latLngBounds(
+              validScans.map((scan) => [scan.latitude as number, scan.longitude as number])
+            )
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 })
+          }
+        } catch (error) {
+          console.error("[v0] Error fitting map bounds:", error)
+        }
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
   }, [scans, map])
 
@@ -67,7 +81,7 @@ export default function InteractiveMap({ scans }: InteractiveMapProps) {
   }
 
   return (
-    <MapContainer center={[20, 0]} zoom={2} className="h-96 rounded-lg border border-gray-200">
+    <MapContainer center={[20, 0]} zoom={2} className="h-96 rounded-lg border border-gray-200" style={{ width: "100%", height: "100%" }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
