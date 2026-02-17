@@ -19,8 +19,6 @@ export async function createNFCRequest(data: NFCRequestData) {
       return { error: 'Unauthorized' }
     }
 
-    console.log("[v0] Creating NFC request for user:", user.id, "Type:", data.requestType)
-
     const { data: request, error } = await supabase
       .from('nfc_requests')
       .insert({
@@ -33,17 +31,14 @@ export async function createNFCRequest(data: NFCRequestData) {
       .single()
 
     if (error) {
-      console.error('[v0] Error creating NFC request:', error)
       return { error: error.message }
     }
 
-    console.log("[v0] NFC request created successfully:", request?.id)
     return { data: request }
-  } catch (error) {
-    console.error('[v0] Unexpected error creating NFC request:', error)
-    return { error: 'An unexpected error occurred' }
+    } catch (error) {
+      return { error: 'An unexpected error occurred' }
+    }
   }
-}
 
 export async function getUserNFCRequests() {
   try {
@@ -111,8 +106,6 @@ export async function updateNFCRequest(
   try {
     const supabase = await createClient()
 
-    console.log("[v0] Admin updating NFC request:", requestId, "Status:", updates.status)
-
     const { data: request, error } = await supabase
       .from('nfc_requests')
       .update(updates)
@@ -121,14 +114,11 @@ export async function updateNFCRequest(
       .single()
 
     if (error) {
-      console.error('[v0] Error updating NFC request:', error)
       return { error: error.message }
     }
 
-    console.log("[v0] NFC request updated successfully:", request?.id, "New status:", request?.status)
     return { data: request }
   } catch (error) {
-    console.error('[v0] Unexpected error updating NFC request:', error)
     return { error: 'An unexpected error occurred' }
   }
 }

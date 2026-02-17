@@ -49,7 +49,7 @@ function MapBounds({ scans }: { scans: Scan[] }) {
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 })
           }
         } catch (error) {
-          console.error("[v0] Error fitting map bounds:", error)
+          // Silently fail map bounds fitting
         }
       }, 100)
 

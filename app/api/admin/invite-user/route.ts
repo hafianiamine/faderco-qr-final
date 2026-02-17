@@ -27,14 +27,12 @@ export async function POST(request: Request) {
 
     // TODO: Implement email sending with your email service
     // For now, return success
-    console.log(`[v0] Invitation would be sent to ${email} (${fullName} from ${company})`)
 
     return NextResponse.json({
       message: "Invitation sent successfully",
       email,
     })
   } catch (error) {
-    console.error("[v0] Error sending invitation:", error)
     return NextResponse.json({ message: "Failed to send invitation" }, { status: 500 })
   }
 }
