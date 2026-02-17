@@ -23,6 +23,8 @@ export function AllQRCodesSection() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [deletingQR, setDeletingQR] = useState<any>(null)
+  const [pageSize] = useState(15)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadQRCodes()
@@ -149,7 +151,7 @@ export function AllQRCodesSection() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredQRCodes.map((qr) => (
+                {filteredQRCodes.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((qr) => (
                   <tr key={qr.id} className="transition-colors hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -211,6 +213,48 @@ export function AllQRCodesSection() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {Math.ceil(filteredQRCodes.length / pageSize) > 1 && (
+            <div className="border-t border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredQRCodes.length)} of {filteredQRCodes.length} QR codes
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(filteredQRCodes.length / pageSize) }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(Math.ceil(filteredQRCodes.length / pageSize), currentPage + 1))}
+                    disabled={currentPage === Math.ceil(filteredQRCodes.length / pageSize)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

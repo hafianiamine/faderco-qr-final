@@ -16,7 +16,6 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { LocationPicker } from "@/components/location-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FormBuilderUI } from "@/components/form-builder-ui"
 import { v4 as uuidv4 } from "uuid"
 
 interface CreateQRCodeFormInlineProps {
@@ -47,18 +46,6 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
   const [wifiSSID, setWifiSSID] = useState("")
   const [wifiPassword, setWifiPassword] = useState("")
   const [wifiSecurity, setWifiSecurity] = useState("WPA")
-  const [cardFirstName, setCardFirstName] = useState("")
-  const [cardLastName, setCardLastName] = useState("")
-  const [cardPhone, setCardPhone] = useState("")
-  const [cardEmail, setCardEmail] = useState("")
-  const [cardCompany, setCardCompany] = useState("")
-  const [cardPosition, setCardPosition] = useState("")
-  const [cardWebsite, setCardWebsite] = useState("")
-  const [successQRData, setSuccessQRData] = useState<{
-    qrCodeId: string
-    title: string
-    qrImage: string
-  } | null>(null)
 
   useEffect(() => {
     const generatePreview = async () => {
@@ -92,7 +79,7 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
     return () => clearTimeout(debounce)
   }, [destinationUrl, colorDark, colorLight, logoPreview, logoSize, logoOutlineColor])
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
@@ -100,11 +87,27 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
         return
       }
       setLogoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
+      
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'qr-logo')
+
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await response.json()
+        if (data.url) {
+          setLogoPreview(data.url)
+        } else {
+          toast.error("Failed to upload logo")
+        }
+      } catch (error) {
+        console.error("[v0] Logo upload error:", error)
+        toast.error("Failed to upload logo")
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -150,13 +153,33 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
       if (result.error) {
         setError(result.error)
         toast.error(result.error)
-      } else if (result.qrCodeId) {
+      } else if (result.qrCodeId && result.shortCode) {
         const qrCodeId = result.qrCodeId
-        setSuccessQRData({
-          qrCodeId,
-          title: title,
-          qrImage: qrPreview || "",
-        })
+        const shortCode = result.shortCode
+        
+        // Generate the actual QR code for the real short code (not the preview)
+        try {
+          const actualQrUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/redirect/${shortCode}`
+          const baseQr = await generateQRCode(actualQrUrl, {
+            color: {
+              dark: colorDark,
+              light: colorLight,
+            },
+          })
+          
+          let actualQrImage = baseQr
+          if (logoPreview && typeof window !== "undefined") {
+            actualQrImage = await addLogoToQRClient(baseQr, logoPreview, 512, logoSize, logoOutlineColor)
+          }
+          
+          toast.success("QR Code Created!")
+          onSuccess?.()
+        } catch (err) {
+          console.error("Error generating actual QR code:", err)
+          toast.success("QR Code Created!")
+          onSuccess?.()
+        }
+        
         setTitle("")
         setDestinationUrl("")
         setColorDark("#000000")
@@ -225,81 +248,19 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
     }
   }
 
-  const handleBusinessCardSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
 
-    if (!cardFirstName || !cardLastName) {
-      toast.error("Please enter first and last name")
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      toast.loading("Generating business card QR code...", { id: "qr-generation" })
-
-      const vCardData = `BEGIN:VCARD
-VERSION:3.0
-FN:${cardFirstName} ${cardLastName}
-N:${cardLastName};${cardFirstName};;;
-TEL:${cardPhone}
-EMAIL:${cardEmail}
-ORG:${cardCompany}
-TITLE:${cardPosition}
-URL:${cardWebsite}
-END:VCARD`
-
-      const result = await createQRCode(`Business Card - ${cardFirstName} ${cardLastName}`, vCardData, {
-        colorDark,
-        colorLight,
-        qrCodeType: "business_card",
-      })
-
-      toast.dismiss("qr-generation")
-
-      if (result.error) {
-        setError(result.error)
-        toast.error(result.error)
-      } else {
-        toast.success("Business Card QR Code Created!")
-        setCardFirstName("")
-        setCardLastName("")
-        setCardPhone("")
-        setCardEmail("")
-        setCardCompany("")
-        setCardPosition("")
-        setCardWebsite("")
-        onSuccess?.()
-      }
-    } catch (err) {
-      toast.dismiss("qr-generation")
-      toast.error("Failed to create business card QR code")
-      console.error("Error:", err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="standard" className="flex items-center gap-2">
             <QrCode className="h-4 w-4" />
             Standard QR
           </TabsTrigger>
-          <TabsTrigger value="forms" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Forms
-          </TabsTrigger>
           <TabsTrigger value="wifi" className="flex items-center gap-2">
             <Wifi className="h-4 w-4" />
             WiFi QR
-          </TabsTrigger>
-          <TabsTrigger value="business-card" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Business Card
           </TabsTrigger>
         </TabsList>
 
@@ -677,9 +638,7 @@ END:VCARD`
           </div>
         </TabsContent>
 
-        <TabsContent value="forms" className="mt-0">
-          <FormBuilderUI formId={uuidv4()} />
-        </TabsContent>
+
 
         <TabsContent value="wifi" className="mt-0">
           <div className="grid gap-6 lg:grid-cols-2">
@@ -850,201 +809,8 @@ END:VCARD`
           </div>
         </TabsContent>
 
-        <TabsContent value="business-card" className="mt-0">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Create Business Card QR Code
-                </h3>
-                <form onSubmit={handleBusinessCardSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName" className="text-gray-900">
-                        First Name
-                      </Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="John"
-                        value={cardFirstName}
-                        onChange={(e) => setCardFirstName(e.target.value)}
-                        className="bg-white/30 border-gray-200"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName" className="text-gray-900">
-                        Last Name
-                      </Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Doe"
-                        value={cardLastName}
-                        onChange={(e) => setCardLastName(e.target.value)}
-                        className="bg-white/30 border-gray-200"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="cardPhone" className="text-gray-900">
-                      Phone
-                    </Label>
-                    <Input
-                      id="cardPhone"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      value={cardPhone}
-                      onChange={(e) => setCardPhone(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardEmail" className="text-gray-900">
-                      Email
-                    </Label>
-                    <Input
-                      id="cardEmail"
-                      type="email"
-                      placeholder="john@company.com"
-                      value={cardEmail}
-                      onChange={(e) => setCardEmail(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardCompany" className="text-gray-900">
-                      Company
-                    </Label>
-                    <Input
-                      id="cardCompany"
-                      type="text"
-                      placeholder="Acme Inc"
-                      value={cardCompany}
-                      onChange={(e) => setCardCompany(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardPosition" className="text-gray-900">
-                      Position/Title
-                    </Label>
-                    <Input
-                      id="cardPosition"
-                      type="text"
-                      placeholder="CEO"
-                      value={cardPosition}
-                      onChange={(e) => setCardPosition(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardWebsite" className="text-gray-900">
-                      Website
-                    </Label>
-                    <Input
-                      id="cardWebsite"
-                      type="url"
-                      placeholder="https://acme.com"
-                      value={cardWebsite}
-                      onChange={(e) => setCardWebsite(e.target.value)}
-                      className="bg-white/30 border-gray-200"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Business Card QR"
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </div>
-
-            <div className="flex items-start justify-center">
-              <div className="w-full max-w-md space-y-4 sticky top-6">
-                <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">💡 How it Works</h4>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex gap-2">
-                      <span className="text-blue-600 font-semibold">📇</span>
-                      <span>
-                        <strong>Business Card:</strong> Users scan to save your contact info to their phone
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
       </Tabs>
-
-      {successQRData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">QR Code Created!</h2>
-              <p className="text-sm text-gray-600">{successQRData.title}</p>
-            </div>
-
-            <div className="mb-6 rounded-lg bg-gray-50 p-4">
-              {successQRData.qrImage ? (
-                <img src={successQRData.qrImage || "/placeholder.svg"} alt="QR Code" className="mx-auto h-48 w-48" />
-              ) : (
-                <div className="flex h-48 w-48 items-center justify-center rounded bg-gray-200">
-                  <span className="text-gray-400">Loading...</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-6 flex gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent" asChild>
-                <a href={successQRData.qrImage} download={`${successQRData.title}.png`}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </a>
-              </Button>
-            </div>
-
-            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-medium text-gray-900 mb-2">Your QR code is ready!</p>
-              <p className="text-xs text-gray-600 mb-3">
-                You can view and edit it anytime in the "My QR Codes" section.
-              </p>
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => {
-                  setSuccessQRData(null)
-                  // Navigate to MyQR section
-                  window.location.hash = "#myqr"
-                }}
-              >
-                Go to My QR Codes
-              </Button>
-            </div>
-
-            <Button variant="ghost" className="w-full" onClick={() => setSuccessQRData(null)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
     </>
   )
 }

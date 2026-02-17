@@ -10,6 +10,7 @@ import { UserAnalyticsSection } from "@/components/user/user-analytics-section"
 import { UserProfileSection } from "@/components/user/user-profile-section"
 import { UserSettingsSection } from "@/components/user/user-settings-section"
 import { CreateQRCodeFormInline } from "@/components/create-qr-code-form-inline"
+import { UserNFSSection } from "@/components/user/user-nfs-section"
 import { FeatureTourModal } from "@/components/feature-tour-modal"
 import { ForcePasswordResetModal } from "@/components/force-password-reset-modal"
 import { checkPasswordResetRequired } from "@/app/actions/security-actions"
@@ -19,6 +20,7 @@ export default function UserDashboardPage() {
   const [userEmail, setUserEmail] = useState<string>()
   const [showFeatureTour, setShowFeatureTour] = useState(false)
   const [showPasswordReset, setShowPasswordReset] = useState(false)
+  const [tourShownOnce, setTourShownOnce] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -28,14 +30,21 @@ export default function UserDashboardPage() {
       } = await supabase.auth.getUser()
       if (user) {
         setUserEmail(user.email)
-        setShowFeatureTour(true)
+        
+        // Only show tour once per browser session
+        const hasSeenTour = sessionStorage.getItem(`tour-seen-${user.id}`)
+        if (!hasSeenTour && !tourShownOnce) {
+          setShowFeatureTour(true)
+          setTourShownOnce(true)
+          sessionStorage.setItem(`tour-seen-${user.id}`, 'true')
+        }
 
         const { required } = await checkPasswordResetRequired()
         setShowPasswordReset(required)
       }
     }
     loadUser()
-  }, [])
+  }, [tourShownOnce])
 
   useEffect(() => {
     async function checkReset() {
@@ -56,27 +65,26 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <AnimatedBackground />
 
-      <UserGlassMenu
-        userEmail={userEmail}
-        onSectionChange={setCurrentSection}
-        currentSection={currentSection}
-        onShowFeatureTour={handleShowTour}
-      />
+      {/* Sidebar - Hidden on mobile, fixed on desktop */}
+      <div className="fixed md:static left-0 top-0 bottom-0 z-40 w-24">
+        <UserGlassMenu
+          userEmail={userEmail}
+          onSectionChange={setCurrentSection}
+          currentSection={currentSection}
+          onShowFeatureTour={handleShowTour}
+        />
+      </div>
 
-      <FeatureTourModal isOpen={showFeatureTour && !showPasswordReset} onClose={handleCloseTour} userName={userEmail} />
-
-      <ForcePasswordResetModal isOpen={showPasswordReset} />
-
-      <div className="relative z-10 ml-24 min-h-screen p-8">
+      {/* Main Content */}
+      <div className="relative z-10 flex-1 w-full min-h-screen p-4 md:p-8">
         <div className="mx-auto max-w-7xl">
           {currentSection === "dashboard" && <UserDashboardSection />}
           {currentSection === "qr-codes" && <UserQRCodesSection />}
           {currentSection === "analytics" && <UserAnalyticsSection />}
           {currentSection === "profile" && <UserProfileSection />}
-          {currentSection === "settings" && <UserSettingsSection />}
           {currentSection === "create" && (
             <div className="space-y-6">
               <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
@@ -88,8 +96,12 @@ export default function UserDashboardPage() {
               </div>
             </div>
           )}
+          {currentSection === "nfs" && <UserNFSSection />}
         </div>
       </div>
+
+      <FeatureTourModal isOpen={showFeatureTour && !showPasswordReset} onClose={handleCloseTour} userName={userEmail} />
+      <ForcePasswordResetModal isOpen={showPasswordReset} />
     </div>
   )
 }

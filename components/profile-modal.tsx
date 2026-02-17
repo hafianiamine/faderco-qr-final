@@ -77,26 +77,23 @@ export function ProfileModal({ open, onOpenChange, userEmail, userRole }: Profil
     }
 
     setAvatarLoading(true)
-
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${Math.random()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'avatar')
 
-      const { error: uploadError } = await supabase.storage.from("qr-codes").upload(filePath, file)
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
 
-      if (uploadError) throw uploadError
+      const data = await response.json()
+      if (!data.url) throw new Error('Failed to upload image')
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("qr-codes").getPublicUrl(filePath)
-
-      const result = await updateProfileAvatar(publicUrl)
-
+      const result = await updateProfileAvatar(data.url)
       if (result.error) throw new Error(result.error)
 
-      setProfile({ ...profile, avatar_url: publicUrl })
+      setProfile({ ...profile, avatar_url: data.url })
       await loadProfile()
 
       toast({

@@ -23,6 +23,10 @@ export interface QRCustomization {
   qrCodeType?: "standard" | "business_card" | "wifi"
 }
 
+export interface BusinessCardQRCustomization extends QRCustomization {
+  vCardData: string
+}
+
 export async function createQRCode(title: string, destinationUrl: string, customization?: QRCustomization) {
   try {
     const supabase = await createClient()
@@ -86,6 +90,7 @@ export async function createQRCode(title: string, destinationUrl: string, custom
       geofence_radius: customization?.geofenceRadius || null,
       is_active: true,
       status: "active",
+      type: customization?.qrCodeType || "standard",
     }
 
     const { data: qrCode, error: insertError } = await supabase.from("qr_codes").insert(insertData).select().single()
@@ -104,6 +109,156 @@ export async function createQRCode(title: string, destinationUrl: string, custom
         destinationUrl,
         shortCode: qrCode.short_code,
         type: customization?.qrCodeType,
+      }),
+      ipAddress: getRealIP(headersList),
+      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
+      userAgent: headersList.get("user-agent") || undefined,
+    })
+
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/qr-codes")
+
+    return { qrCodeId: qrCode.id, shortCode: qrCode.short_code }
+  } catch (error) {
+    return { error: `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}` }
+  }
+}
+
+export async function createBusinessCardQR(
+  title: string,
+  vCardData: string,
+  customization?: BusinessCardQRCustomization,
+) {
+  try {
+    const supabase = await createClient()
+    const headersList = await headers()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "User not authenticated" }
+    }
+
+    // Parse vCard data to extract fields for virtual_business_cards table
+    const vCardLines = vCardData.split('\n')
+    let fullName = ''
+    let email = ''
+    let phone = ''
+    let companyName = ''
+    let jobTitle = ''
+    let website = ''
+    
+    for (const line of vCardLines) {
+      if (line.startsWith('FN:')) fullName = line.substring(3).trim()
+      if (line.startsWith('EMAIL:')) email = line.substring(6).trim()
+      if (line.startsWith('TEL:')) phone = line.substring(4).trim()
+      if (line.startsWith('ORG:')) companyName = line.substring(4).trim()
+      if (line.startsWith('TITLE:')) jobTitle = line.substring(6).trim()
+      if (line.startsWith('URL:')) website = line.substring(4).trim()
+    }
+
+    // First, create the business card record in virtual_business_cards table
+    const { data: businessCard, error: bcError } = await supabase
+      .from("virtual_business_cards")
+      .insert({
+        user_id: user.id,
+        full_name: fullName || title,
+        job_title: jobTitle,
+        company_name: companyName,
+        phone,
+        email,
+        website,
+        vcard_data: vCardData,
+      })
+      .select()
+      .single()
+
+    if (bcError || !businessCard) {
+      return { error: `Failed to create business card: ${bcError?.message || "Unknown error"}` }
+    }
+
+    // Generate a short code for the QR
+    let shortCode = generateShortCode()
+    let isUnique = false
+    let attempts = 0
+
+    while (!isUnique && attempts < 10) {
+      const { data: existing } = await supabase.from("qr_codes").select("id").eq("short_code", shortCode).maybeSingle()
+
+      if (!existing) {
+        isUnique = true
+      } else {
+        shortCode = generateShortCode()
+        attempts++
+      }
+    }
+
+    if (!isUnique) {
+      return { error: "Failed to generate unique short code" }
+    }
+
+    const shortUrl = createShortUrl(shortCode)
+    
+    // Extract base URL from short URL for business card link
+    const shortUrlWithoutRedirect = shortUrl.replace(/\/api\/redirect\/.*/, '')
+    const businessCardUrl = `${shortUrlWithoutRedirect}/business-card/${businessCard.id}`
+
+    // Generate QR code that encodes ONLY the short URL (not vCard data)
+    const qrImageDataUrl = await generateQRCode(shortUrl, {
+      color: {
+        dark: customization?.colorDark || "#000000",
+        light: customization?.colorLight || "#FFFFFF",
+      },
+    })
+
+    const insertData = {
+      user_id: user.id,
+      title,
+      destination_url: businessCardUrl, // Store the business card display page URL
+      vcard_data: vCardData, // Also store vCard data for backward compatibility
+      short_code: shortCode,
+      short_url: shortUrl,
+      qr_image_url: qrImageDataUrl,
+      qr_color_dark: customization?.colorDark || "#000000",
+      qr_color_light: customization?.colorLight || "#FFFFFF",
+      qr_logo_url: customization?.logoUrl || null,
+      logo_size: customization?.logoSize || 12,
+      logo_outline_color: customization?.logoOutlineColor || "#FFFFFF",
+      scan_limit: customization?.scanLimit || null,
+      scans_used: 0,
+      scheduled_start: customization?.scheduledStart || null,
+      scheduled_end: customization?.scheduledEnd || null,
+      geofence_enabled: customization?.geofenceEnabled || false,
+      geofence_latitude: customization?.geofenceLatitude || null,
+      geofence_longitude: customization?.geofenceLongitude || null,
+      geofence_radius: customization?.geofenceRadius || null,
+      is_active: true,
+      status: "active",
+      type: "business_card",
+      business_card_id: businessCard.id,
+    }
+
+    const { data: qrCode, error: insertError } = await supabase
+      .from("qr_codes")
+      .insert(insertData)
+      .select()
+      .single()
+
+    if (insertError) {
+      return { error: `Failed to create business card QR code: ${insertError.message}` }
+    }
+
+    await logActivity({
+      userId: user.id,
+      action: "qr_created",
+      entityType: "qr_code",
+      entityId: qrCode.id,
+      newValue: JSON.stringify({
+        title,
+        shortCode: qrCode.short_code,
+        type: "business_card",
       }),
       ipAddress: getRealIP(headersList),
       deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
@@ -417,7 +572,7 @@ export async function updateQRCodeSettings(
     }
 
     if (settings.qrCodeType !== undefined) {
-      updateData.qr_code_type = settings.qrCodeType
+      updateData.type = settings.qrCodeType
     }
 
     const { error: updateError } = await supabase

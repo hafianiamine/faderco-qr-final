@@ -1,5 +1,5 @@
 "use client"
-import { QrCode, LogOut, LayoutDashboard, Settings, Plus, Lightbulb, Video } from "lucide-react"
+import { QrCode, LogOut, LayoutDashboard, Settings, Plus, Lightbulb, Video, CreditCard, Search, Package } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -19,6 +19,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
   const [avatarUrl, setAvatarUrl] = useState<string>("")
   const [tutorialVideoUrl, setTutorialVideoUrl] = useState<string>("https://www.youtube.com/watch?v=jwiSLaQyZ0U")
   const [showVideoModal, setShowVideoModal] = useState(false)
+  const [showNFCNewBadge, setShowNFCNewBadge] = useState(true)
 
   useEffect(() => {
     async function loadAvatar() {
@@ -27,8 +28,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
         data: { user },
       } = await supabase.auth.getUser()
 
-      console.log("[v0] UserGlassMenu: Loading user data")
-
       if (user) {
         const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle()
 
@@ -36,9 +35,7 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
           setAvatarUrl(data.avatar_url)
         }
 
-        console.log("[v0] UserGlassMenu: Fetching tutorial video URL using server action")
         const { videoUrl } = await getTutorialVideoUrl()
-        console.log("[v0] UserGlassMenu: Tutorial video URL from server:", videoUrl)
 
         if (videoUrl) {
           setTutorialVideoUrl(videoUrl)
@@ -46,12 +43,13 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
       }
     }
     loadAvatar()
-  }, [currentSection])
+  }, [])
 
   const menuItems = [
     { id: "dashboard", label: "My Dashboard", icon: LayoutDashboard },
-    { id: "qr-codes", label: "My QR Codes", icon: QrCode },
-    { id: "create", label: "Create QR Code", icon: Plus },
+    { id: "qr-codes", label: "My QR Codes", icon: Search },
+    { id: "nfs", label: "Virtual Business Card", icon: CreditCard, badge: showNFCNewBadge },
+    { id: "create", label: "Create QR Code", icon: QrCode },
   ]
 
   const handleLogout = async () => {
@@ -68,22 +66,33 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
             const Icon = item.icon
             const isActive = currentSection === item.id
             return (
-              <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={cn(
-                  "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
-                  isActive
-                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-blue-500",
-                )}
-                title={item.label}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
-                  {item.label}
-                </span>
-              </button>
+              <div key={item.id} className="relative">
+                <button
+                  onClick={() => {
+                    onSectionChange(item.id)
+                    if (item.id === "nfs" && item.badge) {
+                      setShowNFCNewBadge(false)
+                    }
+                  }}
+                  className={cn(
+                    "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
+                    isActive
+                      ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-blue-500",
+                  )}
+                  title={item.label}
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.badge && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                      NEW
+                    </span>
+                  )}
+                  <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
+                    {item.label}
+                  </span>
+                </button>
+              </div>
             )
           })}
         </div>
@@ -107,22 +116,6 @@ export function UserGlassMenu({ userEmail, onSectionChange, currentSection, onSh
             </Avatar>
             <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
               Profile
-            </span>
-          </button>
-
-          <button
-            onClick={() => onSectionChange("settings")}
-            className={cn(
-              "group relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300",
-              currentSection === "settings"
-                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
-                : "bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-blue-500",
-            )}
-            title="Settings"
-          >
-            <Settings className="h-5 w-5" />
-            <span className="pointer-events-none absolute left-full ml-4 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 opacity-0 backdrop-blur-xl shadow-lg transition-opacity group-hover:opacity-100">
-              Settings
             </span>
           </button>
 

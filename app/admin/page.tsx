@@ -8,6 +8,7 @@ import { DashboardSection } from "@/components/admin/dashboard-section"
 import { UsersSection } from "@/components/admin/users-section"
 import { AnalyticsSection } from "@/components/admin/analytics-section"
 import { CompaniesSection } from "@/components/admin/companies-section"
+import { AdminNFCRequestsSection } from "@/components/admin/nfc-requests-section"
 import { ProfileSection } from "@/components/admin/profile-section"
 import { SettingsSection } from "@/components/admin/settings-section"
 import { PendingAccountsSection } from "@/components/admin/pending-accounts-section"
@@ -53,6 +54,7 @@ export default function AdminPage() {
           {currentSection === "all-qr-codes" && <AllQRCodesSection />}
           {currentSection === "analytics" && <AnalyticsSection />}
           {currentSection === "companies" && <CompaniesSection />}
+          {currentSection === "nfc-requests" && <AdminNFCRequestsSection />}
           {currentSection === "profile" && <ProfileSection />}
           {currentSection === "settings" && <SettingsSection />}
           {currentSection === "security" && <SecurityDashboard />}
