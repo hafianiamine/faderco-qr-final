@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { getEmailValidationError } from "@/lib/utils/email-validator"
-import { createDraftCard } from "@/app/actions/draft-card-action"
 
 interface AuthModalsProps {
   loginOpen: boolean
@@ -283,17 +282,6 @@ function RegisterModal({
       })
 
       if (error) throw error
-      
-      // Create draft card for new user after successful registration
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          await createDraftCard(user.id, fullName, email, phoneNumber, company)
-        }
-      } catch (draftError) {
-        console.error("Failed to create draft card:", draftError)
-        // Don't fail registration if draft card creation fails
-      }
       
       setSuccess(true)
     } catch (error: unknown) {
