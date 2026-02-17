@@ -86,7 +86,7 @@ export function UserQRCodesSection() {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(50) // Limit to 50 QR codes initially
+        .limit(50)
 
       if (error) {
         console.error("Error loading QR codes:", error)
@@ -98,123 +98,90 @@ export function UserQRCodesSection() {
 
       setLoading(false)
     } catch (error) {
-      console.error("Exception loading QR codes:", error)
-      setQrCodes([])
+      console.error("Error in loadQRCodes:", error)
+      toast.error("Failed to load QR codes")
       setLoading(false)
     }
   }
 
   async function loadPendingDeletions() {
-    const result = await getPendingDeletions()
-    if (!result.error && result.pendingDeletions) {
-      setPendingDeletions(result.pendingDeletions)
-    }
-  }
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-  async function handleEdit(qr: any) {
-    setEditingQR(qr)
-    setNewDestinationUrl(qr.destination_url)
+      if (!user) return
+
+      const pendingData = await getPendingDeletions(user.id)
+      setPendingDeletions(pendingData || [])
+    } catch (error) {
+      console.error("Error loading pending deletions:", error)
+    }
   }
 
   async function handleUpdateDestination() {
     if (!editingQR || !newDestinationUrl) return
 
     setIsUpdating(true)
-    const result = await updateQRCodeDestination(editingQR.id, newDestinationUrl)
-    setIsUpdating(false)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Destination URL updated successfully!")
+    try {
+      await updateQRCodeDestination(editingQR.id, newDestinationUrl)
+      toast.success("QR code updated successfully")
       setEditingQR(null)
       setNewDestinationUrl("")
       loadQRCodes()
-    }
-  }
-
-  async function handleRequestDeletion(qr: any) {
-    setDeletingQR(qr)
-    setUserInputCode("")
-    setCopied(false)
-
-    // Get the confirmation code
-    const result = await scheduleQRCodeDeletion(qr.id, "")
-    if (result.confirmationCode) {
-      setConfirmationCode(result.confirmationCode)
-    } else if (result.error) {
-      toast.error(result.error)
-      setDeletingQR(null)
+    } catch (error) {
+      console.error("Error updating QR code:", error)
+      toast.error("Failed to update QR code")
+    } finally {
+      setIsUpdating(false)
     }
   }
 
   async function handleConfirmDeletion() {
     if (!deletingQR || !userInputCode) return
 
-    const result = await scheduleQRCodeDeletion(deletingQR.id, userInputCode)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else if (result.success) {
-      toast.success("QR code scheduled for deletion in 12 hours. You can cancel anytime before then.")
+    try {
+      await scheduleQRCodeDeletion(deletingQR.id)
+      toast.success("QR code scheduled for deletion")
       setDeletingQR(null)
-      setConfirmationCode("")
       setUserInputCode("")
+      setConfirmationCode("")
       loadQRCodes()
       loadPendingDeletions()
+    } catch (error) {
+      console.error("Error scheduling deletion:", error)
+      toast.error("Failed to schedule deletion")
     }
   }
 
-  async function handleCancelDeletion(qrCodeId: string) {
-    const result = await cancelQRCodeDeletion(qrCodeId)
+  async function handleToggleStatus() {
+    if (!editingQR) return
 
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Deletion cancelled successfully!")
-      loadPendingDeletions()
-    }
-  }
-
-  function handleCopyCode() {
-    navigator.clipboard.writeText(confirmationCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  async function handleToggleStatus(qr: any) {
-    const newStatus = qr.status === "active" ? "inactive" : "active"
-    const result = await toggleQRCodeStatus(qr.id, newStatus)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success(`QR code ${newStatus === "active" ? "activated" : "deactivated"} successfully!`)
+    try {
+      await toggleQRCodeStatus(editingQR.id)
+      toast.success("QR code status updated")
       loadQRCodes()
+    } catch (error) {
+      console.error("Error toggling status:", error)
+      toast.error("Failed to update status")
     }
-  }
-
-  function handleView(qr: any) {
-    setViewingQR(qr)
   }
 
   function isPendingDeletion(qr: any) {
-    if (qr.scheduled_deletion_at) {
-      const scheduledTime = new Date(qr.scheduled_deletion_at).getTime()
-      const now = new Date().getTime()
-      // Only show as pending if scheduled time is in the future
-      if (scheduledTime > now) {
-        return { scheduled_deletion_at: qr.scheduled_deletion_at, qr_code_id: qr.id }
-      }
+    const scheduledTime = new Date(qr.scheduled_deletion_at).getTime()
+    const now = new Date().getTime()
+
+    if (scheduledTime > now) {
+      return { scheduled_deletion_at: qr.scheduled_deletion_at, qr_code_id: qr.id }
     }
     return pendingDeletions.find((pd) => pd.qr_code_id === qr.id)
   }
 
-  function getTimeRemaining(scheduledAt: string) {
-    const now = new Date()
-    const scheduled = new Date(scheduledAt)
-    const deletionTime = new Date(scheduled.getTime() + 12 * 60 * 60 * 1000)
-    const diff = deletionTime.getTime() - now.getTime()
+  function getRemainingDeletionTime(scheduledTime: string) {
+    const scheduled = new Date(scheduledTime).getTime()
+    const now = new Date().getTime()
+    const diff = scheduled - now
 
     if (diff <= 0) return "Deleting soon..."
 
@@ -224,7 +191,7 @@ export function UserQRCodesSection() {
     return `${hours}h ${minutes}m remaining`
   }
 
-  function isNewQRCode(createdAt: string) {
+  function isNewlyCreated(createdAt: string) {
     const created = new Date(createdAt).getTime()
     const now = new Date().getTime()
     const fiveMinutesAgo = now - 5 * 60 * 1000
@@ -259,7 +226,7 @@ export function UserQRCodesSection() {
             ) : (
               <>
                 <Plus className="mr-2 h-4 w-4" />
-                Create New
+                Create QR Code
               </>
             )}
           </Button>
@@ -270,8 +237,8 @@ export function UserQRCodesSection() {
         <div className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl">
           <CreateQRCodeFormInline
             onSuccess={() => {
-              loadQRCodes()
               setShowCreateForm(false)
+              loadQRCodes()
             }}
           />
         </div>
@@ -282,40 +249,40 @@ export function UserQRCodesSection() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedFilter("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedFilter === "all"
                   ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              All QR Codes
+              All
             </button>
             <button
               onClick={() => setSelectedFilter("standard")}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedFilter === "standard"
                   ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              Standard QR
+              Standard
             </button>
             <button
               onClick={() => setSelectedFilter("wifi")}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedFilter === "wifi"
                   ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              WiFi QR
+              WiFi
             </button>
             <button
               onClick={() => setSelectedFilter("business_card")}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedFilter === "business_card"
                   ? "bg-blue-500 text-white"
-                  : "bg-white/10 text-gray-900 hover:bg-white/20"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
               Business Card
@@ -351,158 +318,151 @@ export function UserQRCodesSection() {
             return (
               <div
                 key={qr.id}
-                className={`group rounded-2xl border p-6 shadow-lg backdrop-blur-xl transition-all ${
-                  pendingDeletion
-                    ? "border-red-300 bg-red-50/20"
-                    : "border-gray-200 bg-white/10 hover:border-gray-300 hover:bg-white/20"
-                }`}
+                className="rounded-2xl border border-gray-200 bg-white/10 p-6 shadow-lg backdrop-blur-xl hover:shadow-xl transition-shadow"
               >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-900 truncate">{qr.title}</h3>
-                      {isNewQRCode(qr.created_at) && (
-                        <Badge
-                          variant="default"
-                          className="bg-green-600 hover:bg-green-700 flex-shrink-0 animate-pulse"
-                        >
-                          NEW
-                        </Badge>
-                      )}
-                      {qr.status === "inactive" && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 flex-shrink-0">
-                          Inactive
-                        </Badge>
-                      )}
-                      {qr.scan_limit && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 flex-shrink-0">
-                          {qr.scans_used || 0}/{qr.scan_limit}
-                        </Badge>
-                      )}
-                      {pendingDeletion && (
-                        <Badge variant="destructive" className="flex-shrink-0 uppercase">
-                          <Clock className="mr-1 h-3 w-3" />
-                          Scheduled for Deletion
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-600 truncate break-all" title={qr.destination_url}>
-                      {qr.destination_url}
-                    </p>
-                    {pendingDeletion && (
-                      <p className="mt-1 text-xs text-red-600 font-medium">
-                        {getTimeRemaining(pendingDeletion.scheduled_deletion_at)}
-                      </p>
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 text-balance">{qr.title}</h3>
+                    {qr.destination_url && (
+                      <p className="text-xs text-gray-600 truncate mt-1">{qr.destination_url}</p>
                     )}
                   </div>
+                  <Badge
+                    className={`flex-shrink-0 ${
+                      qr.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {qr.active ? "Active" : "Inactive"}
+                  </Badge>
                 </div>
 
-                <div className="mb-3 rounded-lg bg-white/50 p-3">
-                  {qr.qr_logo_url ? (
-                    <QRWithLogo qr={qr} />
-                  ) : (
-                    <img src={qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-28 w-28" />
-                  )}
+                {isNewlyCreated(qr.created_at) && (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 flex-shrink-0">
+                    New
+                  </Badge>
+                )}
+                {qr.type === "wifi" && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 flex-shrink-0">
+                    WiFi
+                  </Badge>
+                )}
+                {qr.type === "business_card" && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 flex-shrink-0">
+                    Business Card
+                  </Badge>
+                )}
+                {pendingDeletion && (
+                  <Badge variant="destructive" className="flex-shrink-0 uppercase">
+                    <Clock className="mr-1 h-3 w-3" />
+                    {getRemainingDeletionTime(pendingDeletion.scheduled_deletion_at)}
+                  </Badge>
+                )}
+
+                <div className="my-4">
+                  <QRWithLogo qr={qr} />
                 </div>
 
-                <div className="space-y-2">
-                  {pendingDeletion ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-green-200 bg-green-50/30 text-green-700 hover:bg-green-100/50"
-                      onClick={() => handleCancelDeletion(qr.id)}
-                    >
-                      <X className="mr-1 h-4 w-4" />
-                      Cancel Deletion
-                    </Button>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="outline"
-                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleView(qr)}
-                        >
-                          <Eye className="mr-1 h-3.5 w-3.5" />
-                          View
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
-                          asChild
-                        >
-                          <a href={qr.qr_image_url} download={`${qr.title}.png`}>
-                            <Download className="h-3.5 w-3.5" />
-                          </a>
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          variant="outline"
-                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleEdit(qr)}
-                        >
-                          <Edit className="mr-1 h-3.5 w-3.5" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-8 text-xs border-gray-200 bg-white/30 hover:bg-white/50"
-                          onClick={() => handleToggleStatus(qr)}
-                          title={qr.status === "active" ? "Deactivate" : "Activate"}
-                        >
-                          {qr.status === "active" ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-8 text-xs border-red-200 bg-red-50/30 text-red-600 hover:bg-red-100/50"
-                          onClick={() => handleRequestDeletion(qr)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeletingQR(qr)}
+                    className="w-full bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                  >
+                    <X className="mr-1 h-4 w-4" />
+                    Cancel Deletion
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewingQR(qr)}
+                    className="w-full"
+                  >
+                    <Eye className="mr-1 h-3.5 w-3.5" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const link = document.createElement("a")
+                      link.href = qr.qr_image_url || "/placeholder.svg"
+                      link.download = `${qr.title}.png`
+                      link.click()
+                    }}
+                    className="w-full"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingQR(qr)
+                      setNewDestinationUrl(qr.destination_url || "")
+                    }}
+                    className="w-full"
+                  >
+                    <Edit className="mr-1 h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleStatus}
+                    className="w-full"
+                  >
+                    {qr.active ? (
+                      <>
+                        <PowerOff className="mr-1 h-4 w-4" />
+                        Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <Power className="mr-1 h-4 w-4" />
+                        Activate
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setDeletingQR(qr)
+                      setConfirmationCode(Math.random().toString(36).substring(2, 8).toUpperCase())
+                      setUserInputCode("")
+                    }}
+                    className="w-full"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )
           })}
         </div>
+      )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="h-8 px-3 text-xs"
-            >
-              Previous
-            </Button>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={page === currentPage ? "default" : "outline"}
-                  onClick={() => setCurrentPage(page)}
-                  className="h-8 w-8 p-0 text-xs"
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 px-3 text-xs"
-            >
-              Next
-            </Button>
-          </div>
-        )}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
       )}
 
       <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>
@@ -510,43 +470,40 @@ export function UserQRCodesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>{viewingQR?.title}</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <div className="rounded-lg bg-white p-4">
-                {viewingQR?.qr_logo_url ? (
-                  <QRWithLogo qr={viewingQR} />
-                ) : (
-                  <img
-                    src={viewingQR?.qr_image_url || "/placeholder.svg"}
-                    alt={viewingQR?.title}
-                    className="mx-auto h-64 w-64"
-                  />
-                )}
+              {viewingQR && <QRWithLogo qr={viewingQR} />}
+              <div>
+                <p className="text-xs text-gray-600">Destination URL:</p>
+                <p className="text-sm font-mono text-gray-900 break-all">{viewingQR?.destination_url}</p>
               </div>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <div className="font-semibold">Destination URL:</div>
-                  <div className="text-muted-foreground break-all text-xs">{viewingQR?.destination_url}</div>
-                </div>
-                <div>
-                  <div className="font-semibold">Short Code:</div>
-                  <div className="text-muted-foreground font-mono text-xs">{viewingQR?.short_code}</div>
-                </div>
-                <div>
-                  <div className="font-semibold">Total Scans:</div>
-                  <div className="text-muted-foreground text-xs">{viewingQR?.scans_used || 0}</div>
-                </div>
-                <div>
-                  <div className="font-semibold">Status:</div>
-                  <div className="text-muted-foreground capitalize text-xs">{viewingQR?.status}</div>
-                </div>
+              <div>
+                <p className="text-xs text-gray-600">QR Code ID:</p>
+                <p className="text-sm font-mono text-gray-900">{viewingQR?.id}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">Type:</p>
+                <p className="text-sm text-gray-900">{viewingQR?.type || "Standard"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">Created:</p>
+                <p className="text-sm text-gray-900">{viewingQR ? new Date(viewingQR.created_at).toLocaleString() : ""}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">Scans:</p>
+                <p className="text-sm text-gray-900">{viewingQR?.scan_count || 0}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Close</AlertDialogCancel>
             <AlertDialogAction asChild>
-              <a href={viewingQR?.qr_image_url} download={`${viewingQR?.title}.png`}>
-                Download
-              </a>
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(viewingQR?.qr_code_id || "")
+                  toast.success("QR Code ID copied!")
+                }}
+              >
+                Copy ID
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -557,12 +514,10 @@ export function UserQRCodesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Edit Destination URL</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <div>Update the destination URL for "{editingQR?.title}". The QR code image will remain the same.</div>
               <Input
                 placeholder="https://example.com"
                 value={newDestinationUrl}
                 onChange={(e) => setNewDestinationUrl(e.target.value)}
-                className="font-mono"
               />
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -576,7 +531,7 @@ export function UserQRCodesSection() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleUpdateDestination} disabled={isUpdating || !newDestinationUrl}>
-              {isUpdating ? "Updating..." : "Update URL"}
+              {isUpdating ? "Updating..." : "Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -587,15 +542,14 @@ export function UserQRCodesSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm QR Code Deletion</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <p>
-                You are about to schedule "{deletingQR?.title}" for deletion. This QR code will be permanently deleted
-                in <strong>12 hours</strong>.
-              </p>
-              <p className="text-sm">To confirm, please copy the code below and paste it in the input field:</p>
-              <div className="rounded-lg bg-gray-100 p-3 font-mono text-center text-lg font-bold tracking-wider">
-                {confirmationCode}
-              </div>
-              <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={handleCopyCode}>
+              <p>This QR code will be permanently deleted. This action cannot be undone.</p>
+              <p className="font-semibold">To confirm, please enter this code:</p>
+              <p className="text-center text-lg font-bold text-red-600 tracking-widest">{confirmationCode}</p>
+              <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={() => {
+                navigator.clipboard.writeText(confirmationCode)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }}>
                 {copied ? (
                   <>
                     <Check className="mr-2 h-4 w-4" />
@@ -609,22 +563,19 @@ export function UserQRCodesSection() {
                 )}
               </Button>
               <Input
-                placeholder="Paste confirmation code here"
+                placeholder="Enter confirmation code"
                 value={userInputCode}
                 onChange={(e) => setUserInputCode(e.target.value.toUpperCase())}
-                className="font-mono text-center"
+                className="font-mono"
               />
-              <p className="text-xs text-muted-foreground">
-                You can cancel the deletion anytime within the next 12 hours.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => {
                 setDeletingQR(null)
-                setConfirmationCode("")
                 setUserInputCode("")
+                setConfirmationCode("")
               }}
             >
               Cancel
