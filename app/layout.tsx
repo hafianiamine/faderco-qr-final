@@ -34,12 +34,6 @@ export const metadata: Metadata = {
     maximumScale: 1,
     userScalable: false,
   },
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "FADERCO QR",
-  },
   formatDetection: {
     telephone: false,
   },
@@ -70,17 +64,6 @@ export default function RootLayout({
         <SecurityProvider>
           <Suspense fallback={null}>{children}</Suspense>
         </SecurityProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/service-worker.js');
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )
