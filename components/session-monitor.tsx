@@ -24,16 +24,14 @@ export function SessionMonitor() {
         } = await supabase.auth.getSession()
 
         if (!session) {
-          console.log('[v0] SessionMonitor: No Supabase session, redirecting to login')
           clearSession()
           router.push('/auth/login')
           return
         }
 
-        console.log('[v0] SessionMonitor: Valid Supabase session found for:', session.user?.email)
         resetActivityTimer()
       } catch (error) {
-        console.error('[v0] SessionMonitor: Error checking session:', error)
+        // Silently fail session check
       }
     }
 

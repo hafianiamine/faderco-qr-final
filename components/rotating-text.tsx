@@ -12,17 +12,11 @@ export function RotatingText({ words, className = "" }: RotatingTextProps) {
   const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] RotatingText mounted with words:", words)
-    console.log("[v0] Current word:", words[currentIndex])
-  }, [])
-
-  useEffect(() => {
     const interval = setInterval(() => {
       setIsAnimating(true)
       setTimeout(() => {
         setCurrentIndex((prev) => {
           const newIndex = (prev + 1) % words.length
-          console.log("[v0] Rotating to word:", words[newIndex])
           return newIndex
         })
         setIsAnimating(false)

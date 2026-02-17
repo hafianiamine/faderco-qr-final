@@ -16,13 +16,11 @@ export async function getLandingSections() {
       .order('section_number', { ascending: true })
 
     if (error) {
-      console.error('[v0] Supabase error:', error)
       throw error
     }
 
     return { data: data || [], error: null }
   } catch (error: any) {
-    console.error('[v0] Error fetching landing sections:', error.message || error)
     return { data: [], error: error?.message || 'Failed to fetch landing sections' }
   }
 }
@@ -52,13 +50,11 @@ export async function updateLandingSection(
       .select()
 
     if (error) {
-      console.error('[v0] Supabase update error:', error)
       throw error
     }
 
     return { data: data?.[0] || null, error: null }
   } catch (error: any) {
-    console.error('[v0] Error updating landing section:', error.message || error)
     return { data: null, error: error?.message || 'Failed to update landing section' }
   }
 }

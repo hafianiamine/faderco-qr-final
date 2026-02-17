@@ -105,7 +105,6 @@ export function CreateQRCodeFormInline({ onSuccess }: CreateQRCodeFormInlineProp
           toast.error("Failed to upload logo")
         }
       } catch (error) {
-        console.error("[v0] Logo upload error:", error)
         toast.error("Failed to upload logo")
       }
     }

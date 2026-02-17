@@ -45,10 +45,10 @@ export async function logActivity(params: LogActivityParams) {
     })
 
     if (error) {
-      console.error("[v0] Failed to log activity:", error)
+      // Silently fail activity logging
     }
   } catch (error) {
-    console.error("[v0] Activity logging error:", error)
+    // Silently fail activity logging
   }
 }
 
