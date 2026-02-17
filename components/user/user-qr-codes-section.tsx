@@ -45,8 +45,8 @@ export function UserQRCodesSection() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    loadQRCodes()
-    loadPendingDeletions()
+    // Load pending deletions first, then load QR codes so filter has data
+    loadPendingDeletions().then(() => loadQRCodes())
   }, [])
 
   const filteredQRCodes = qrCodes.filter((qr) => {
@@ -82,7 +82,8 @@ export function UserQRCodesSection() {
         return
       }
 
-      const { data, error } = await supabase
+      // First, get all QR codes for this user
+      const { data: allQRCodes, error } = await supabase
         .from("qr_codes")
         .select("*")
         .eq("user_id", user.id)
@@ -94,7 +95,19 @@ export function UserQRCodesSection() {
         toast.error("Failed to load QR codes")
         setQrCodes([])
       } else {
-        setQrCodes(Array.isArray(data) ? data : [])
+        // Filter out QR codes that are scheduled for deletion
+        const activeQRCodes = allQRCodes?.filter(qr => {
+          const pendingDeletion = pendingDeletions?.find(pd => pd.qr_code_id === qr.id)
+          return !pendingDeletion
+        }) || []
+        
+        console.log("[v0] QR Codes loaded:", {
+          total: allQRCodes?.length || 0,
+          active: activeQRCodes.length,
+          deleted: (allQRCodes?.length || 0) - activeQRCodes.length
+        })
+        
+        setQrCodes(Array.isArray(activeQRCodes) ? activeQRCodes : [])
       }
 
       setLoading(false)
@@ -248,7 +261,8 @@ export function UserQRCodesSection() {
           <CreateQRCodeFormInline
             onSuccess={() => {
               setShowCreateForm(false)
-              loadQRCodes()
+              // Load pending deletions first, then QR codes
+              loadPendingDeletions().then(() => loadQRCodes())
             }}
           />
         </div>
