@@ -663,8 +663,9 @@ function QRWithLogo({ qr }: { qr: any }) {
           setQrWithLogo(qr.qr_image_url)
         }
       }
-      embedLogo()
-    }, [qr])
+    }
+    embedLogo()
+  }, [qr])
 
-    return <img src={qrWithLogo || qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
+  return <img src={qrWithLogo || qr.qr_image_url || "/placeholder.svg"} alt={qr.title} className="mx-auto h-32 w-32" />
 }
