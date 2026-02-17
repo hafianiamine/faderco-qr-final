@@ -132,17 +132,6 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
       return { error: "Unauthorized" }
     }
 
-    // Verify ownership
-    const { data: card } = await supabase
-      .from("virtual_business_cards")
-      .select("user_id")
-      .eq("id", cardId)
-      .single()
-
-    if (!card || card.user_id !== user.id) {
-      return { error: "Unauthorized" }
-    }
-
     // Generate vCard
     const vcard = generateVCard(cardData)
 
