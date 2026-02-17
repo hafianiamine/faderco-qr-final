@@ -6,8 +6,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const publicRoutes = ["/", "/auth/login", "/auth/register", "/auth/registration-success", "/auth/pending-approval"]
-  if (publicRoutes.includes(request.nextUrl.pathname)) {
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/",
+    "/auth/login",
+    "/auth/register",
+    "/auth/registration-success",
+    "/auth/pending-approval",
+  ]
+
+  // Allow public business card pages and QR redirects
+  const isPublicBusinessCard = request.nextUrl.pathname.startsWith("/business-card/")
+  const isPublicRedirect = request.nextUrl.pathname.startsWith("/api/redirect/")
+  
+  if (publicRoutes.includes(request.nextUrl.pathname) || isPublicBusinessCard || isPublicRedirect) {
     return NextResponse.next()
   }
 
