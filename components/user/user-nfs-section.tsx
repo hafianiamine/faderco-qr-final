@@ -115,7 +115,10 @@ export function UserNFSSection() {
         return
       }
       toast({ title: "Success", description: "Virtual card deleted" })
-      loadCards()
+      // Remove the deleted card from state immediately
+      setCards(cards.filter(card => card.id !== id))
+      // Then reload to sync with database
+      await loadCards()
     } catch (error) {
       console.error("Error deleting card:", error)
       toast({ title: "Error", description: "Failed to delete virtual card" })
