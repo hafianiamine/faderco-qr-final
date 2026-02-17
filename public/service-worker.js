@@ -48,6 +48,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-http/https requests (chrome-extension, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   // Skip API calls (let them go through network)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -71,9 +76,14 @@ self.addEventListener('fetch', (event) => {
         }
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
+          cache.put(request, responseToCache).catch(() => {
+            console.log('[Service Worker] Failed to cache:', request.url);
+          });
         });
         return response;
+      }).catch((error) => {
+        console.log('[Service Worker] Fetch failed:', error);
+        return caches.match('/offline.html');
       });
     })
   );

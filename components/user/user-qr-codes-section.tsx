@@ -77,6 +77,7 @@ export function UserQRCodesSection() {
       } = await supabase.auth.getUser()
 
       if (!user) {
+        setQrCodes([])
         setLoading(false)
         return
       }
@@ -93,13 +94,14 @@ export function UserQRCodesSection() {
         toast.error("Failed to load QR codes")
         setQrCodes([])
       } else {
-        setQrCodes(data || [])
+        setQrCodes(Array.isArray(data) ? data : [])
       }
 
       setLoading(false)
     } catch (error) {
       console.error("Error in loadQRCodes:", error)
       toast.error("Failed to load QR codes")
+      setQrCodes([]) // Ensure state is always an array
       setLoading(false)
     }
   }
@@ -111,12 +113,16 @@ export function UserQRCodesSection() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!user) return
+      if (!user) {
+        setPendingDeletions([])
+        return
+      }
 
       const pendingData = await getPendingDeletions(user.id)
       setPendingDeletions(pendingData || [])
     } catch (error) {
       console.error("Error loading pending deletions:", error)
+      setPendingDeletions([]) // Ensure state is always an array
     }
   }
 
