@@ -175,6 +175,10 @@ export function UserQRCodesSection() {
     if (scheduledTime > now) {
       return { scheduled_deletion_at: qr.scheduled_deletion_at, qr_code_id: qr.id }
     }
+    // Safe check: ensure pendingDeletions is an array before calling .find()
+    if (!Array.isArray(pendingDeletions)) {
+      return null
+    }
     return pendingDeletions.find((pd) => pd.qr_code_id === qr.id)
   }
 

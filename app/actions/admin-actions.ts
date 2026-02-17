@@ -150,7 +150,7 @@ export async function resetUserPassword(userId: string, userEmail: string) {
   }
 }
 
-export async function createUser(email: string, password: string, fullName: string, company?: string) {
+export async function createUser(email: string, password: string, fullName: string, company?: string, phoneNumber?: string) {
   try {
     const supabase = await createClient()
 
@@ -187,6 +187,7 @@ export async function createUser(email: string, password: string, fullName: stri
       user_metadata: {
         full_name: fullName,
         company: company || "",
+        phone_number: phoneNumber || "",
       },
     })
 
@@ -199,7 +200,7 @@ export async function createUser(email: string, password: string, fullName: stri
     if (newUser.user) {
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ status: "approved", company: company || "" })
+        .update({ status: "approved", company: company || "", phone: phoneNumber || "" })
         .eq("id", newUser.user.id)
 
       if (updateError) {

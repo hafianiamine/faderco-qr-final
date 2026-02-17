@@ -164,12 +164,10 @@ export function UserNFSSection() {
               <p className="text-sm text-gray-600">Create and manage your virtual business card with unique QR code</p>
           </div>
           <Button onClick={() => {
-            if (cards.length === 0) {
-              setShowCreator(true)
-            }
-          }} disabled={cards.length > 0} className="flex items-center gap-2">
+            setShowCreator(true)
+          }} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            {cards.length > 0 ? "Card Created" : "Create Card"}
+            Create Card
           </Button>
         </div>
       </div>
