@@ -14,6 +14,7 @@ interface VirtualCard {
   job_title?: string
   website?: string
   cover_image_url?: string
+  profile_image_url?: string
   theme_color?: string
   vcard_data: string
 }
@@ -99,9 +100,20 @@ export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
           <div className="relative px-6 pb-8">
             {/* Profile Image */}
             <div className="flex justify-center -mt-20 mb-4">
-              <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-300 to-purple-300 border-4 border-white shadow-xl flex items-center justify-center text-white text-6xl font-bold" style={{ borderColor: accentColor }}>
-                {card.full_name.charAt(0).toUpperCase()}
-              </div>
+              {card.profile_image_url && !imageError ? (
+                <img 
+                  src={card.profile_image_url}
+                  alt={card.full_name}
+                  className="w-40 h-40 rounded-full border-4 border-white shadow-xl object-cover"
+                  style={{ borderColor: accentColor }}
+                  crossOrigin="anonymous"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-300 to-purple-300 border-4 border-white shadow-xl flex items-center justify-center text-white text-6xl font-bold" style={{ borderColor: accentColor }}>
+                  {card.full_name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             {/* Name */}

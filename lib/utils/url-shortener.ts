@@ -8,15 +8,22 @@ export function generateShortCode(): string {
 }
 
 export function createShortUrl(shortCode: string): string {
-  // Priority: VERCEL_URL (for deployed Vercel apps), then fallback to localhost
+  // Priority: NEXT_PUBLIC_APP_URL (environment variable for custom domain)
+  // Then: VERCEL_URL (for deployed Vercel apps)
+  // Then: NEXT_PUBLIC_SITE_URL (fallback env var)
+  // Then: localhost (development only)
   let baseUrl = "http://localhost:3000"
   
-  if (process.env.VERCEL_URL) {
-    // Use the Vercel URL with https
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  } else if (process.env.VERCEL_URL) {
     baseUrl = `https://${process.env.VERCEL_URL}`
+  } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+    baseUrl = process.env.NEXT_PUBLIC_SITE_URL
   }
   
   // Ensure no trailing slash to avoid double slashes
   const cleanUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  console.log("[v0] QR redirect URL base:", cleanUrl)
   return `${cleanUrl}/api/redirect/${shortCode}`
 }

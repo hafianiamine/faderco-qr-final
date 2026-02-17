@@ -373,15 +373,27 @@ export function UserQRCodesSection() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDeletingQR(qr)}
-                    className="w-full bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
-                  >
-                    <X className="mr-1 h-4 w-4" />
-                    Cancel Deletion
-                  </Button>
+                  {pendingDeletion ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingQR(qr)}
+                      className="w-full bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                    >
+                      <X className="mr-1 h-4 w-4" />
+                      Cancel Deletion
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingQR(qr)}
+                      className="w-full bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      Delete
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
