@@ -9,6 +9,12 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
 
   const supabase = await createClient()
 
+  // Get the proper base URL for redirects
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+
+  console.log("[v0] Redirect base URL:", baseUrl)
+
   try {
     // First try to find in qr_codes table
     const { data: qrCode, error: queryError } = await supabase
@@ -192,7 +198,7 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
       // Check if this is a business card
       if (qrCodeData.type === "business_card" && qrCodeData.business_card_id) {
         return NextResponse.redirect(
-          new URL(`/business-card/${qrCodeData.business_card_id}`, request.url).toString(),
+          new URL(`/business-card/${qrCodeData.business_card_id}`, baseUrl).toString(),
           { status: 307 }
         )
       }
@@ -214,7 +220,7 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
     if (virtualCard && !virtualCardError) {
       // Found a virtual business card - redirect to its display page
       return NextResponse.redirect(
-        new URL(`/business-card/${virtualCard.id}`, request.url).toString(),
+        new URL(`/business-card/${virtualCard.id}`, baseUrl).toString(),
         { status: 307 }
       )
     }
