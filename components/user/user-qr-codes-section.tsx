@@ -144,11 +144,21 @@ export function UserQRCodesSection() {
 
     setIsUpdating(true)
     try {
-      await updateQRCodeDestination(editingQR.id, newDestinationUrl)
+      const result = await updateQRCodeDestination(editingQR.id, newDestinationUrl)
+      if (result.error) {
+        toast.error(result.error)
+        setIsUpdating(false)
+        return
+      }
+      
+      console.log("[v0] Update successful, reloading QR codes...")
       toast.success("QR code updated successfully")
       setEditingQR(null)
       setNewDestinationUrl("")
-      loadQRCodes()
+      
+      // Reload pending deletions first, then QR codes to ensure fresh data
+      await loadPendingDeletions()
+      await loadQRCodes()
     } catch (error) {
       console.error("Error updating QR code:", error)
       toast.error("Failed to update QR code")
@@ -178,9 +188,22 @@ export function UserQRCodesSection() {
     if (!editingQR) return
 
     try {
-      await toggleQRCodeStatus(editingQR.id)
+      const result = await toggleQRCodeStatus(
+        editingQR.id,
+        editingQR.status === "active" ? "inactive" : "active"
+      )
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      
+      console.log("[v0] Status toggle successful, reloading QR codes...")
       toast.success("QR code status updated")
-      loadQRCodes()
+      setEditingQR(null)
+      
+      // Reload pending deletions first, then QR codes to ensure fresh data
+      await loadPendingDeletions()
+      await loadQRCodes()
     } catch (error) {
       console.error("Error toggling status:", error)
       toast.error("Failed to update status")

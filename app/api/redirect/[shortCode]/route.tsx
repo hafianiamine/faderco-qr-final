@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
+export const revalidate = 0 // Never cache, always fetch fresh
 
 export async function GET(request: NextRequest, { params }: { params: { shortCode: string } }) {
   const { shortCode } = params
@@ -26,6 +27,13 @@ export async function GET(request: NextRequest, { params }: { params: { shortCod
     if (qrCode && !queryError) {
       // Found in qr_codes table - continue with existing QR code logic
       let qrCodeData = qrCode
+
+      console.log("[v0] QR Code status check:", {
+        id: qrCodeData.id,
+        is_active: qrCodeData.is_active,
+        status: qrCodeData.status,
+        destination_url: qrCodeData.destination_url
+      })
 
       // Geofencing validation before other checks
       if (qrCodeData.geofence_enabled && qrCodeData.geofence_latitude && qrCodeData.geofence_longitude && qrCodeData.geofence_radius) {

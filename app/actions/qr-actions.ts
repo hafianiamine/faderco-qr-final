@@ -448,63 +448,17 @@ export async function updateQRCodeDestination(qrCodeId: string, newDestinationUr
 
     await logActivity({
       userId: user.id,
-      action: "qr_edited",
+      action: "qr_destination_updated",
       entityType: "qr_code",
       entityId: qrCodeId,
-      oldValue: oldQrCode?.destination_url || "",
+      oldValue: oldQrCode?.destination_url,
       newValue: newDestinationUrl,
       ipAddress: getRealIP(headersList),
       deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
       userAgent: headersList.get("user-agent") || undefined,
     })
 
-    revalidatePath("/dashboard")
-    revalidatePath("/dashboard/qr-codes")
-
-    return { success: true }
-  } catch (error) {
-    return { error: `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}` }
-  }
-}
-
-export async function toggleQRCodeStatus(qrCodeId: string, newStatus: "active" | "inactive") {
-  try {
-    const supabase = await createClient()
-    const headersList = await headers()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { error: "Unauthorized" }
-    }
-
-    const { error: updateError } = await supabase
-      .from("qr_codes")
-      .update({
-        status: newStatus,
-        is_active: newStatus === "active",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", qrCodeId)
-      .eq("user_id", user.id)
-
-    if (updateError) {
-      return { error: `Failed to update status: ${updateError.message}` }
-    }
-
-    await logActivity({
-      userId: user.id,
-      action: newStatus === "active" ? "qr_enabled" : "qr_disabled",
-      entityType: "qr_code",
-      entityId: qrCodeId,
-      newValue: newStatus,
-      ipAddress: getRealIP(headersList),
-      deviceInfo: JSON.stringify(parseUserAgent(headersList.get("user-agent") || "")),
-      userAgent: headersList.get("user-agent") || undefined,
-    })
-
+    // Revalidate cache to ensure fresh data is used
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/qr-codes")
 
