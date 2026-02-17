@@ -1,8 +1,7 @@
 {
   "name": "faderco-qr-by-hafiani",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "private": true,
-  "description": "FADERCO QR - Production-ready QR code management platform with analytics and virtual business cards. Codebase cleaned: all debug logs removed, syntax errors fixed.",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
