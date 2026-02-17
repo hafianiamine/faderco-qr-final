@@ -37,6 +37,13 @@ export default async function BusinessCardPage({ params }: { params: { id: strin
     redirect('/404')
   }
 
+  console.log("[v0] Business card page loaded:", {
+    id: params.id,
+    cardId: businessCard.id,
+    coverImageUrl: businessCard.cover_image_url,
+    fullName: businessCard.full_name
+  })
+
   // Track the view
   await trackCardView(params.id)
 

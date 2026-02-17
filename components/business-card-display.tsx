@@ -25,7 +25,26 @@ interface BusinessCardDisplayProps {
 export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const accentColor = card.theme_color || '#6366f1'
+
+  // Debug logging
+  console.log("[v0] BusinessCard loaded:", { 
+    id: card.id,
+    name: card.full_name,
+    coverImageUrl: card.cover_image_url,
+    imageExists: !!card.cover_image_url,
+    imageUrl: card.cover_image_url ? card.cover_image_url.substring(0, 100) : 'none'
+  })
+
+  const handleImageError = () => {
+    console.error("[v0] Image failed to load:", card.cover_image_url)
+    setImageError(true)
+  }
+
+  const handleImageLoad = () => {
+    console.log("[v0] Image loaded successfully:", card.cover_image_url)
+  }
 
   const downloadVCard = () => {
     const element = document.createElement('a')
@@ -61,8 +80,16 @@ export function BusinessCardDisplay({ card }: BusinessCardDisplayProps) {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           {/* Cover Image */}
           <div className="relative h-48 overflow-hidden">
-            {card.cover_image_url ? (
-              <img src={card.cover_image_url} alt="Cover" className="w-full h-full object-cover" />
+            {card.cover_image_url && !imageError ? (
+              <img 
+                src={card.cover_image_url} 
+                alt="Cover" 
+                className="w-full h-full object-cover" 
+                crossOrigin="anonymous"
+                loading="lazy"
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+              />
             ) : (
               <div className="w-full h-full" style={{ backgroundColor: accentColor }} />
             )}
