@@ -39,8 +39,10 @@ export function saveSessionWithExpiry(sessionData: Omit<SessionData, 'expiresAt'
     // Update last activity
     localStorage.setItem(ACTIVITY_KEY, now.toString());
     
+    console.log('[v0] Session saved with expiry:', new Date(session.expiresAt).toISOString());
     return true;
   } catch (error) {
+    console.error('[v0] Failed to save session:', error);
     return false;
   }
 }
@@ -60,6 +62,7 @@ export function getValidSession(): SessionData | null {
 
     // Check if session has expired (30 days)
     if (session.expiresAt && now > session.expiresAt) {
+      console.log('[v0] Session expired');
       clearSession();
       return null;
     }
@@ -69,6 +72,7 @@ export function getValidSession(): SessionData | null {
     if (lastActivityStr) {
       const lastActivity = parseInt(lastActivityStr, 10);
       if (now - lastActivity > INACTIVITY_TIMEOUT_MS) {
+        console.log('[v0] Session inactive for too long');
         clearSession();
         return null;
       }
@@ -76,6 +80,7 @@ export function getValidSession(): SessionData | null {
 
     return session;
   } catch (error) {
+    console.error('[v0] Failed to get session:', error);
     return null;
   }
 }
@@ -87,8 +92,10 @@ export function clearSession() {
   try {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(ACTIVITY_KEY);
+    console.log('[v0] Session cleared');
     return true;
   } catch (error) {
+    console.error('[v0] Failed to clear session:', error);
     return false;
   }
 }
@@ -102,6 +109,7 @@ export function resetActivityTimer() {
     localStorage.setItem(ACTIVITY_KEY, now);
     return true;
   } catch (error) {
+    console.error('[v0] Failed to reset activity timer:', error);
     return false;
   }
 }
@@ -120,6 +128,7 @@ export function getSessionTimeRemaining(): number | null {
     const remaining = session.expiresAt - Date.now();
     return Math.max(0, remaining);
   } catch (error) {
+    console.error('[v0] Failed to get session time remaining:', error);
     return null;
   }
 }

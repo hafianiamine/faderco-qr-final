@@ -11,6 +11,8 @@ export async function ensureDefaultVirtualCard() {
       return { error: "Unauthorized" }
     }
 
+    console.log("[v0] Ensuring default virtual card for user:", user.id)
+
     // Check if user already has a default card
     const { data: existingCard } = await supabase
       .from("virtual_business_cards")
@@ -20,6 +22,7 @@ export async function ensureDefaultVirtualCard() {
       .single()
 
     if (existingCard) {
+      console.log("[v0] User already has default card:", existingCard.id)
       return { data: existingCard }
     }
 
@@ -34,6 +37,8 @@ export async function ensureDefaultVirtualCard() {
     const shortCode = `${user.id.slice(0, 8)}-${Date.now().toString(36)}`.toLowerCase()
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://faderco.com"
     const shortUrl = `${baseUrl}/card/${shortCode}`
+
+    console.log("[v0] Creating default card for user with short_code:", shortCode)
 
     // Create default virtual card
     const { data: newCard, error } = await supabase
@@ -52,11 +57,14 @@ export async function ensureDefaultVirtualCard() {
       .single()
 
     if (error) {
+      console.error("[v0] Error creating default card:", error)
       return { error: error.message }
     }
 
+    console.log("[v0] Default virtual card created successfully:", newCard?.id)
     return { data: newCard }
   } catch (error) {
+    console.error("[v0] Unexpected error in ensureDefaultVirtualCard:", error)
     return { error: "An unexpected error occurred" }
   }
 }
@@ -78,11 +86,14 @@ export async function getDefaultVirtualCard() {
       .single()
 
     if (error) {
+      console.error("[v0] Error fetching default card:", error)
       return { error: error.message }
     }
 
+    console.log("[v0] Default virtual card fetched:", card?.id)
     return { data: card }
   } catch (error) {
+    console.error("[v0] Unexpected error fetching default card:", error)
     return { error: "An unexpected error occurred" }
   }
 }

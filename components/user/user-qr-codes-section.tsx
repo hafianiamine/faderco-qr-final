@@ -503,9 +503,10 @@ export function UserQRCodesSection() {
             </Button>
           </div>
         )}
-      )}
+      </div>
 
       <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>
+
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>{viewingQR?.title}</AlertDialogTitle>
@@ -659,6 +660,7 @@ function QRWithLogo({ qr }: { qr: any }) {
           )
           setQrWithLogo(result)
         } catch (error) {
+          console.error("Failed to embed logo:", error)
           setQrWithLogo(qr.qr_image_url)
         }
       }

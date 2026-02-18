@@ -86,6 +86,7 @@ export function UserNFSSection() {
         setCardRequests(requestMap)
       }
     } catch (error) {
+      console.error("[v0] NFS: Error loading cards:", error)
       toast({ title: "Error", description: "Failed to load virtual cards" })
     } finally {
       setLoading(false)

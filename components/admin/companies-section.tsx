@@ -70,11 +70,13 @@ export function CompaniesSection() {
 
   async function loadCompanyUsers(companyName: string) {
     const supabase = createClient()
+    console.log("[v0] Loading users for company:", companyName)
     const { data: users, error } = await supabase
       .from("profiles")
       .select("id, full_name, email, phone_number, company")
       .eq("company", companyName)
 
+    console.log("[v0] Company users loaded:", users?.length || 0, "Error:", error?.message)
     if (users) {
       setCompanyUsers(users as User[])
     } else {
