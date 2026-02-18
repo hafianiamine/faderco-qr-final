@@ -75,7 +75,11 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/service-worker.js');
+                  navigator.serviceWorker.register('/service-worker.js').then((reg) => {
+                    console.log('[v0] Service Worker registered:', reg);
+                  }).catch((err) => {
+                    console.error('[v0] Service Worker registration failed:', err);
+                  });
                 });
               }
             `,

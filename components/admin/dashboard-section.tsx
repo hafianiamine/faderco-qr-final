@@ -47,6 +47,8 @@ export function DashboardSection() {
 
     const { data: qrCodesData, error: qrError } = await supabase.from("qr_codes").select("id, type, title")
 
+    console.log("[v0] QR Codes Count:", qrCodesData?.length, "Error:", qrError)
+
     const [{ count: usersCount }, { count: scansCount }, { data: companies }, { data: scansData }, { data: topCodes }] =
       await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),

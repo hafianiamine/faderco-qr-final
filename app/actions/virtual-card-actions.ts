@@ -44,6 +44,8 @@ export async function createVirtualCard(cardData: VirtualCardData) {
       return { error: "Unauthorized" }
     }
 
+    console.log("[v0] Creating virtual card with cover image:", cardData.coverImageBase64 ? "yes" : "no")
+
     // Generate unique short code
     let shortCode = generateShortCode()
     let isUnique = false
@@ -116,6 +118,8 @@ export async function updateVirtualCard(cardId: string, cardData: VirtualCardDat
     const {
       data: { user },
     } = await supabase.auth.getUser()
+
+    console.log("[v0] Updating virtual card with cover image:", cardData.coverImageBase64 ? "yes" : "no")
 
     if (!user) {
       return { error: "Unauthorized" }

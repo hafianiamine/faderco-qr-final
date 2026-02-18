@@ -20,8 +20,11 @@ export async function POST(request: NextRequest) {
       contentType: file.type,
     })
 
+    console.log(`[v0] Uploaded ${type} image to Blob:`, blob.url)
+
     return NextResponse.json({ url: blob.url })
   } catch (error) {
+    console.error('[v0] Blob upload error:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
