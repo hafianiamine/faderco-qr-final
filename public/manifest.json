@@ -1,6 +1,6 @@
 {
-  "name": "FADERCO QR - NFC Virtual Cards",
-  "short_name": "FADERCO QR",
+  "name": "faderco coocnt - NFC Virtual Cards",
+  "short_name": "faderco coocnt",
   "description": "Create and manage your NFC virtual business cards with QR codes",
   "start_url": "/",
   "scope": "/",
