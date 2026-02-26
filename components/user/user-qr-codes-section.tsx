@@ -503,10 +503,9 @@ export function UserQRCodesSection() {
             </Button>
           </div>
         )}
-      </div>
+      )}
 
       <AlertDialog open={!!viewingQR} onOpenChange={(open) => !open && setViewingQR(null)}>
-
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>{viewingQR?.title}</AlertDialogTitle>
