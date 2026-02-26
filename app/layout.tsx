@@ -25,7 +25,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "FADERCO QR Platform",
+  title: "faderco coocnt",
   description: "Professional QR code generation and management platform with advanced analytics",
   generator: "fadercoqr.com",
   viewport: {
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "FADERCO QR",
+    title: "faderco coocnt",
   },
   formatDetection: {
     telephone: false,
@@ -64,7 +64,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="FADERCO QR" />
+        <meta name="apple-mobile-web-app-title" content="faderco coocnt" />
       </head>
       <body className="font-sans antialiased">
         <SecurityProvider>
